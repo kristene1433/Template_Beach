@@ -368,82 +368,78 @@ const Home = () => {
       {/* Contact Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Get in Touch
-              </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                Have questions about our Gulf Shores condo or ready to apply? 
-                Our team is here to help you secure your perfect beachfront home.
-              </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-5 h-5 text-blue-600" />
-                  <span className="text-gray-700">(407) 687-1270</span>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Get in Touch
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Have questions about our Gulf Shores condo or ready to apply? 
+              Our team is here to help you secure your perfect beachfront home.
+            </p>
+          </div>
+          
+          <div className="max-w-4xl mx-auto">
+            {/* Contact Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Email Card */}
+              <div className="bg-blue-50 rounded-lg p-6 text-center hover:bg-blue-100 transition-colors duration-200">
+                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-white" />
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  <span className="text-gray-700">palmrunbeachcondo@gmail.com</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <span className="text-gray-700">18650 Gulf Blvd Unit 207, Indian Shores, FL 33785</span>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-2">Perfect Location</h4>
-                <p className="text-sm text-blue-800">
-                  Well-placed between Dunedin and St. Petersburg, very near the bridge to Tampa. A perfect environment for all-year-round entertainment with tons of activities all along the coast and around Tampa within an hour or two.
-                </p>
-              </div>
-            </div>
-            
-            <div className="card">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Send us a Message
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Have questions about our Gulf Shores condo or ready to apply? 
-                Send us a message and we'll get back to you promptly.
-              </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">Email Us</p>
-                    <p className="text-sm text-gray-600">palmrunbeachcondo@gmail.com</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Phone className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">Call Us</p>
-                    <p className="text-sm text-gray-600">(407) 687-1270</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">Visit Us</p>
-                    <p className="text-sm text-gray-600">18650 Gulf Blvd Unit 207, Indian Shores, FL 33785</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
+                <p className="text-gray-600 mb-4">palmrunbeachcondo@gmail.com</p>
                 <Link
                   to="/contact"
-                  className="btn-primary w-full text-center block"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Send Detailed Message
+                  Send Message
+                  <span className="ml-1">→</span>
                 </Link>
               </div>
+
+              {/* Phone Card */}
+              <div className="bg-green-50 rounded-lg p-6 text-center hover:bg-green-100 transition-colors duration-200">
+                <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Phone className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Call Us</h3>
+                <p className="text-gray-600 mb-4">(407) 687-1270</p>
+                <a
+                  href="tel:+14076871270"
+                  className="inline-flex items-center text-green-600 hover:text-green-700 font-medium"
+                >
+                  Call Now
+                  <span className="ml-1">→</span>
+                </a>
+              </div>
+
+              {/* Location Card */}
+              <div className="bg-purple-50 rounded-lg p-6 text-center hover:bg-purple-100 transition-colors duration-200">
+                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Visit Us</h3>
+                <p className="text-gray-600 mb-4">18650 Gulf Blvd Unit 207<br />Indian Shores, FL 33785</p>
+                <a
+                  href="https://maps.google.com/?q=18650+Gulf+Blvd+Unit+207+Indian+Shores+FL+33785"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  View on Map
+                  <span className="ml-1">→</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Location Description */}
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <h4 className="font-semibold text-gray-900 mb-3">Perfect Location</h4>
+              <p className="text-gray-600">
+                Well-placed between Dunedin and St. Petersburg, very near the bridge to Tampa. 
+                A perfect environment for all-year-round entertainment with tons of activities 
+                all along the coast and around Tampa within an hour or two.
+              </p>
             </div>
           </div>
         </div>
