@@ -20,7 +20,8 @@ const AdminDashboard = () => {
   const [leaseFormData, setLeaseFormData] = useState({
     leaseStartDate: '',
     leaseEndDate: '',
-    rentalAmount: 2500
+    rentalAmount: 2500,
+    depositAmount: 500
   });
   const [selectedApplicationForLease, setSelectedApplicationForLease] = useState(null);
 
@@ -134,7 +135,8 @@ const AdminDashboard = () => {
           applicationId: selectedApplicationForLease._id,
           leaseStartDate: leaseFormData.leaseStartDate, // Send date string directly
           leaseEndDate: leaseFormData.leaseEndDate, // Send date string directly
-          rentalAmount: parseInt(leaseFormData.rentalAmount)
+          rentalAmount: parseInt(leaseFormData.rentalAmount),
+          depositAmount: parseInt(leaseFormData.depositAmount)
         })
       });
 
@@ -156,7 +158,8 @@ const AdminDashboard = () => {
         setLeaseFormData({
           leaseStartDate: '',
           leaseEndDate: '',
-          rentalAmount: 2500
+          rentalAmount: 2500,
+          depositAmount: 500
         });
         
         // Refresh applications to show updated lease information
@@ -169,7 +172,8 @@ const AdminDashboard = () => {
             ...selectedApplication,
             leaseStartDate: leaseFormData.leaseStartDate,
             leaseEndDate: leaseFormData.leaseEndDate,
-            rentalAmount: parseInt(leaseFormData.rentalAmount)
+            rentalAmount: parseInt(leaseFormData.rentalAmount),
+            depositAmount: parseInt(leaseFormData.depositAmount)
           };
           setSelectedApplication(updatedApp);
           
@@ -700,7 +704,8 @@ const AdminDashboard = () => {
                      setLeaseFormData({
                        leaseStartDate: '',
                        leaseEndDate: '',
-                       rentalAmount: 2500
+                       rentalAmount: 2500,
+                       depositAmount: 500
                      });
                    }}
                    className="text-gray-400 hover:text-gray-600"
@@ -757,6 +762,21 @@ const AdminDashboard = () => {
                    />
                  </div>
 
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Security Deposit Amount ($) *
+                   </label>
+                   <input
+                     type="number"
+                     required
+                     min="0"
+                     step="100"
+                     value={leaseFormData.depositAmount}
+                     onChange={(e) => setLeaseFormData(prev => ({ ...prev, depositAmount: parseInt(e.target.value) || 0 }))}
+                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                   />
+                 </div>
+
                  <div className="flex justify-end space-x-3 pt-4">
                    <button
                      type="button"
@@ -766,7 +786,8 @@ const AdminDashboard = () => {
                        setLeaseFormData({
                          leaseStartDate: '',
                          leaseEndDate: '',
-                         rentalAmount: 2500
+                         rentalAmount: 2500,
+                         depositAmount: 500
                        });
                      }}
                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

@@ -5,9 +5,6 @@ import {
   FileText, 
   CreditCard, 
   Building2, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle,
   ArrowRight,
   DollarSign,
   Calendar,
@@ -60,23 +57,6 @@ const Dashboard = () => {
         return 'text-red-600 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved':
-      case 'completed':
-      case 'succeeded':
-        return <CheckCircle className="w-5 h-5" />;
-      case 'pending':
-      case 'processing':
-        return <Clock className="w-5 h-5" />;
-      case 'rejected':
-      case 'failed':
-        return <AlertCircle className="w-5 h-5" />;
-      default:
-        return <Clock className="w-5 h-5" />;
     }
   };
 
@@ -135,7 +115,7 @@ const Dashboard = () => {
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.firstName}!
+            Welcome back, {user?.firstName || user?.email || 'Guest'}!
           </h1>
           <p className="text-gray-600 mt-2">
             Here's an overview of your rental application and account status
@@ -193,13 +173,13 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               {leaseStatus?.leaseSigned ? 
                 'Your lease agreement has been signed and is active' : 
-                'Generate and review your lease agreement'}
+                'Review your lease agreement'}
             </p>
             <Link
               to="/lease"
               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
-              {leaseStatus?.leaseSigned ? 'View Lease' : 'Generate Lease'}
+              {leaseStatus?.leaseSigned ? 'View Lease' : 'Review Lease'}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -251,7 +231,8 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
                 <p className="text-sm text-gray-600">
-                  {user?.rentalAmount ? `$${user.rentalAmount}` : 'Not specified'}
+                  {leaseStatus?.rentalAmount ? `$${leaseStatus.rentalAmount.toLocaleString()}` : 
+                   leaseStatus?.hasApplication ? 'Pending lease generation' : 'Not specified'}
                 </p>
               </div>
             </div>
@@ -261,7 +242,8 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Security Deposit</p>
                 <p className="text-sm text-gray-600">
-                  {user?.depositAmount ? `$${user.depositAmount}` : '$500'}
+                  {leaseStatus?.depositAmount ? `$${leaseStatus.depositAmount.toLocaleString()}` : 
+                   leaseStatus?.hasApplication ? 'Pending lease generation' : '$500'}
                 </p>
               </div>
             </div>
@@ -318,6 +300,18 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
+              
+              {leaseStatus?.depositAmount && (
+                <div className="flex items-center space-x-3">
+                  <DollarSign className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Security Deposit</p>
+                    <p className="text-sm text-gray-600">
+                      ${leaseStatus.depositAmount.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="mt-4 pt-4 border-t border-gray-200">
@@ -325,7 +319,7 @@ const Dashboard = () => {
                 to="/lease"
                 className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
               >
-                {leaseStatus?.leaseSigned ? 'View Full Lease Agreement' : 'Generate and Review Lease'}
+                {leaseStatus?.leaseSigned ? 'View Full Lease Agreement' : 'Review Lease'}
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>

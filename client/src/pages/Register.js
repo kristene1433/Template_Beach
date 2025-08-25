@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    firstName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -40,7 +41,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await register(formData.email, formData.password);
+      await register(formData.firstName, formData.email, formData.password);
       toast.success('Registration successful! Please log in.');
       navigate('/login');
     } catch (error) {
@@ -67,6 +68,29 @@ const Register = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* First Name Field */}
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <UserPlus className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  required
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="input-field pl-10"
+                  placeholder="Enter your first name"
+                />
+              </div>
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

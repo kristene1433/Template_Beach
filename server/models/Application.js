@@ -106,7 +106,8 @@ const applicationSchema = new mongoose.Schema({
   },
   leaseSignedAt: Date,
   leaseSignature: String,
-  rentalAmount: Number
+  rentalAmount: Number,
+  depositAmount: Number
 }, {
   timestamps: true
 });

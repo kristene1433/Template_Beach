@@ -7,7 +7,7 @@ const router = express.Router();
 // Generate lease agreement
 router.post('/generate', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.body;
+    const { leaseStartDate, leaseEndDate, rentalAmount = 2500, depositAmount = 500 } = req.body;
     
     // Get user's application
     const application = await Application.findOne({ userId: req.user._id });
@@ -20,6 +20,7 @@ router.post('/generate', auth, async (req, res) => {
     application.leaseStartDate = leaseStartDate;
     application.leaseEndDate = leaseEndDate;
     application.rentalAmount = rentalAmount;
+    application.depositAmount = depositAmount;
     await application.save();
 
     // Generate lease agreement content
@@ -51,7 +52,7 @@ router.post('/admin/generate', auth, async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const { applicationId, leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.body;
+    const { applicationId, leaseStartDate, leaseEndDate, rentalAmount = 2500, depositAmount = 500 } = req.body;
     
     if (!applicationId) {
       return res.status(400).json({ error: 'Application ID is required' });
@@ -68,6 +69,7 @@ router.post('/admin/generate', auth, async (req, res) => {
     application.leaseStartDate = leaseStartDate;
     application.leaseEndDate = leaseEndDate;
     application.rentalAmount = rentalAmount;
+    application.depositAmount = depositAmount;
     await application.save();
 
     // Generate lease agreement content
@@ -87,7 +89,7 @@ router.post('/admin/generate', auth, async (req, res) => {
 // Download lease agreement as PDF
 router.get('/download', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.query;
+    const { leaseStartDate, leaseEndDate, rentalAmount = 2500, depositAmount = 500 } = req.query;
     
     // Get user's application
     const application = await Application.findOne({ userId: req.user._id });
@@ -100,6 +102,7 @@ router.get('/download', auth, async (req, res) => {
     application.leaseStartDate = leaseStartDate;
     application.leaseEndDate = leaseEndDate;
     application.rentalAmount = rentalAmount;
+    application.depositAmount = depositAmount;
     await application.save();
 
     // Generate lease agreement
@@ -171,7 +174,7 @@ router.get('/preview', auth, async (req, res) => {
 // Sign lease agreement
 router.post('/sign', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, rentalAmount, signature } = req.body;
+    const { leaseStartDate, leaseEndDate, rentalAmount, depositAmount, signature } = req.body;
     
     if (!signature) {
       return res.status(400).json({ error: 'Digital signature is required' });
@@ -191,6 +194,7 @@ router.post('/sign', auth, async (req, res) => {
     application.leaseSignedAt = new Date();
     application.leaseSignature = signature;
     application.rentalAmount = rentalAmount;
+    application.depositAmount = depositAmount;
 
     await application.save();
 
@@ -233,7 +237,8 @@ router.get('/status', auth, async (req, res) => {
       leaseSignedAt: application.leaseSignedAt,
       leaseStartDate: application.leaseStartDate,
       leaseEndDate: application.leaseEndDate,
-      rentalAmount: application.rentalAmount
+      rentalAmount: application.rentalAmount,
+      depositAmount: application.depositAmount
     });
   } catch (error) {
     console.error('Lease status fetch error:', error);
