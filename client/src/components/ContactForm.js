@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Mail, Phone, User, MessageSquare, Send } from 'lucide-react';
-import { sendContactEmail } from '../utils/emailjs';
+import { sendContactEmail, initEmailJS } from '../utils/emailjs';
 
 const ContactForm = () => {
+  const [loading, setLoading] = useState(false);
+  const [emailjsReady, setEmailjsReady] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,7 +13,20 @@ const ContactForm = () => {
     subject: '',
     message: ''
   });
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Initialize EmailJS when component mounts
+    try {
+      const initialized = initEmailJS();
+      setEmailjsReady(initialized);
+      if (!initialized) {
+        console.error('EmailJS initialization failed');
+      }
+    } catch (error) {
+      console.error('EmailJS initialization error:', error);
+      setEmailjsReady(false);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,6 +46,19 @@ const ContactForm = () => {
     setLoading(true);
     
     try {
+      // Check if EmailJS is configured
+      if (!process.env.REACT_APP_EMAILJS_SERVICE_ID || 
+          !process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID || 
+          !process.env.REACT_APP_EMAILJS_PUBLIC_KEY) {
+        throw new Error('EmailJS not configured. Please check your environment variables.');
+      }
+
+      console.log('EmailJS Config:', {
+        serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID,
+        templateId: process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID,
+        publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? 'Set' : 'Missing'
+      });
+
       const result = await sendContactEmail(formData);
       
       if (result.success) {
@@ -43,10 +71,12 @@ const ContactForm = () => {
           message: ''
         });
       } else {
-        toast.error('Failed to send message. Please try again.');
+        console.error('EmailJS Error:', result.error);
+        toast.error(`Failed to send message: ${result.error}`);
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.');
+      console.error('Contact form error:', error);
+      toast.error(`An error occurred: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -60,6 +90,23 @@ const ContactForm = () => {
         <p className="text-gray-600 mt-2">
           Have a question? Need assistance? Send us a message and we'll get back to you promptly.
         </p>
+        
+        {/* EmailJS Status Indicator */}
+        {!emailjsReady && (
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800 text-sm">
+              ⚠️ EmailJS is not configured. Please set up your environment variables.
+            </p>
+          </div>
+        )}
+        
+        {emailjsReady && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 text-sm">
+              ✅ EmailJS is ready to send messages.
+            </p>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
