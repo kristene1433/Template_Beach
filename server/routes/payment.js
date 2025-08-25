@@ -25,29 +25,38 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       const session = event.data.object;
       
       try {
-        // Find the payment record
-        const payment = await Payment.findOne({ 
+        // Create payment record from session metadata
+        const payment = new Payment({
+          userId: session.metadata.userId,
           stripePaymentIntentId: session.payment_intent,
-          'metadata.checkoutSessionId': session.id
+          stripeCustomerId: session.customer,
+          amount: Math.round(parseFloat(session.metadata.amount) * 100), // Convert to cents
+          currency: 'usd',
+          paymentType: session.metadata.paymentType,
+          description: `${session.metadata.paymentType} payment`,
+          status: 'succeeded',
+          paidAt: new Date(),
+          metadata: {
+            propertyAddress: session.metadata.propertyAddress,
+            checkoutSessionId: session.id
+          }
         });
 
-        if (payment) {
-          // Update payment status
-          payment.status = 'succeeded';
-          payment.paidAt = new Date();
-          payment.receiptUrl = session.receipt_url;
-          
-          // Get payment intent details for additional info
-          const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
-          if (paymentIntent.charges.data[0]?.payment_method_details?.card) {
-            const card = paymentIntent.charges.data[0].payment_method_details.card;
-            payment.cardLast4 = card.last4;
-            payment.cardBrand = card.brand;
-          }
-
-          await payment.save();
-          console.log(`Payment ${payment._id} marked as successful`);
+        // Get payment intent details for additional info
+        const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+        if (paymentIntent.charges.data[0]?.payment_method_details?.card) {
+          const card = paymentIntent.charges.data[0].payment_method_details.card;
+          payment.cardLast4 = card.last4;
+          payment.cardBrand = card.brand;
         }
+
+        // Get receipt URL from session
+        if (session.receipt_url) {
+          payment.receiptUrl = session.receipt_url;
+        }
+
+        await payment.save();
+        console.log(`Payment ${payment._id} created and marked as successful`);
       } catch (error) {
         console.error('Error processing webhook:', error);
       }
@@ -159,32 +168,12 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       }
     });
 
-    // Create payment record in database
-    const payment = new Payment({
-      userId: user._id,
-      stripePaymentIntentId: session.payment_intent,
-      stripeCustomerId: customer.id,
-      amount: Math.round(amount * 100), // Store in cents
-      currency: 'usd',
-      paymentType,
-      description: description || `${paymentType} payment`,
-      status: 'pending',
-      metadata: {
-        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : '',
-        checkoutSessionId: session.id
-      }
-    });
-
-    await payment.save();
+    // Don't create payment record here - it will be created when webhook fires
+    // The session metadata contains all the information we need
 
     res.json({
       sessionId: session.id,
-      url: session.url,
-      payment: {
-        id: payment._id,
-        amount: payment.amount,
-        status: payment.status
-      }
+      url: session.url
     });
   } catch (error) {
     console.error('Checkout session creation error:', error);
