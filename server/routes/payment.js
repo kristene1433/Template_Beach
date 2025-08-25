@@ -149,7 +149,6 @@ router.post('/create-checkout-session', auth, async (req, res) => {
         amount: amount.toString(),
         propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
       },
-      customer_email: user.email,
       billing_address_collection: 'required',
       payment_intent_data: {
         metadata: {

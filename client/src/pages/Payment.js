@@ -343,15 +343,10 @@ const Payment = () => {
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Proceed to Payment (${getPaymentAmount().toFixed(2)})
+                    Proceed to Payment
                   </>
                 )}
               </button>
-
-              {/* Debug Info */}
-              <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-100 rounded">
-                Debug: selectedAmount={selectedAmount}, customAmount={customAmount}, getPaymentAmount()={getPaymentAmount()}
-              </div>
 
               {/* Security Notice */}
               <div className="text-center text-sm text-gray-500">
