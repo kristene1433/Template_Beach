@@ -14,17 +14,17 @@ const leaseRoutes = require('./routes/lease');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware - Updated to allow Stripe and EmailJS
+// Security middleware - Updated to allow Stripe, EmailJS, and Google Fonts
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://api.emailjs.com"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://api.emailjs.com"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://api.emailjs.com", "https://api.emailjs.com/api/v1.0/email/send"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'", "https:", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameAncestors: ["'none'"],

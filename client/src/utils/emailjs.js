@@ -10,6 +10,13 @@ export const EMAILJS_CONFIG = {
 
 // Validate configuration
 export const validateEmailJSConfig = () => {
+  console.log('EmailJS Config Check:', {
+    SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID,
+    CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID,
+    LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID,
+    PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
+  });
+  
   if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.CONTACT_TEMPLATE_ID || 
       !EMAILJS_CONFIG.LEASE_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
     console.error('EmailJS configuration missing. Please check your environment variables.');
