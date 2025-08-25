@@ -332,7 +332,7 @@ const Payment = () => {
               {/* Submit Button */}
               <button
                 onClick={handlePayment}
-                disabled={loading || !getPaymentAmount()}
+                disabled={loading}
                 className="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
@@ -343,10 +343,15 @@ const Payment = () => {
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Proceed to Payment
+                    Proceed to Payment (${getPaymentAmount().toFixed(2)})
                   </>
                 )}
               </button>
+
+              {/* Debug Info */}
+              <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-100 rounded">
+                Debug: selectedAmount={selectedAmount}, customAmount={customAmount}, getPaymentAmount()={getPaymentAmount()}
+              </div>
 
               {/* Security Notice */}
               <div className="text-center text-sm text-gray-500">
