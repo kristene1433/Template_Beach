@@ -128,11 +128,7 @@ const AppRoutes = () => {
       />
       <Route 
         path="/contact" 
-        element={
-          <ProtectedRoute>
-            <ContactForm />
-          </ProtectedRoute>
-        } 
+        element={<ContactForm />} 
       />
       <Route 
         path="/admin/login" 
