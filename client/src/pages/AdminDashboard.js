@@ -145,6 +145,8 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Server response data:', data);
+        console.log('Lease agreement content:', data.leaseAgreement);
         setLeaseContent(data.leaseAgreement);
         setLeaseGenerated(true);
         toast.success('Lease agreement generated successfully!');
@@ -184,6 +186,15 @@ const AdminDashboard = () => {
   };
 
   const viewLease = () => {
+    // Debug: Check what's in leaseContent
+    console.log('Lease Content:', leaseContent);
+    console.log('Lease Content Length:', leaseContent ? leaseContent.length : 'No content');
+    
+    if (!leaseContent) {
+      toast.error('No lease content available. Please generate the lease first.');
+      return;
+    }
+    
     // Create a new window/tab to display the lease content
     const newWindow = window.open('', '_blank');
     newWindow.document.write(`
@@ -227,7 +238,8 @@ const AdminDashboard = () => {
         leaseEndDate: leaseFormData.leaseEndDate,
         rentalAmount: leaseFormData.rentalAmount,
         depositAmount: leaseFormData.depositAmount,
-        tenantEmail: sendToManager ? 'palmrunbeachcondo@gmail.com' : selectedApplicationForLease.userId?.email
+        tenantEmail: sendToManager ? 'palmrunbeachcondo@gmail.com' : selectedApplicationForLease.userId?.email,
+        leaseContent: leaseContent
       };
 
       const result = await sendLeaseNotification(leaseData);
@@ -847,14 +859,23 @@ const AdminDashboard = () => {
                    </div>
                  </form>
                ) : (
-                 <div className="space-y-4">
-                   <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                     <p className="text-sm text-green-800">
-                       Lease agreement has been generated successfully! You can now view, download, or send it via email.
-                     </p>
-                   </div>
-                   
-                   <div className="flex flex-col space-y-3">
+                                   <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                      <p className="text-sm text-green-800">
+                        Lease agreement has been generated successfully! You can now view, download, or send it via email.
+                      </p>
+                    </div>
+                    
+                    {/* Debug info - remove this after testing */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>Debug Info:</strong><br/>
+                        Lease Content Length: {leaseContent ? leaseContent.length : 'No content'}<br/>
+                        First 100 chars: {leaseContent ? leaseContent.substring(0, 100) + '...' : 'No content'}
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col space-y-3">
                      <button
                        onClick={viewLease}
                        className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

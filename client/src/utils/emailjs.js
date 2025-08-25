@@ -94,6 +94,7 @@ export const sendLeaseNotification = async (leaseData) => {
         rental_amount: leaseData.rentalAmount,
         deposit_amount: leaseData.depositAmount,
         property_address: '18650 Gulf Blvd Unit 207, Indian Shores, FL 33785',
+        lease_content: leaseData.leaseContent || 'Lease content not available',
         sent_date: new Date().toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
