@@ -87,7 +87,7 @@ export const sendLeaseNotification = async (leaseData) => {
       EMAILJS_CONFIG.SERVICE_ID,
       EMAILJS_CONFIG.LEASE_TEMPLATE_ID,
       {
-        to_email: 'palmrunbeachcondo@gmail.com',
+        to_email: leaseData.tenantEmail || 'palmrunbeachcondo@gmail.com',
         tenant_name: `${leaseData.firstName} ${leaseData.lastName}`,
         lease_start_date: leaseData.leaseStartDate,
         lease_end_date: leaseData.leaseEndDate,

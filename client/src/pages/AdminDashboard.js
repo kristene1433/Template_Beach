@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sendLeaseNotification } from '../utils/emailjs';
 import {
   Users, FileText, Search, Eye, Download, Calendar, 
   Phone, Mail, MapPin, UserCheck, Clock, CheckCircle,
@@ -24,6 +25,8 @@ const AdminDashboard = () => {
     depositAmount: 500
   });
   const [selectedApplicationForLease, setSelectedApplicationForLease] = useState(null);
+  const [leaseContent, setLeaseContent] = useState('');
+  const [leaseGenerated, setLeaseGenerated] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -141,26 +144,10 @@ const AdminDashboard = () => {
       });
 
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `lease-agreement-${selectedApplicationForLease.firstName}-${selectedApplicationForLease.lastName}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        toast.success('Lease agreement generated and downloaded');
-        
-        // Close modal and reset form
-        setShowLeaseModal(false);
-        setSelectedApplicationForLease(null);
-        setLeaseFormData({
-          leaseStartDate: '',
-          leaseEndDate: '',
-          rentalAmount: 2500,
-          depositAmount: 500
-        });
+        const data = await response.json();
+        setLeaseContent(data.leaseAgreement);
+        setLeaseGenerated(true);
+        toast.success('Lease agreement generated successfully!');
         
         // Refresh applications to show updated lease information
         await loadApplications();
@@ -194,6 +181,80 @@ const AdminDashboard = () => {
       console.error('Error generating lease:', error);
       toast.error('Error generating lease');
     }
+  };
+
+  const viewLease = () => {
+    // Create a new window/tab to display the lease content
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+      <html>
+        <head>
+          <title>Lease Agreement - ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            pre { white-space: pre-wrap; font-family: inherit; }
+          </style>
+        </head>
+        <body>
+          <h1>Lease Agreement</h1>
+          <pre>${leaseContent}</pre>
+        </body>
+      </html>
+    `);
+    newWindow.document.close();
+  };
+
+  const downloadLease = () => {
+    const blob = new Blob([leaseContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `lease-agreement-${selectedApplicationForLease.firstName}-${selectedApplicationForLease.lastName}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    toast.success('Lease downloaded successfully!');
+  };
+
+  const sendLeaseEmail = async (sendToManager = false) => {
+    try {
+      const leaseData = {
+        firstName: selectedApplicationForLease.firstName,
+        lastName: selectedApplicationForLease.lastName,
+        leaseStartDate: leaseFormData.leaseStartDate,
+        leaseEndDate: leaseFormData.leaseEndDate,
+        rentalAmount: leaseFormData.rentalAmount,
+        depositAmount: leaseFormData.depositAmount,
+        tenantEmail: sendToManager ? 'palmrunbeachcondo@gmail.com' : selectedApplicationForLease.userId?.email
+      };
+
+      const result = await sendLeaseNotification(leaseData);
+      
+      if (result.success) {
+        const recipient = sendToManager ? 'manager' : 'tenant';
+        toast.success(`Lease notification email sent successfully to ${recipient}!`);
+      } else {
+        toast.error(`Failed to send email: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending lease email:', error);
+      toast.error('Error sending lease email');
+    }
+  };
+
+  const resetLeaseModal = () => {
+    setShowLeaseModal(false);
+    setSelectedApplicationForLease(null);
+    setLeaseFormData({
+      leaseStartDate: '',
+      leaseEndDate: '',
+      rentalAmount: 2500,
+      depositAmount: 500
+    });
+    setLeaseContent('');
+    setLeaseGenerated(false);
   };
 
   const filteredApplications = applications.filter(app => {
@@ -695,19 +756,10 @@ const AdminDashboard = () => {
              <div className="mt-3">
                <div className="flex items-center justify-between mb-6">
                  <h3 className="text-lg font-medium text-gray-900">
-                   Generate Lease Agreement
+                   {leaseGenerated ? 'Lease Generated Successfully' : 'Generate Lease Agreement'}
                  </h3>
                  <button
-                   onClick={() => {
-                     setShowLeaseModal(false);
-                     setSelectedApplicationForLease(null);
-                     setLeaseFormData({
-                       leaseStartDate: '',
-                       leaseEndDate: '',
-                       rentalAmount: 2500,
-                       depositAmount: 500
-                     });
-                   }}
+                   onClick={resetLeaseModal}
                    className="text-gray-400 hover:text-gray-600"
                  >
                    <XCircle className="h-6 w-6" />
@@ -716,92 +768,136 @@ const AdminDashboard = () => {
 
                <div className="mb-4">
                  <p className="text-sm text-gray-600">
-                   Generating lease for: <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
+                   {leaseGenerated ? 'Lease for:' : 'Generating lease for:'} <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
                  </p>
                </div>
 
-               <form onSubmit={handleLeaseSubmit} className="space-y-4">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Lease Start Date *
-                   </label>
-                   <input
-                     type="date"
-                     required
-                     value={leaseFormData.leaseStartDate}
-                     onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseStartDate: e.target.value }))}
-                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                   />
-                 </div>
+               {!leaseGenerated ? (
+                 <form onSubmit={handleLeaseSubmit} className="space-y-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                       Lease Start Date *
+                     </label>
+                     <input
+                       type="date"
+                       required
+                       value={leaseFormData.leaseStartDate}
+                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseStartDate: e.target.value }))}
+                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                     />
+                   </div>
 
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Lease End Date *
-                   </label>
-                   <input
-                     type="date"
-                     required
-                     value={leaseFormData.leaseEndDate}
-                     onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseEndDate: e.target.value }))}
-                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                   />
-                 </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                       Lease End Date *
+                     </label>
+                     <input
+                       type="date"
+                       required
+                       value={leaseFormData.leaseEndDate}
+                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseEndDate: e.target.value }))}
+                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                     />
+                   </div>
 
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Monthly Rental Amount ($) *
-                   </label>
-                   <input
-                     type="number"
-                     required
-                     min="0"
-                     step="100"
-                     value={leaseFormData.rentalAmount}
-                     onChange={(e) => setLeaseFormData(prev => ({ ...prev, rentalAmount: parseInt(e.target.value) || 0 }))}
-                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                   />
-                 </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                       Monthly Rental Amount ($) *
+                     </label>
+                     <input
+                       type="number"
+                       required
+                       min="0"
+                       step="100"
+                       value={leaseFormData.rentalAmount}
+                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, rentalAmount: parseInt(e.target.value) || 0 }))}
+                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                     />
+                   </div>
 
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Security Deposit Amount ($) *
-                   </label>
-                   <input
-                     type="number"
-                     required
-                     min="0"
-                     step="100"
-                     value={leaseFormData.depositAmount}
-                     onChange={(e) => setLeaseFormData(prev => ({ ...prev, depositAmount: parseInt(e.target.value) || 0 }))}
-                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                   />
-                 </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                       Security Deposit Amount ($) *
+                     </label>
+                     <input
+                       type="number"
+                       required
+                       min="0"
+                       step="100"
+                       value={leaseFormData.depositAmount}
+                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, depositAmount: parseInt(e.target.value) || 0 }))}
+                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                     />
+                   </div>
 
-                 <div className="flex justify-end space-x-3 pt-4">
-                   <button
-                     type="button"
-                     onClick={() => {
-                       setShowLeaseModal(false);
-                       setSelectedApplicationForLease(null);
-                       setLeaseFormData({
-                         leaseStartDate: '',
-                         leaseEndDate: '',
-                         rentalAmount: 2500,
-                         depositAmount: 500
-                       });
-                     }}
-                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                   >
-                     Cancel
-                   </button>
-                   <button
-                     type="submit"
-                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                   >
-                     Generate Lease
-                   </button>
+                   <div className="flex justify-end space-x-3 pt-4">
+                     <button
+                       type="button"
+                       onClick={resetLeaseModal}
+                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                     >
+                       Cancel
+                     </button>
+                     <button
+                       type="submit"
+                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     >
+                       Generate Lease
+                     </button>
+                   </div>
+                 </form>
+               ) : (
+                 <div className="space-y-4">
+                   <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                     <p className="text-sm text-green-800">
+                       Lease agreement has been generated successfully! You can now view, download, or send it via email.
+                     </p>
+                   </div>
+                   
+                   <div className="flex flex-col space-y-3">
+                     <button
+                       onClick={viewLease}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     >
+                       <Eye className="h-4 w-4" />
+                       <span>View Lease</span>
+                     </button>
+                     
+                     <button
+                       onClick={downloadLease}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                     >
+                       <Download className="h-4 w-4" />
+                       <span>Download Lease</span>
+                     </button>
+                     
+                     <button
+                       onClick={sendLeaseEmail}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                     >
+                       <Mail className="h-4 w-4" />
+                       <span>Send to Tenant</span>
+                     </button>
+                     
+                     <button
+                       onClick={() => sendLeaseEmail(true)}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                     >
+                       <Mail className="h-4 w-4" />
+                       <span>Send to Manager</span>
+                     </button>
+                   </div>
+                   
+                   <div className="flex justify-end pt-4">
+                     <button
+                       onClick={resetLeaseModal}
+                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                     >
+                       Close
+                     </button>
+                   </div>
                  </div>
-               </form>
+               )}
              </div>
            </div>
          </div>

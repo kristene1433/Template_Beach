@@ -75,11 +75,23 @@ router.post('/admin/generate', auth, async (req, res) => {
     // Generate lease agreement content
     const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount);
 
-    // Set headers for download
-    res.setHeader('Content-Type', 'text/plain');
-    res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.txt"`);
-
-    res.send(leaseAgreement);
+    // Return the lease content as JSON
+    res.json({
+      success: true,
+      leaseAgreement,
+      application: {
+        id: application._id,
+        firstName: application.firstName,
+        lastName: application.lastName,
+        phone: application.phone,
+        address: application.address,
+        additionalGuests: application.additionalGuests,
+        leaseStartDate: application.leaseStartDate,
+        leaseEndDate: application.leaseEndDate,
+        rentalAmount: application.rentalAmount,
+        depositAmount: application.depositAmount
+      }
+    });
   } catch (error) {
     console.error('Admin lease generation error:', error);
     res.status(500).json({ error: 'Server error generating lease agreement' });
