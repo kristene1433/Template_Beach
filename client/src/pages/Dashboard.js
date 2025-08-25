@@ -399,7 +399,7 @@ const Dashboard = () => {
               <Mail className="w-5 h-5 text-primary-600" />
               <div>
                 <p className="text-sm font-medium text-gray-900">Email Support</p>
-                <p className="text-sm text-gray-600">jaypommrehn@gmail.com</p>
+                <p className="text-sm text-gray-600">palmrunbeachcondo@gmail.com</p>
               </div>
             </div>
             
@@ -410,6 +410,16 @@ const Dashboard = () => {
                 <p className="text-sm text-gray-600">18650 Gulf Blvd Unit 207<br />Indian Shores, FL 33785</p>
               </div>
             </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <Link
+              to="/contact"
+              className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
+            >
+              Send us a Message
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
           </div>
         </div>
       </div>

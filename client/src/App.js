@@ -21,6 +21,7 @@ import Lease from './pages/Lease';
 import Profile from './pages/Profile';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import ContactForm from './components/ContactForm';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -122,6 +123,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/contact" 
+        element={
+          <ProtectedRoute>
+            <ContactForm />
           </ProtectedRoute>
         } 
       />

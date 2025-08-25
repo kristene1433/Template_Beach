@@ -385,7 +385,7 @@ const Home = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-blue-600" />
-                  <span className="text-gray-700">jaypommrehn@gmail.com</span>
+                  <span className="text-gray-700">palmrunbeachcondo@gmail.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-5 h-5 text-blue-600" />
@@ -405,35 +405,45 @@ const Home = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
                 Send us a Message
               </h3>
-              <form className="space-y-4">
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    className="input-field"
-                  />
+              <p className="text-gray-600 mb-6">
+                Have questions about our Gulf Shores condo or ready to apply? 
+                Send us a message and we'll get back to you promptly.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">Email Us</p>
+                    <p className="text-sm text-gray-600">palmrunbeachcondo@gmail.com</p>
+                  </div>
                 </div>
-                <div>
-                  <input
-                    type="email"
-                    placeholder="Your Email"
-                    className="input-field"
-                  />
+                
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <Phone className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">Call Us</p>
+                    <p className="text-sm text-gray-600">(407) 687-1270</p>
+                  </div>
                 </div>
-                <div>
-                  <textarea
-                    placeholder="Your Message"
-                    rows="4"
-                    className="input-field resize-none"
-                  ></textarea>
+                
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">Visit Us</p>
+                    <p className="text-sm text-gray-600">18650 Gulf Blvd Unit 207, Indian Shores, FL 33785</p>
+                  </div>
                 </div>
-                <button
-                  type="submit"
-                  className="btn-primary w-full"
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <Link
+                  to="/contact"
+                  className="btn-primary w-full text-center block"
                 >
-                  Send Message
-                </button>
-              </form>
+                  Send Detailed Message
+                </Link>
+              </div>
             </div>
           </div>
         </div>
