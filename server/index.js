@@ -17,11 +17,20 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
+// Rate limiting - Updated for Heroku compatibility
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  trustProxy: true
+  trustProxy: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Custom key generator for Heroku
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For header if available (Heroku), otherwise use IP
+    return req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+  },
+  // Skip rate limiting for health checks
+  skip: (req) => req.path === '/api/health'
 });
 app.use(limiter);
 
@@ -63,7 +72,20 @@ if (process.env.NODE_ENV === 'production') {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error details:', {
+    message: err.message,
+    code: err.code,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+  
+  // Handle rate limiting errors specifically
+  if (err.code === 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR') {
+    return res.status(429).json({ 
+      error: 'Too many requests',
+      message: 'Rate limit exceeded. Please try again later.'
+    });
+  }
+  
   res.status(500).json({ 
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
