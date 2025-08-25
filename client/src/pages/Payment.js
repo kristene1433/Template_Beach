@@ -196,8 +196,8 @@ const Payment = () => {
                     onClick={() => handlePaymentTypeChange('deposit')}
                     className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                       paymentType === 'deposit'
-                        ? 'border-primary bg-primary text-white shadow-lg scale-105'
-                        : 'border-gray-300 hover:border-primary hover:bg-primary-light hover:scale-102'
+                        ? 'border-primary-600 bg-primary-600 text-white shadow-lg scale-105'
+                        : 'border-gray-300 hover:border-primary-600 hover:bg-primary-50 hover:scale-102'
                     }`}
                   >
                     <Shield className="mx-auto h-8 w-8 mb-2" />
@@ -209,8 +209,8 @@ const Payment = () => {
                     onClick={() => handlePaymentTypeChange('rent')}
                     className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                       paymentType === 'rent'
-                        ? 'border-primary bg-primary text-white shadow-lg scale-105'
-                        : 'border-gray-300 hover:border-primary hover:bg-primary-light hover:scale-102'
+                        ? 'border-primary-600 bg-primary-600 text-white shadow-lg scale-105'
+                        : 'border-gray-300 hover:border-primary-600 hover:bg-primary-50 hover:scale-102'
                     }`}
                   >
                     <Home className="mx-auto h-8 w-8 mb-2" />
@@ -250,8 +250,8 @@ const Payment = () => {
                             onClick={() => handleAmountSelect(amount)}
                             className={`py-2 px-3 rounded-md border transition-colors ${
                               selectedAmount === amount
-                                ? 'border-primary bg-primary text-white'
-                                : 'border-gray-300 hover:border-primary hover:bg-primary-light'
+                                ? 'border-primary-600 bg-primary-600 text-white'
+                                : 'border-gray-300 hover:border-primary-600 hover:bg-primary-50'
                             }`}
                           >
                             ${amount}
@@ -276,7 +276,7 @@ const Payment = () => {
                           placeholder="0.00"
                           min="1"
                           step="0.01"
-                          className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                          className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
                         />
                       </div>
                     </div>
@@ -294,7 +294,7 @@ const Payment = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add a note about this payment..."
                   rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
                 />
               </div>
 
@@ -329,11 +329,17 @@ const Payment = () => {
                 </div>
               </div>
 
+              {/* Debug Info - Remove this after fixing */}
+              <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-100 rounded">
+                Debug: selectedAmount={selectedAmount}, customAmount={customAmount}, getPaymentAmount()={getPaymentAmount()}
+              </div>
+
               {/* Submit Button */}
               <button
                 onClick={handlePayment}
                 disabled={loading}
-                className="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center border-2 border-red-500 font-bold text-lg relative z-10"
+                style={{minHeight: '60px', display: 'flex', visibility: 'visible', opacity: 1}}
               >
                 {loading ? (
                   <>
