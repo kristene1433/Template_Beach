@@ -31,8 +31,7 @@ router.post('/', auth, async (req, res) => {
 
     const applicationData = {
       ...req.body,
-      userId: req.user._id,
-      email: req.user.email
+      userId: req.user._id
     };
 
     const application = new Application(applicationData);
@@ -233,6 +232,29 @@ router.get('/admin/all', auth, async (req, res) => {
   } catch (error) {
     console.error('Admin applications fetch error:', error);
     res.status(500).json({ error: 'Server error fetching applications' });
+  }
+});
+
+// Admin: Get single application by ID
+router.get('/admin/:applicationId', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    const application = await Application.findById(applicationId)
+      .populate('userId', 'firstName lastName email phone');
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json({ application });
+  } catch (error) {
+    console.error('Admin single application fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching application' });
   }
 });
 

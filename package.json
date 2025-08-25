@@ -9,7 +9,10 @@
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
     "install-all": "npm install && cd client && npm install",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "create-admin": "node server/scripts/createAdmin.js",
+    "delete-admin": "node server/scripts/deleteAdmin.js",
+    "check-admin": "node server/scripts/checkAdmin.js"
   },
   "keywords": ["rental", "property", "management", "tenant", "application"],
   "author": "Palm Run LLC",

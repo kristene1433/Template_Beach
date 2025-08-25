@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       
       toast.success('Login successful!');
-      return { success: true };
+      return { success: true, user: userData };
     } catch (error) {
       const message = error.response?.data?.error || 'Login failed. Please try again.';
       toast.error(message);
@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (userData) => {
+  const register = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/register', userData);
+      const response = await axios.post('/api/auth/register', { email, password });
       const { token: newToken, user: newUser } = response.data;
       
       localStorage.setItem('token', newToken);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -7,19 +7,7 @@ import {
   FileText,
   Download,
   Eye,
-  PenTool,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  User,
-  Home,
-  Calendar,
-  DollarSign,
-  MapPin,
-  Phone,
-  Mail,
-  PenTool as Signature,
-  Save
+  AlertCircle
 } from 'lucide-react';
 
 const Lease = () => {
@@ -29,53 +17,65 @@ const Lease = () => {
   const [leaseData, setLeaseData] = useState(null);
   const [leaseContent, setLeaseContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
-  const [signature, setSignature] = useState('');
-  const [signing, setSigning] = useState(false);
-  const [application, setApplication] = useState(null);
 
-  useEffect(() => {
-    if (user) {
-      loadApplication();
-      loadLeaseStatus();
-    }
-  }, [user]);
-
-  const loadApplication = async () => {
+  const generateLeaseFromData = useCallback(async (leaseInfo) => {
     try {
-      const response = await axios.get('/api/applications/');
-      if (response.data.application) {
-        setApplication(response.data.application);
-      }
+      setLoading(true);
+      const response = await axios.post('/api/lease/generate', {
+        leaseStartDate: leaseInfo?.leaseStartDate || formatDateForAPI(new Date()),
+        leaseEndDate: leaseInfo?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        rentalAmount: leaseInfo?.rentalAmount || 2500
+      });
+      setLeaseContent(response.data.leaseAgreement);
+      toast.success('Lease agreement loaded successfully!');
     } catch (error) {
-      console.error('Error loading application:', error);
+      console.error('Error loading existing lease:', error);
+      toast.error('Error loading lease agreement');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const loadLeaseStatus = async () => {
+  const loadLeaseStatus = useCallback(async () => {
     try {
       const response = await axios.get('/api/lease/status');
-      if (response.data.lease) {
-        setLeaseData(response.data.lease);
+      if (response.data.hasApplication) {
+        setLeaseData(response.data);
+        // If there's a lease agreement, automatically generate and display it
+        if (response.data.leaseSigned || response.data.leaseStartDate) {
+          await generateLeaseFromData(response.data);
+        }
       }
     } catch (error) {
       console.error('Error loading lease status:', error);
     }
-  };
+  }, [generateLeaseFromData]);
+
+  useEffect(() => {
+    if (user) {
+      loadLeaseStatus();
+    }
+  }, [user, loadLeaseStatus]);
+
 
   const generateLease = async () => {
-    if (!application) {
-      toast.error('Please complete your application first');
+    if (!leaseData) {
+      toast.error('No lease information available');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/lease/generate');
-      setLeaseContent(response.data.leaseContent);
-      setLeaseData(response.data.lease);
+      const response = await axios.post('/api/lease/generate', {
+        leaseStartDate: leaseData?.leaseStartDate || formatDateForAPI(new Date()),
+        leaseEndDate: leaseData?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        rentalAmount: leaseData?.rentalAmount || 2500
+      });
+      setLeaseContent(response.data.leaseAgreement);
+      setLeaseData(response.data.application);
       toast.success('Lease agreement generated successfully!');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error generating lease');
+      toast.error(error.response?.data?.error || 'Error generating lease');
     } finally {
       setLoading(false);
     }
@@ -85,19 +85,26 @@ const Lease = () => {
     if (!leaseContent) {
       await generateLease();
     }
-    setShowPreview(true);
+    if (leaseContent) {
+      setShowPreview(true);
+    }
   };
 
   const downloadLease = async () => {
     try {
       const response = await axios.get('/api/lease/download', {
+        params: {
+          leaseStartDate: leaseData?.leaseStartDate || formatDateForAPI(new Date()),
+          leaseEndDate: leaseData?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+          rentalAmount: leaseData?.rentalAmount || 2500
+        },
         responseType: 'blob'
       });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `lease-agreement-${user.firstName}-${user.lastName}.pdf`);
+      link.setAttribute('download', `lease-agreement-${user.firstName}-${user.lastName}.txt`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -109,35 +116,46 @@ const Lease = () => {
     }
   };
 
-  const handleSignatureChange = (e) => {
-    setSignature(e.target.value);
-  };
-
-  const signLease = async () => {
-    if (!signature.trim()) {
-      toast.error('Please provide your signature');
-      return;
-    }
-
-    setSigning(true);
-    try {
-      await axios.post('/api/lease/sign', { signature });
-      toast.success('Lease agreement signed successfully!');
-      await loadLeaseStatus();
-      setSignature('');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error signing lease');
-    } finally {
-      setSigning(false);
-    }
-  };
-
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return 'Not set';
+    
+    try {
+      // Handle both date strings and Date objects
+      let dateObj;
+      if (typeof dateString === 'string') {
+        // If it's a date string like "2025-01-01", parse it directly
+        if (dateString.includes('-')) {
+          const [year, month, day] = dateString.split('-').map(Number);
+          dateObj = new Date(year, month - 1, day);
+        } else {
+          dateObj = new Date(dateString);
+        }
+      } else {
+        dateObj = new Date(dateString);
+      }
+      
+      // Check if the date is valid
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+      }
+      
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
+  };
+
+  // Helper function to format dates for API calls (YYYY-MM-DD format)
+  const formatDateForAPI = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   if (!user) {
@@ -170,19 +188,19 @@ const Lease = () => {
             {leaseData && (
               <div className="mt-2 text-primary-light">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  leaseData.signed 
+                  leaseData.leaseSigned 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {leaseData.signed ? 'Signed' : 'Pending Signature'}
+                  {leaseData.leaseSigned ? 'Signed' : 'Available for Review'}
                 </span>
               </div>
             )}
           </div>
 
           <div className="p-6">
-            {/* Application Status Check */}
-            {!application && (
+            {/* Application Status Check - Only show if no lease data */}
+            {!leaseData && !loading && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <div className="flex items-start">
                   <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
@@ -202,60 +220,78 @@ const Lease = () => {
               </div>
             )}
 
-            {application && !application.status === 'submitted' && (
+            {/* Lease Status Display */}
+            {leaseData && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-start">
-                  <Clock className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                   <div className="text-sm text-blue-800">
-                    <p className="font-medium">Application Under Review</p>
-                    <p className="mt-1">
-                      Your application is currently being reviewed. Once approved, you'll be able to access your lease agreement.
+                    <p className="font-medium">
+                      {leaseData.leaseSigned ? 'Lease Agreement Signed' : 'Lease Agreement Available'}
                     </p>
+                    <p className="mt-1">
+                      {leaseData.leaseSigned 
+                        ? 'Your lease agreement has been signed and is active. You can view and download it below.'
+                        : 'Your lease agreement is ready for review. You can generate, preview, and download it below.'
+                      }
+                    </p>
+                    {leaseData.leaseStartDate && leaseData.leaseEndDate && (
+                      <p className="mt-1 text-xs">
+                        Lease Period: {formatDate(leaseData.leaseStartDate)} - {formatDate(leaseData.leaseEndDate)}
+                      </p>
+                    )}
+                    {leaseData.rentalAmount && (
+                      <p className="mt-1 text-xs">
+                        Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Lease Actions */}
-            {application && application.status === 'submitted' && (
+            {leaseData && (
               <div className="mb-6">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {!leaseData && (
-                    <button
-                      onClick={generateLease}
-                      disabled={loading}
-                      className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="mr-2 h-5 w-5" />
-                          Generate Lease Agreement
-                        </>
-                      )}
-                    </button>
+                <div className="flex flex-wrap gap-3">
+                  {!leaseContent && (
+                    <>
+                      <button
+                        onClick={() => generateLeaseFromData(leaseData)}
+                        disabled={loading}
+                        className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        {loading ? 'Loading...' : 'Load Lease'}
+                      </button>
+                      
+                      <button
+                        onClick={generateLease}
+                        disabled={loading}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        {loading ? 'Generating...' : 'Generate New Lease'}
+                      </button>
+                    </>
                   )}
                   
-                  {leaseData && (
+                  {leaseContent && (
                     <>
                       <button
                         onClick={previewLease}
-                        className="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-secondary-dark transition-colors flex items-center justify-center"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
                       >
-                        <Eye className="mr-2 h-5 w-5" />
+                        <Eye className="w-4 h-4 mr-2" />
                         Preview Lease
                       </button>
                       
                       <button
                         onClick={downloadLease}
-                        className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
                       >
-                        <Download className="mr-2 h-5 w-5" />
-                        Download PDF
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Lease
                       </button>
                     </>
                   )}
@@ -263,142 +299,88 @@ const Lease = () => {
               </div>
             )}
 
-            {/* Lease Information */}
-            {leaseData && (
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Lease Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Tenant:</span>
-                      <span className="ml-2 font-medium">{user.firstName} {user.lastName}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Email:</span>
-                      <span className="ml-2 font-medium">{user.email}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Phone:</span>
-                      <span className="ml-2 font-medium">{user.phone}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <Home className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Property:</span>
-                      <span className="ml-2 font-medium">{user.address}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Monthly Rent:</span>
-                      <span className="ml-2 font-medium">${user.rentalAmount}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">Security Deposit:</span>
-                      <span className="ml-2 font-medium">${user.depositAmount}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {leaseData.signed && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                      <span className="text-sm text-green-800 font-medium">
-                        Lease signed on {formatDate(leaseData.signedAt)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* Digital Signature */}
-            {leaseData && !leaseData.signed && (
+
+            {leaseContent && (
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Signature className="mr-2 h-5 w-5 text-primary" />
-                  Digital Signature
-                </h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  By typing your full name below, you agree to the terms and conditions outlined in this lease agreement.
-                </p>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Legal Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={signature}
-                      onChange={handleSignatureChange}
-                      placeholder="Type your full legal name as it appears on your ID"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {leaseData?.leaseSigned ? 'Your Lease Agreement' : 'Generated Lease Agreement'}
+                  </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={previewLease}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Preview
+                    </button>
+                    <button
+                      onClick={downloadLease}
+                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </button>
                   </div>
-                  
-                  <button
-                    onClick={signLease}
-                    disabled={signing || !signature.trim()}
-                    className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {signing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Signing...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-5 w-5" />
-                        Sign Lease Agreement
-                      </>
-                    )}
-                  </button>
                 </div>
-              </div>
-            )}
-
-            {/* Lease Preview Modal */}
-            {showPreview && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                  <div className="bg-primary px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-white">Lease Agreement Preview</h2>
-                    <button
-                      onClick={() => setShowPreview(false)}
-                      className="text-white hover:text-primary-light transition-colors"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  
-                  <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                    <div className="prose max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800 leading-relaxed">
-                        {leaseContent}
-                      </pre>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 px-6 py-4 flex justify-end">
-                    <button
-                      onClick={() => setShowPreview(false)}
-                      className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-                    >
-                      Close Preview
-                    </button>
-                  </div>
+                
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
+                    {leaseContent}
+                  </pre>
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Lease Preview Modal */}
+      {showPreview && leaseContent && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Lease Agreement Preview
+                </h3>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 leading-relaxed">
+                  {leaseContent}
+                </pre>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={downloadLease}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <Download className="w-4 h-4 mr-2 inline" />
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

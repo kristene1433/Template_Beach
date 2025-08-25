@@ -7,7 +7,7 @@ const router = express.Router();
 // Generate lease agreement
 router.post('/generate', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, additionalTerms } = req.body;
+    const { leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.body;
     
     // Get user's application
     const application = await Application.findOne({ userId: req.user._id });
@@ -15,12 +15,15 @@ router.post('/generate', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found. Please complete your application first.' });
     }
 
-    if (!application.isComplete) {
-      return res.status(400).json({ error: 'Application is not complete. Please submit your application first.' });
-    }
+    // Save lease information to the application
+    // Store dates as strings to avoid timezone issues
+    application.leaseStartDate = leaseStartDate;
+    application.leaseEndDate = leaseEndDate;
+    application.rentalAmount = rentalAmount;
+    await application.save();
 
     // Generate lease agreement content
-    const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, additionalTerms);
+    const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount);
 
     res.json({
       message: 'Lease agreement generated successfully',
@@ -29,11 +32,9 @@ router.post('/generate', auth, async (req, res) => {
         id: application._id,
         firstName: application.firstName,
         lastName: application.lastName,
-        email: application.email,
         phone: application.phone,
-        address: application.rentalProperty.address,
-        rentalAmount: application.rentalProperty.rentalAmount,
-        depositAmount: application.rentalProperty.depositAmount
+        address: application.address,
+        additionalGuests: application.additionalGuests
       }
     });
   } catch (error) {
@@ -42,10 +43,51 @@ router.post('/generate', auth, async (req, res) => {
   }
 });
 
+// Admin: Generate lease agreement for any application
+router.post('/admin/generate', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId, leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.body;
+    
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID is required' });
+    }
+
+    // Get application by ID
+    const application = await Application.findById(applicationId).populate('userId', 'email');
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Save lease information to the application
+    // Store dates as strings to avoid timezone issues
+    application.leaseStartDate = leaseStartDate;
+    application.leaseEndDate = leaseEndDate;
+    application.rentalAmount = rentalAmount;
+    await application.save();
+
+    // Generate lease agreement content
+    const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount);
+
+    // Set headers for download
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.txt"`);
+
+    res.send(leaseAgreement);
+  } catch (error) {
+    console.error('Admin lease generation error:', error);
+    res.status(500).json({ error: 'Server error generating lease agreement' });
+  }
+});
+
 // Download lease agreement as PDF
 router.get('/download', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, additionalTerms } = req.query;
+    const { leaseStartDate, leaseEndDate, rentalAmount = 2500 } = req.query;
     
     // Get user's application
     const application = await Application.findOne({ userId: req.user._id });
@@ -53,14 +95,17 @@ router.get('/download', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    if (!application.isComplete) {
-      return res.status(400).json({ error: 'Application is not complete' });
-    }
+    // Save lease information to the application
+    // Store dates as strings to avoid timezone issues
+    application.leaseStartDate = leaseStartDate;
+    application.leaseEndDate = leaseEndDate;
+    application.rentalAmount = rentalAmount;
+    await application.save();
 
     // Generate lease agreement
-    const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, additionalTerms);
+    const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount);
 
-    // Set headers for PDF download
+    // Set headers for download
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.txt"`);
 
@@ -83,14 +128,6 @@ router.get('/preview', auth, async (req, res) => {
       });
     }
 
-    if (!application.isComplete) {
-      return res.json({
-        hasApplication: true,
-        isComplete: false,
-        message: 'Application is not complete. Please submit your application first.'
-      });
-    }
-
     // Generate preview with default dates
     const defaultStartDate = new Date();
     defaultStartDate.setDate(defaultStartDate.getDate() + 30); // 30 days from now
@@ -98,10 +135,19 @@ router.get('/preview', auth, async (req, res) => {
     const defaultEndDate = new Date(defaultStartDate);
     defaultEndDate.setFullYear(defaultEndDate.getFullYear() + 1); // 1 year lease
 
+    // Format dates as YYYY-MM-DD strings to avoid timezone issues
+    const formatDateForAPI = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const leasePreview = generateLeaseAgreement(
       application, 
-      defaultStartDate.toISOString().split('T')[0], 
-      defaultEndDate.toISOString().split('T')[0]
+      formatDateForAPI(defaultStartDate), 
+      formatDateForAPI(defaultEndDate),
+      2500
     );
 
     res.json({
@@ -111,11 +157,9 @@ router.get('/preview', auth, async (req, res) => {
       application: {
         firstName: application.firstName,
         lastName: application.lastName,
-        email: application.email,
         phone: application.phone,
-        address: application.rentalProperty.address,
-        rentalAmount: application.rentalProperty.rentalAmount,
-        depositAmount: application.rentalProperty.depositAmount
+        address: application.address,
+        additionalGuests: application.additionalGuests
       }
     });
   } catch (error) {
@@ -127,7 +171,7 @@ router.get('/preview', auth, async (req, res) => {
 // Sign lease agreement
 router.post('/sign', auth, async (req, res) => {
   try {
-    const { leaseStartDate, leaseEndDate, additionalTerms, signature } = req.body;
+    const { leaseStartDate, leaseEndDate, rentalAmount, signature } = req.body;
     
     if (!signature) {
       return res.status(400).json({ error: 'Digital signature is required' });
@@ -139,17 +183,14 @@ router.post('/sign', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    if (!application.isComplete) {
-      return res.status(400).json({ error: 'Application is not complete' });
-    }
-
     // Update application with lease information
-    application.rentalProperty.leaseStartDate = leaseStartDate;
-    application.rentalProperty.leaseEndDate = leaseEndDate;
+    // Store dates as strings to avoid timezone issues
+    application.leaseStartDate = leaseStartDate;
+    application.leaseEndDate = leaseEndDate;
     application.leaseSigned = true;
     application.leaseSignedAt = new Date();
     application.leaseSignature = signature;
-    application.additionalTerms = additionalTerms;
+    application.rentalAmount = rentalAmount;
 
     await application.save();
 
@@ -162,8 +203,8 @@ router.post('/sign', auth, async (req, res) => {
         id: application._id,
         leaseSigned: application.leaseSigned,
         leaseSignedAt: application.leaseSignedAt,
-        leaseStartDate: application.rentalProperty.leaseStartDate,
-        leaseEndDate: application.rentalProperty.leaseEndDate
+        leaseStartDate: application.leaseStartDate,
+        leaseEndDate: application.leaseEndDate
       }
     });
   } catch (error) {
@@ -187,11 +228,12 @@ router.get('/status', auth, async (req, res) => {
 
     res.json({
       hasApplication: true,
-      isComplete: application.isComplete,
-      leaseSigned: application.leaseSigned,
+      isComplete: true,
+      leaseSigned: application.leaseSigned || false,
       leaseSignedAt: application.leaseSignedAt,
-      leaseStartDate: application.rentalProperty.leaseStartDate,
-      leaseEndDate: application.rentalProperty.leaseEndDate
+      leaseStartDate: application.leaseStartDate,
+      leaseEndDate: application.leaseEndDate,
+      rentalAmount: application.rentalAmount
     });
   } catch (error) {
     console.error('Lease status fetch error:', error);
@@ -199,110 +241,163 @@ router.get('/status', auth, async (req, res) => {
   }
 });
 
-// Helper function to generate lease agreement content
-function generateLeaseAgreement(application, leaseStartDate, leaseEndDate, additionalTerms = '') {
+// Helper function to generate lease agreement content using the Palm Run LLC template
+function generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount = 2500) {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 
-  const startDate = leaseStartDate ? new Date(leaseStartDate).toLocaleDateString('en-US', {
+  const startDate = leaseStartDate ? (() => {
+    // Handle both date strings (YYYY-MM-DD) and Date objects
+    let dateObj;
+    if (typeof leaseStartDate === 'string') {
+      // If it's a string like "2025-01-01", parse it directly
+      const [year, month, day] = leaseStartDate.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day);
+    } else {
+      // If it's already a Date object
+      dateObj = new Date(leaseStartDate);
+    }
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  })() : 'TBD';
+
+  const endDate = leaseEndDate ? (() => {
+    // Handle both date strings (YYYY-MM-DD) and Date objects
+    let dateObj;
+    if (typeof leaseEndDate === 'string') {
+      // If it's a string like "2025-01-31", parse it directly
+      const [year, month, day] = leaseEndDate.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day);
+    } else {
+      // If it's already a Date object
+      dateObj = new Date(leaseEndDate);
+    }
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  })() : 'TBD';
+
+  // Calculate dates for payment terms
+  const startDateObj = leaseStartDate ? (() => {
+    let dateObj;
+    if (typeof leaseStartDate === 'string') {
+      const [year, month, day] = leaseStartDate.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day);
+    } else {
+      dateObj = new Date(leaseStartDate);
+    }
+    
+    if (isNaN(dateObj.getTime())) {
+      return new Date(); // Fallback to current date
+    }
+    
+    return dateObj;
+  })() : new Date();
+  
+  const sixtyDaysBefore = new Date(startDateObj);
+  sixtyDaysBefore.setDate(sixtyDaysBefore.getDate() - 60);
+  
+  // Cancellation deadline is 60 days BEFORE the lease start date
+  const cancellationDeadline = new Date(startDateObj);
+  cancellationDeadline.setDate(cancellationDeadline.getDate() - 60);
+
+  const sixtyDaysBeforeFormatted = sixtyDaysBefore.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }) : 'TBD';
+  });
 
-  const endDate = leaseEndDate ? new Date(leaseEndDate).toLocaleDateString('en-US', {
+  const cancellationDeadlineFormatted = cancellationDeadline.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }) : 'TBD';
+  });
 
-  return `LEASE AGREEMENT
 
-This Lease Agreement (the "Lease") is made and entered into on ${currentDate}, by and between:
 
-LANDLORD: Palm Run LLC
-TENANT: ${application.firstName} ${application.lastName}
+  return `PALM RUN LLC. MONTHLY RENTAL AGREEMENT
 
-PROPERTY ADDRESS:
-${application.rentalProperty.address.street}
-${application.rentalProperty.address.city}, ${application.rentalProperty.address.state} ${application.rentalProperty.address.zipCode}
+This Agreement made and entered on ${currentDate}, between Palm Run, LLC (hereinafter referred
+to as the "Manager"), mailing address 18650 Gulf Blvd, #207, Indian Shores, FL 33785,
+and ${application.firstName} ${application.lastName} (hereinafter referred to as the "Renter"), mailing address ${application.address.street}, ${application.address.city}, ${application.address.state} ${application.address.zipCode}, concerning the premises known as "18650 Gulf Blvd, #207, Indian Shores, FL 33785". The
+Owner of the property is Palm Run, LLC.
 
-LEASE TERM:
-Commencement Date: ${startDate}
-Termination Date: ${endDate}
+1. **Rent**: Renter agrees to pay the sum of $${rentalAmount}
+US Dollars (Rental Fee) for the rental period of ${startDate} to ${endDate}, to be paid in via Zelle,
+Paypal, Venmo, Money order, fed wire, USDC, or US Checks made payable to "Palm Run,
+LLC". The Rental Fee is non-refundable if Renter cancels this agreement after ${cancellationDeadlineFormatted}, unless the Manager can secure a replacement tenant for the same Rental
+Period, under the same or better terms. The rental period begins at 4 P.M. on the first day
+and ends at 10:00 A.M. the last day of the rental period.
 
-RENTAL AMOUNT:
-Monthly Rent: $${application.rentalProperty.rentalAmount}
-Security Deposit: $${application.rentalProperty.depositAmount}
+2. **Deposit & Payment**: A $500 US dollar deposit towards the Rental Fee is due upon
+execution of this Agreement. The balance of the Rental Fee ($${rentalAmount}), is due on or before ${sixtyDaysBeforeFormatted}. Following the renter's departure, an inspection of the premises will
+be conducted. Based upon the condition of the Premises, all, a portion of, or none of the
+Security Deposit may be refunded, depending on whether any damage, beyond normal
+wear and tear, has occurred.
 
-TENANT INFORMATION:
-Name: ${application.firstName} ${application.lastName}
-Email: ${application.email}
+3. **Quiet Enjoyment**: Renter shall enjoy use of the Premises and is expected to share
+the common areas respectfully. Renter is prohibited from hosting gatherings exceeding
+eight individuals or creating excessive noise that would interfere with the quiet enjoyment
+of other tenants or surrounding neighbors.
+
+4. **Condition of the Premises**: An initial walk-through inspection will be conducted by
+both the Renter and Manager to agree on the initial condition of the Premises. The Manager
+confirms that the Premises are in good order, repair, and clean livable condition at the time
+of this agreement.
+
+5. **Manager Responsibility**: Manager is responsible for payment of normal electric,
+water, sewer, local telephone, basic cable TV, high speed wireless internet, and lawn care
+service. The rental property includes a one car dedicated parking space for sole use of
+Renter.
+
+6. **Renter Responsibilities**: Renter agrees to maintain the Premises in a clean and
+orderly condition. Overnight guests are limited to four persons (including Renters). Daytime
+guests, present between 8 AM and 10 PM, are limited to four persons (including Renter),
+unless otherwise agreed upon by the Owner. Smoking and pets are strictly prohibited on
+the premises.
+
+7. **Limitation of Liability**: Manager or Owner is not responsible for injury to Renter or
+their guests or for any damage to or theft of Renter's property, unless such injury, damage,
+or theft results from the gross negligence or intentional misconduct of the Manager/Owner.
+
+IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS RENTAL AGREEMENT THE DAY
+AND YEAR FIRST ABOVE WRITTEN.
+
+Renters:
+${application.firstName} ${application.lastName}_______________ DATED: ____________________
+
+Jay Pommrehn for Palm Run, LLC:
+_________________________ DATED: ____________________
+
+Receipt of Deposit is hereby acknowledged by Manager (Owner's Agent):
+By _________________________________ Date ________________________
+
+---
+Generated on: ${currentDate}
+Application ID: ${application._id}
+Tenant: ${application.firstName} ${application.lastName}
 Phone: ${application.phone}
-Date of Birth: ${application.dateOfBirth ? new Date(application.dateOfBirth).toLocaleDateString() : 'N/A'}
-SSN: ${application.ssn ? '***-**-' + application.ssn.slice(-4) : 'N/A'}
-
-CURRENT ADDRESS:
-${application.currentAddress.street}
-${application.currentAddress.city}, ${application.currentAddress.state} ${application.currentAddress.zipCode}
-Monthly Rent: $${application.currentAddress.monthlyRent || 'N/A'}
-Landlord: ${application.currentAddress.landlordName || 'N/A'}
-Landlord Phone: ${application.currentAddress.landlordPhone || 'N/A'}
-
-EMPLOYMENT INFORMATION:
-Employer: ${application.employment.employerName || 'N/A'}
-Job Title: ${application.employment.jobTitle || 'N/A'}
-Employer Phone: ${application.employment.employerPhone || 'N/A'}
-Employment Start Date: ${application.employment.employmentStartDate ? new Date(application.employment.employmentStartDate).toLocaleDateString() : 'N/A'}
-Monthly Income: $${application.employment.monthlyIncome || 'N/A'}
-Supervisor: ${application.employment.supervisorName || 'N/A'}
-
-EMERGENCY CONTACT:
-Name: ${application.emergencyContact.name || 'N/A'}
-Relationship: ${application.emergencyContact.relationship || 'N/A'}
-Phone: ${application.emergencyContact.phone || 'N/A'}
-Address: ${application.emergencyContact.address || 'N/A'}
-
-REFERENCES:
-${application.references.map((ref, index) => 
-  `${index + 1}. ${ref.name || 'N/A'} - ${ref.relationship || 'N/A'} - ${ref.phone || 'N/A'} - ${ref.email || 'N/A'}`
-).join('\n')}
-
-PETS:
-Has Pets: ${application.pets.hasPets ? 'Yes' : 'No'}
-${application.pets.hasPets && application.pets.petDetails.length > 0 ? 
-  application.pets.petDetails.map((pet, index) => 
-    `Pet ${index + 1}: ${pet.type || 'N/A'} - ${pet.breed || 'N/A'} - ${pet.weight || 'N/A'} lbs - ${pet.age || 'N/A'} years old`
-  ).join('\n') : 'No pets'
-}
-
-VEHICLES:
-Has Vehicles: ${application.vehicles.hasVehicles ? 'Yes' : 'No'}
-${application.vehicles.hasVehicles && application.vehicles.vehicleDetails.length > 0 ? 
-  application.vehicles.vehicleDetails.map((vehicle, index) => 
-    `Vehicle ${index + 1}: ${vehicle.year || 'N/A'} ${vehicle.make || 'N/A'} ${vehicle.model || 'N/A'} - ${vehicle.color || 'N/A'} - License: ${vehicle.licensePlate || 'N/A'}`
-  ).join('\n') : 'No vehicles'
-}
-
-ADDITIONAL TERMS:
-${additionalTerms || 'Standard lease terms apply as per state and local regulations.'}
-
-TENANT SIGNATURE:
-By signing this lease agreement, I acknowledge that I have read, understood, and agree to all terms and conditions outlined above.
-
-Signature: _________________________
-Date: ${currentDate}
-
-LANDLORD SIGNATURE:
-By signing this lease agreement, I acknowledge that I have read, understood, and agree to all terms and conditions outlined above.
-
-Signature: _________________________
-Date: ${currentDate}
-
-This lease agreement is generated based on the information provided in the rental application. All information is subject to verification and approval by Palm Run LLC.`;
+Email: ${application.userId ? application.userId.email : 'N/A'}`;
 }
 
 module.exports = router;

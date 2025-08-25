@@ -17,111 +17,53 @@ const applicationSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  email: {
-    type: String,
-    required: true,
-    trim: true
-  },
   phone: {
     type: String,
     required: true,
     trim: true
   },
-  dateOfBirth: {
-    type: Date,
-    required: true
-  },
-  ssn: {
-    type: String,
-    required: true,
-    trim: true
-  },
   
-  // Current Address
-  currentAddress: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    monthlyRent: Number,
-    landlordName: String,
-    landlordPhone: String,
-    reasonForMoving: String
-  },
-  
-  // Employment Information
-  employment: {
-    employerName: String,
-    jobTitle: String,
-    employerPhone: String,
-    employmentStartDate: Date,
-    monthlyIncome: Number,
-    supervisorName: String
-  },
-  
-  // Rental Property Information
-  rentalProperty: {
-    address: {
-      street: String,
-      city: String,
-      state: String,
-      zipCode: String
-    },
-    rentalAmount: {
-      type: Number,
-      required: true
-    },
-    depositAmount: {
-      type: Number,
-      required: true
-    },
-    leaseStartDate: Date,
-    leaseEndDate: Date
-  },
-  
-  // Emergency Contact
-  emergencyContact: {
-    name: String,
-    relationship: String,
-    phone: String,
-    address: String
-  },
-  
-  // References
-  references: [{
-    name: String,
-    relationship: String,
-    phone: String,
-    email: String
-  }],
-  
-  // Additional Information
-  pets: {
-    hasPets: {
-      type: Boolean,
-      default: false
-    },
-    petDetails: [{
+  // Address
+  address: {
+    street: {
       type: String,
-      breed: String,
-      weight: Number,
-      age: Number
-    }]
+      required: true,
+      trim: true
+    },
+    city: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    state: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    zipCode: {
+      type: String,
+      required: true,
+      trim: true
+    }
   },
   
-  vehicles: {
-    hasVehicles: {
-      type: Boolean,
-      default: false
+  // Additional Guests
+  additionalGuests: [{
+    firstName: {
+      type: String,
+      required: true,
+      trim: true
     },
-    vehicleDetails: [{
-      make: String,
-      model: String,
-      year: Number,
-      color: String,
-      licensePlate: String
-    }]
-  },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    isAdult: {
+      type: Boolean,
+      default: true
+    }
+  }],
   
   // Application Status
   status: {
@@ -144,12 +86,6 @@ const applicationSchema = new mongoose.Schema({
   // Notes
   notes: String,
   
-  // Application completion
-  isComplete: {
-    type: Boolean,
-    default: false
-  },
-  
   submittedAt: {
     type: Date,
     default: Date.now
@@ -159,30 +95,34 @@ const applicationSchema = new mongoose.Schema({
   reviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  
+  // Lease Information
+  leaseStartDate: String, // Store as YYYY-MM-DD string to avoid timezone issues
+  leaseEndDate: String,   // Store as YYYY-MM-DD string to avoid timezone issues
+  leaseSigned: {
+    type: Boolean,
+    default: false
+  },
+  leaseSignedAt: Date,
+  leaseSignature: String,
+  rentalAmount: Number
 }, {
   timestamps: true
 });
 
 // Index for efficient queries
 applicationSchema.index({ userId: 1, status: 1 });
-applicationSchema.index({ email: 1 });
 
 // Virtual for full name
 applicationSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Virtual for full current address
-applicationSchema.virtual('fullCurrentAddress').get(function() {
-  if (!this.currentAddress.street) return '';
-  return `${this.currentAddress.street}, ${this.currentAddress.city}, ${this.currentAddress.state} ${this.currentAddress.zipCode}`;
-});
-
-// Virtual for full rental property address
-applicationSchema.virtual('fullRentalAddress').get(function() {
-  if (!this.rentalProperty.address.street) return '';
-  return `${this.rentalProperty.address.street}, ${this.rentalProperty.address.city}, ${this.rentalProperty.address.state} ${this.rentalProperty.address.zipCode}`;
+// Virtual for full address
+applicationSchema.virtual('fullAddress').get(function() {
+  if (!this.address.street) return '';
+  return `${this.address.street}, ${this.address.city}, ${this.address.state} ${this.address.zipCode}`;
 });
 
 // Ensure virtuals are serialized

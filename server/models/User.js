@@ -17,17 +17,14 @@ const userSchema = new mongoose.Schema({
   },
   firstName: {
     type: String,
-    required: true,
     trim: true
   },
   lastName: {
     type: String,
-    required: true,
     trim: true
   },
   phone: {
     type: String,
-    required: true,
     trim: true
   },
   address: {
@@ -37,8 +34,7 @@ const userSchema = new mongoose.Schema({
     zipCode: String
   },
   rentalAmount: {
-    type: Number,
-    required: true
+    type: Number
   },
   depositAmount: {
     type: Number,
@@ -93,7 +89,8 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 
 // Method to get full name
 userSchema.methods.getFullName = function() {
-  return `${this.firstName} ${this.lastName}`;
+  if (!this.firstName && !this.lastName) return this.email;
+  return `${this.firstName || ''} ${this.lastName || ''}`.trim();
 };
 
 // Method to get full address

@@ -20,8 +20,7 @@ app.use(helmet());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false
+  trustProxy: true
 });
 app.use(limiter);
 
@@ -31,7 +30,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing middleware
+// Body parsing middleware - IMPORTANT: Must come before webhook route
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -46,8 +45,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/application', applicationRoutes);
-app.use('/api/payment', paymentRoutes);
 app.use('/api/lease', leaseRoutes);
+
+// Payment routes - webhook needs raw body, other routes need JSON
+app.use('/api/payment', paymentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

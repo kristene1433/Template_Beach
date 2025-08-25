@@ -5,10 +5,88 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Create payment intent for deposit
-router.post('/create-payment-intent', auth, async (req, res) => {
+// Stripe webhook handler for payment completion - MUST use raw body
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
   try {
-    const { amount, paymentType = 'deposit', description } = req.body;
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      
+      try {
+        // Find the payment record
+        const payment = await Payment.findOne({ 
+          stripePaymentIntentId: session.payment_intent,
+          'metadata.checkoutSessionId': session.id
+        });
+
+        if (payment) {
+          // Update payment status
+          payment.status = 'succeeded';
+          payment.paidAt = new Date();
+          payment.receiptUrl = session.receipt_url;
+          
+          // Get payment intent details for additional info
+          const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+          if (paymentIntent.charges.data[0]?.payment_method_details?.card) {
+            const card = paymentIntent.charges.data[0].payment_method_details.card;
+            payment.cardLast4 = card.last4;
+            payment.cardBrand = card.brand;
+          }
+
+          await payment.save();
+          console.log(`Payment ${payment._id} marked as successful`);
+        }
+      } catch (error) {
+        console.error('Error processing webhook:', error);
+      }
+      break;
+
+    case 'payment_intent.payment_failed':
+      const paymentIntent = event.data.object;
+      
+      try {
+        const payment = await Payment.findOne({ 
+          stripePaymentIntentId: paymentIntent.id 
+        });
+
+        if (payment) {
+          payment.status = 'failed';
+          payment.failedAt = new Date();
+          payment.error = {
+            code: paymentIntent.last_payment_error?.code || 'payment_failed',
+            message: paymentIntent.last_payment_error?.message || 'Payment failed'
+          };
+          await payment.save();
+          console.log(`Payment ${payment._id} marked as failed`);
+        }
+      } catch (error) {
+        console.error('Error processing failed payment webhook:', error);
+      }
+      break;
+
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+// Create Stripe Checkout session
+router.post('/create-checkout-session', auth, async (req, res) => {
+  try {
+    const { amount, paymentType = 'deposit', description, successUrl, cancelUrl } = req.body;
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
@@ -41,26 +119,51 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       });
     }
 
-    // Create payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd',
+    // Create Stripe Checkout session
+    const session = await stripe.checkout.sessions.create({
       customer: customer.id,
-      description: description || `${paymentType} payment for ${user.firstName} ${user.lastName}`,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment',
+              description: description || `${paymentType} payment for ${user.firstName} ${user.lastName}`,
+              metadata: {
+                paymentType,
+                userId: user._id.toString()
+              }
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: successUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/cancel`,
       metadata: {
         userId: user._id.toString(),
         paymentType,
+        amount: amount.toString(),
         propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
       },
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      customer_email: user.email,
+      billing_address_collection: 'required',
+      payment_intent_data: {
+        metadata: {
+          userId: user._id.toString(),
+          paymentType,
+          propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        }
+      }
     });
 
     // Create payment record in database
     const payment = new Payment({
       userId: user._id,
-      stripePaymentIntentId: paymentIntent.id,
+      stripePaymentIntentId: session.payment_intent,
       stripeCustomerId: customer.id,
       amount: Math.round(amount * 100), // Store in cents
       currency: 'usd',
@@ -68,16 +171,16 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       description: description || `${paymentType} payment`,
       status: 'pending',
       metadata: {
-        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : '',
+        checkoutSessionId: session.id
       }
     });
 
     await payment.save();
 
     res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      customerId: customer.id,
+      sessionId: session.id,
+      url: session.url,
       payment: {
         id: payment._id,
         amount: payment.amount,
@@ -85,8 +188,8 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Payment intent creation error:', error);
-    res.status(500).json({ error: 'Server error creating payment intent' });
+    console.error('Checkout session creation error:', error);
+    res.status(500).json({ error: 'Server error creating checkout session' });
   }
 });
 
@@ -224,87 +327,90 @@ router.post('/:paymentId/cancel', auth, async (req, res) => {
   }
 });
 
-// Webhook for Stripe events
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
+// Create payment intent for deposit
+router.post('/create-payment-intent', auth, async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  try {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        await handlePaymentSuccess(paymentIntent);
-        break;
-      
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
-        await handlePaymentFailure(failedPayment);
-        break;
-      
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+    const { amount, paymentType = 'deposit', description } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    res.json({ received: true });
+    // Get user information
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create or retrieve Stripe customer
+    let customer;
+    const existingCustomers = await stripe.customers.list({
+      email: user.email,
+      limit: 1
+    });
+
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        phone: user.phone,
+        metadata: {
+          userId: user._id.toString(),
+          propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        }
+      });
+    }
+
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: 'usd',
+      customer: customer.id,
+      description: description || `${paymentType} payment for ${user.firstName} ${user.lastName}`,
+      metadata: {
+        userId: user._id.toString(),
+        paymentType,
+        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    // Create payment record in database
+    const payment = new Payment({
+      userId: user._id,
+      stripePaymentIntentId: paymentIntent.id,
+      stripeCustomerId: customer.id,
+      amount: Math.round(amount * 100), // Store in cents
+      currency: 'usd',
+      paymentType,
+      description: description || `${paymentType} payment`,
+      status: 'pending',
+      metadata: {
+        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+      }
+    });
+
+    await payment.save();
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id,
+      payment: {
+        id: payment._id,
+        amount: payment.amount,
+        status: payment.status
+      }
+    });
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    console.error('Payment intent creation error:', error);
+    res.status(500).json({ error: 'Server error creating payment intent' });
   }
 });
-
-// Handle successful payment
-async function handlePaymentSuccess(paymentIntent) {
-  try {
-    const payment = await Payment.findOne({
-      stripePaymentIntentId: paymentIntent.id
-    });
-
-    if (payment) {
-      payment.status = 'succeeded';
-      payment.paidAt = new Date();
-      payment.receiptUrl = paymentIntent.charges.data[0]?.receipt_url;
-      
-      if (paymentIntent.charges.data[0]?.payment_method_details?.card) {
-        const card = paymentIntent.charges.data[0].payment_method_details.card;
-        payment.cardLast4 = card.last4;
-        payment.cardBrand = card.brand;
-      }
-
-      await payment.save();
-    }
-  } catch (error) {
-    console.error('Payment success handling error:', error);
-  }
-}
-
-// Handle failed payment
-async function handlePaymentFailure(paymentIntent) {
-  try {
-    const payment = await Payment.findOne({
-      stripePaymentIntentId: paymentIntent.id
-    });
-
-    if (payment) {
-      payment.status = 'failed';
-      payment.failedAt = new Date();
-      payment.error = {
-        code: paymentIntent.last_payment_error?.code,
-        message: paymentIntent.last_payment_error?.message
-      };
-
-      await payment.save();
-    }
-  } catch (error) {
-    console.error('Payment failure handling error:', error);
-  }
-}
 
 // Admin: Get all payments
 router.get('/admin/all', auth, async (req, res) => {

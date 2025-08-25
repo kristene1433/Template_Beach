@@ -12,7 +12,7 @@ const generateToken = (userId) => {
 // User registration
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, phone, address, rentalAmount, depositAmount } = req.body;
+    const { email, password } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -20,16 +20,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Create new user
+    // Create new user with just email and password
     const user = new User({
       email,
-      password,
-      firstName,
-      lastName,
-      phone,
-      address,
-      rentalAmount,
-      depositAmount: depositAmount || 500
+      password
     });
 
     await user.save();

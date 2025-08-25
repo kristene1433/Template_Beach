@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useStripe } from '../contexts/StripeContext';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import {
   CreditCard,
-  DollarSign,
-  Calendar,
-  CheckCircle,
   AlertCircle,
   Receipt,
   Download,
   Clock,
-  User,
   Home,
   Shield
 } from 'lucide-react';
 
 const Payment = () => {
   const { user } = useAuth();
-  const { stripe } = useStripe();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState([]);
@@ -28,7 +22,6 @@ const Payment = () => {
   const [customAmount, setCustomAmount] = useState('');
   const [paymentType, setPaymentType] = useState('deposit');
   const [description, setDescription] = useState('');
-  const [showCustomAmount, setShowCustomAmount] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -47,7 +40,6 @@ const Payment = () => {
 
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);
-    setShowCustomAmount(false);
     setCustomAmount('');
   };
 
@@ -63,11 +55,9 @@ const Payment = () => {
     setPaymentType(type);
     if (type === 'deposit') {
       setSelectedAmount('500');
-      setShowCustomAmount(false);
       setCustomAmount('');
     } else {
       setSelectedAmount('custom');
-      setShowCustomAmount(true);
     }
   };
 
@@ -79,11 +69,6 @@ const Payment = () => {
   };
 
   const handlePayment = async () => {
-    if (!stripe) {
-      toast.error('Stripe is not loaded. Please try again.');
-      return;
-    }
-
     const amount = getPaymentAmount();
     if (!amount || amount <= 0) {
       toast.error('Please enter a valid amount');
@@ -92,39 +77,63 @@ const Payment = () => {
 
     setLoading(true);
     try {
-      // Create payment intent
-      const response = await axios.post('/api/payments/create-payment-intent', {
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: 'usd',
+      // Create Stripe Checkout session
+      const response = await axios.post('/api/payment/create-checkout-session', {
+        amount: amount,
         paymentType,
-        description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`
+        description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`,
+        successUrl: `${window.location.origin}/payment/success`,
+        cancelUrl: `${window.location.origin}/payment/cancel`
       });
 
-      const { clientSecret } = response.data;
-
-      // For now, we'll simulate a successful payment since we don't have Stripe Elements set up
-      // In a real implementation, you would use stripe.confirmCardPayment with a card element
-      toast.success('Payment successful! (Demo mode)');
-      await loadPaymentHistory();
-      // Reset form
-      setSelectedAmount('500');
-      setCustomAmount('');
-      setPaymentType('deposit');
-      setDescription('');
-      setShowCustomAmount(false);
+      const { url } = response.data;
+      
+      // Redirect to Stripe Checkout
+      if (url) {
+        window.location.href = url;
+      } else {
+        toast.error('Failed to create checkout session');
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Payment failed');
+      console.error('Payment error:', error);
+      toast.error(error.response?.data?.error || 'Payment failed');
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString) return 'Not set';
+    
+    try {
+      // Handle both date strings and Date objects
+      let dateObj;
+      if (typeof dateString === 'string') {
+        // If it's a date string like "2025-01-01", parse it directly
+        if (dateString.includes('-')) {
+          const [year, month, day] = dateString.split('-').map(Number);
+          dateObj = new Date(year, month - 1, day);
+        } else {
+          dateObj = new Date(dateString);
+        }
+      } else {
+        dateObj = new Date(dateString);
+      }
+      
+      // Check if the date is valid
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+      }
+      
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
   };
 
   const formatAmount = (amount) => {
@@ -185,26 +194,28 @@ const Payment = () => {
                   <button
                     type="button"
                     onClick={() => handlePaymentTypeChange('deposit')}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                       paymentType === 'deposit'
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-gray-300 hover:border-primary hover:bg-primary-light'
+                        ? 'border-primary bg-primary text-white shadow-lg scale-105'
+                        : 'border-gray-300 hover:border-primary hover:bg-primary-light hover:scale-102'
                     }`}
                   >
-                    <Shield className="mx-auto h-6 w-6 mb-2" />
+                    <Shield className="mx-auto h-8 w-8 mb-2" />
                     <span className="font-medium">Security Deposit</span>
+                    <p className="text-xs mt-1 opacity-90">$500 Required</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => handlePaymentTypeChange('rent')}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                       paymentType === 'rent'
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-gray-300 hover:border-primary hover:bg-primary-light'
+                        ? 'border-primary bg-primary text-white shadow-lg scale-105'
+                        : 'border-gray-300 hover:border-primary hover:bg-primary-light hover:scale-102'
                     }`}
                   >
-                    <Home className="mx-auto h-6 w-6 mb-2" />
+                    <Home className="mx-auto h-8 w-8 mb-2" />
                     <span className="font-medium">Rent Payment</span>
+                    <p className="text-xs mt-1 opacity-90">Custom Amount</p>
                   </button>
                 </div>
               </div>
@@ -212,121 +223,68 @@ const Payment = () => {
               {/* Amount Selection */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Payment Amount</h2>
+                
                 {paymentType === 'deposit' ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleAmountSelect('500')}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        selectedAmount === '500'
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                      }`}
-                    >
-                      <DollarSign className="mx-auto h-8 w-8 mb-2" />
-                      <span className="text-xl font-bold">$500</span>
-                      <span className="block text-sm opacity-90">Standard Deposit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAmountSelect('custom')}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        selectedAmount === 'custom'
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                      }`}
-                    >
-                      <DollarSign className="mx-auto h-8 w-8 mb-2" />
-                      <span className="text-xl font-bold">Custom</span>
-                      <span className="block text-sm opacity-90">Agreed Amount</span>
-                    </button>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-800 font-medium">Security Deposit</p>
+                        <p className="text-green-600 text-sm">Required for all tenants</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-800">$500.00</p>
+                        <p className="text-green-600 text-sm">Fixed amount</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleAmountSelect('1000')}
-                        className={`p-3 rounded-lg border-2 transition-colors ${
-                          selectedAmount === '1000'
-                            ? 'border-primary bg-primary text-white'
-                            : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                        }`}
-                      >
-                        <span className="font-bold">$1,000</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAmountSelect('1500')}
-                        className={`p-3 rounded-lg border-2 transition-colors ${
-                          selectedAmount === '1500'
-                            ? 'border-primary bg-primary text-white'
-                            : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                        }`}
-                      >
-                        <span className="font-bold">$1,500</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAmountSelect('2000')}
-                        className={`p-3 rounded-lg border-2 transition-colors ${
-                          selectedAmount === '2000'
-                            ? 'border-primary bg-primary text-white'
-                            : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                        }`}
-                      >
-                        <span className="font-bold">$2,000</span>
-                      </button>
+                  <div className="space-y-4">
+                    {/* Quick Amount Buttons */}
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Quick Select:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['1000', '1500', '2000', '2500', '3000', '3500'].map((amount) => (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => handleAmountSelect(amount)}
+                            className={`py-2 px-3 rounded-md border transition-colors ${
+                              selectedAmount === amount
+                                ? 'border-primary bg-primary text-white'
+                                : 'border-gray-300 hover:border-primary hover:bg-primary-light'
+                            }`}
+                          >
+                            ${amount}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAmountSelect('custom')}
-                      className={`p-3 rounded-lg border-2 transition-colors ${
-                        selectedAmount === 'custom'
-                          ? 'border-primary bg-primary text-white'
-                          : 'border-gray-300 hover:border-primary hover:bg-primary-light'
-                      }`}
-                    >
-                      <span className="font-bold">Custom Amount</span>
-                    </button>
-                  </div>
-                )}
 
-                {/* Custom Amount Input */}
-                {(selectedAmount === 'custom' || paymentType === 'rent') && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Enter Amount (USD)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                        $
-                      </span>
-                      <input
-                        type="number"
-                        value={customAmount}
-                        onChange={handleCustomAmountChange}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
+                    {/* Custom Amount Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Custom Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          $
+                        </span>
+                        <input
+                          type="number"
+                          value={customAmount}
+                          onChange={handleCustomAmountChange}
+                          placeholder="0.00"
+                          min="1"
+                          step="0.01"
+                          className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
-
-                {/* Display Selected Amount */}
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Total Amount:</span>
-                    <span className="text-2xl font-bold text-primary">
-                      ${getPaymentAmount().toFixed(2)}
-                    </span>
-                  </div>
-                </div>
               </div>
 
-              {/* Payment Description */}
+              {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Description (Optional)
@@ -334,13 +292,44 @@ const Payment = () => {
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add a note about this payment..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Add any additional notes about this payment..."
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 />
               </div>
 
-              {/* Payment Button */}
+              {/* Payment Summary */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-3">Payment Summary</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Payment Type:</span>
+                    <span className="font-medium">
+                      {paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount:</span>
+                    <span className="font-bold text-lg">
+                      ${getPaymentAmount().toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Processing Fee:</span>
+                    <span className="text-gray-600">$0.00</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-900">Total:</span>
+                      <span className="font-bold text-xl text-primary">
+                        ${getPaymentAmount().toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
               <button
                 onClick={handlePayment}
                 disabled={loading || !getPaymentAmount()}
@@ -348,29 +337,21 @@ const Payment = () => {
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing Payment...
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Processing...
                   </>
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Pay ${getPaymentAmount().toFixed(2)}
+                    Proceed to Payment
                   </>
                 )}
               </button>
 
               {/* Security Notice */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">Secure Payment Processing</p>
-                    <p className="mt-1">
-                      Your payment information is encrypted and secure. We use Stripe, a trusted payment processor, 
-                      to handle all transactions.
-                    </p>
-                  </div>
-                </div>
+              <div className="text-center text-sm text-gray-500">
+                <Shield className="inline h-4 w-4 mr-1" />
+                Your payment is secured by Stripe. We never store your card information.
               </div>
             </div>
           </div>

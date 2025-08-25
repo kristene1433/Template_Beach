@@ -15,8 +15,12 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Application from './pages/Application';
 import Payment from './pages/Payment';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import Lease from './pages/Lease';
 import Profile from './pages/Profile';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -31,6 +35,29 @@ const ProtectedRoute = ({ children }) => {
   }
   
   return user ? children : <Navigate to="/login" />;
+};
+
+// Admin Protected Route Component
+const AdminProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/admin/login" />;
+  }
+  
+  if (user.role !== 'admin') {
+    return <Navigate to="/admin/login" />;
+  }
+  
+  return children;
 };
 
 // App Routes
@@ -67,6 +94,22 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/payment/success" 
+        element={
+          <ProtectedRoute>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/payment/cancel" 
+        element={
+          <ProtectedRoute>
+            <PaymentCancel />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/lease" 
         element={
           <ProtectedRoute>
@@ -80,6 +123,18 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <Profile />
           </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/login" 
+        element={user?.role === 'admin' ? <Navigate to="/admin/dashboard" /> : <AdminLogin />} 
+      />
+      <Route 
+        path="/admin/dashboard" 
+        element={
+          <AdminProtectedRoute>
+            <AdminDashboard />
+          </AdminProtectedRoute>
         } 
       />
     </Routes>

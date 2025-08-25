@@ -21,6 +21,9 @@ const Footer = () => {
             <Link to="/login" className="text-gray-400 hover:text-white transition-colors duration-200">
               Tenant Portal
             </Link>
+            <Link to="/admin/login" className="text-gray-400 hover:text-white transition-colors duration-200">
+              Admin
+            </Link>
             <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors duration-200">
               Privacy Policy
             </Link>

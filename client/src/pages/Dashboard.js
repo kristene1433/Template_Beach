@@ -88,11 +88,37 @@ const Dashboard = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString) return 'Not set';
+    
+    try {
+      // Handle both date strings and Date objects
+      let dateObj;
+      if (typeof dateString === 'string') {
+        // If it's a date string like "2025-01-01", parse it directly
+        if (dateString.includes('-')) {
+          const [year, month, day] = dateString.split('-').map(Number);
+          dateObj = new Date(year, month - 1, day);
+        } else {
+          dateObj = new Date(dateString);
+        }
+      } else {
+        dateObj = new Date(dateString);
+      }
+      
+      // Check if the date is valid
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+      }
+      
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
   };
 
   if (loading) {
@@ -158,7 +184,7 @@ const Dashboard = () => {
                 <Building2 className="w-6 h-6 text-accent-600" />
               </div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(leaseStatus?.leaseSigned ? 'completed' : 'pending')}`}>
-                {leaseStatus?.leaseSigned ? 'Signed' : 'Pending'}
+                {leaseStatus?.leaseSigned ? 'Signed' : 'Available'}
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -167,13 +193,13 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               {leaseStatus?.leaseSigned ? 
                 'Your lease agreement has been signed and is active' : 
-                'Complete your application to proceed with lease signing'}
+                'Generate and review your lease agreement'}
             </p>
             <Link
               to="/lease"
               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
-              View Details
+              {leaseStatus?.leaseSigned ? 'View Lease' : 'Generate Lease'}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -204,45 +230,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="card mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              to="/application"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors duration-200"
-            >
-              <FileText className="w-5 h-5 text-primary-600 mr-3" />
-              <span className="font-medium text-gray-900">Complete Application</span>
-            </Link>
-            
-            <Link
-              to="/payment"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors duration-200"
-            >
-              <CreditCard className="w-5 h-5 text-primary-600 mr-3" />
-              <span className="font-medium text-gray-900">Make Payment</span>
-            </Link>
-            
-            <Link
-              to="/lease"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors duration-200"
-            >
-              <Building2 className="w-5 h-5 text-primary-600 mr-3" />
-              <span className="font-medium text-gray-900">View Lease</span>
-            </Link>
-            
-            <Link
-              to="/profile"
-              className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors duration-200"
-            >
-              <div className="w-5 h-5 bg-primary-600 rounded-full mr-3 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</span>
-              </div>
-              <span className="font-medium text-gray-900">Update Profile</span>
-            </Link>
-          </div>
-        </div>
+
 
         {/* Property Information */}
         <div className="card mb-8">
@@ -253,9 +241,7 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Property Address</p>
                 <p className="text-sm text-gray-600">
-                  {user?.address?.street ? 
-                    `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : 
-                    'Not specified'}
+                  18650 Gulf Blvd Unit 207, Indian Shores, FL 33785
                 </p>
               </div>
             </div>
@@ -281,6 +267,92 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Lease Information */}
+        {leaseStatus?.hasApplication ? (
+          <div className="card mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Lease Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex items-center space-x-3">
+                <Building2 className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Lease Status</p>
+                  <p className="text-sm text-gray-600">
+                    {leaseStatus?.leaseSigned ? 'Signed' : 'Available for Review'}
+                  </p>
+                </div>
+              </div>
+              
+              {leaseStatus?.leaseStartDate && (
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Lease Start Date</p>
+                    <p className="text-sm text-gray-600">
+                      {formatDate(leaseStatus.leaseStartDate)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {leaseStatus?.leaseEndDate && (
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Lease End Date</p>
+                    <p className="text-sm text-gray-600">
+                      {formatDate(leaseStatus.leaseEndDate)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {leaseStatus?.rentalAmount && (
+                <div className="flex items-center space-x-3">
+                  <DollarSign className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
+                    <p className="text-sm text-gray-600">
+                      ${leaseStatus.rentalAmount.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <Link
+                to="/lease"
+                className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
+              >
+                {leaseStatus?.leaseSigned ? 'View Full Lease Agreement' : 'Generate and Review Lease'}
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="card mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Lease Information</h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <Building2 className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Complete Application First</p>
+                  <p className="mt-1">
+                    You need to complete your rental application before you can access lease information.
+                  </p>
+                  <Link
+                    to="/application"
+                    className="mt-2 inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Go to Application
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recent Payments */}
         {recentPayments.length > 0 && (
@@ -325,7 +397,7 @@ const Dashboard = () => {
               <Phone className="w-5 h-5 text-primary-600" />
               <div>
                 <p className="text-sm font-medium text-gray-900">Phone Support</p>
-                <p className="text-sm text-gray-600">(555) 123-4567</p>
+                <p className="text-sm text-gray-600">(407) 687-1270</p>
               </div>
             </div>
             
@@ -333,15 +405,15 @@ const Dashboard = () => {
               <Mail className="w-5 h-5 text-primary-600" />
               <div>
                 <p className="text-sm font-medium text-gray-900">Email Support</p>
-                <p className="text-sm text-gray-600">support@palmrunllc.com</p>
+                <p className="text-sm text-gray-600">jaypommrehn@gmail.com</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
-              <Calendar className="w-5 h-5 text-primary-600" />
+              <MapPin className="w-5 h-5 text-primary-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900">Business Hours</p>
-                <p className="text-sm text-gray-600">Mon-Fri: 9AM-6PM</p>
+                <p className="text-sm font-medium text-gray-900">Property Address</p>
+                <p className="text-sm text-gray-600">18650 Gulf Blvd Unit 207<br />Indian Shores, FL 33785</p>
               </div>
             </div>
           </div>
