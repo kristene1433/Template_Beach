@@ -68,8 +68,15 @@ const applicationSchema = new mongoose.Schema({
   // Application Status
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'completed'],
-    default: 'pending'
+    enum: ['draft', 'pending', 'approved', 'rejected', 'completed'],
+    default: 'draft'
+  },
+  
+  // Requested Lease Start
+  requestedMonths: {
+    type: String,
+    required: true,
+    trim: true
   },
   
   // Documents

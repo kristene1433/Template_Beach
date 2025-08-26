@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   User, 
@@ -28,6 +28,7 @@ const Application = () => {
       zipCode: ''
     },
     phone: '',
+    requestedMonths: '',
     additionalGuests: []
   });
 
@@ -51,20 +52,23 @@ const Application = () => {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.application) {
-            setExistingApplication(data.application);
+          // Check if there are any applications and get the most recent one
+          if (data.applications && data.applications.length > 0) {
+            const mostRecentApp = data.applications[0]; // Most recent application
+            setExistingApplication(mostRecentApp);
             // Pre-fill form with existing data
             setFormData({
-              firstName: data.application.firstName || '',
-              lastName: data.application.lastName || '',
+              firstName: mostRecentApp.firstName || '',
+              lastName: mostRecentApp.lastName || '',
               address: {
-                street: data.application.address?.street || '',
-                city: data.application.address?.city || '',
-                state: data.application.address?.state || '',
-                zipCode: data.application.address?.zipCode || ''
+                street: mostRecentApp.address?.street || '',
+                city: mostRecentApp.address?.city || '',
+                state: mostRecentApp.address?.state || '',
+                zipCode: mostRecentApp.address?.zipCode || ''
               },
-              phone: data.application.phone || '',
-              additionalGuests: (data.application.additionalGuests || []).map(guest => ({
+              phone: mostRecentApp.phone || '',
+              requestedMonths: mostRecentApp.requestedMonths || '',
+              additionalGuests: (mostRecentApp.additionalGuests || []).map(guest => ({
                 ...guest,
                 id: guest.id || Date.now() + Math.random() // Add id for frontend tracking
               }))
@@ -154,6 +158,7 @@ const Application = () => {
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!formData.requestedMonths.trim()) newErrors.requestedMonths = 'Please select when you would like to start your lease';
     if (!formData.address.street.trim()) newErrors['address.street'] = 'Street address is required';
     if (!formData.address.city.trim()) newErrors['address.city'] = 'City is required';
     if (!formData.address.state.trim()) newErrors['address.state'] = 'State is required';
@@ -211,10 +216,11 @@ const Application = () => {
       // Determine if this is a create or update operation
       const isUpdate = existingApplication !== null;
       const method = isUpdate ? 'PUT' : 'POST';
-      const successMessage = isUpdate ? 'Application updated successfully!' : 'Application submitted successfully!';
+      const url = isUpdate ? `/api/application/${existingApplication._id}` : '/api/application';
+      const successMessage = isUpdate ? 'Application updated successfully!' : 'Application created successfully!';
 
       // Send the data to the backend
-      const response = await fetch('/api/application', {
+      const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
@@ -233,8 +239,9 @@ const Application = () => {
       // Update the existing application state
       setExistingApplication(result.application);
       
-      toast.success(successMessage);
-      navigate('/dashboard');
+             toast.success(successMessage);
+       // Force a page reload to ensure dashboard shows updated data
+       window.location.href = '/dashboard';
     } catch (error) {
       toast.error(error.message || `Failed to ${existingApplication ? 'update' : 'submit'} application. Please try again.`);
       console.error('Application submission error:', error);
@@ -245,6 +252,48 @@ const Application = () => {
 
   const getFieldError = (fieldName) => {
     return errors[fieldName] || '';
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!existingApplication) {
+      toast.error('Please save your application first before submitting');
+      return;
+    }
+
+    if (!validateForm()) {
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`/api/application/${existingApplication._id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit application');
+      }
+
+      const result = await response.json();
+      
+      // Update the existing application state
+      setExistingApplication(result.application);
+      
+                    toast.success('Application submitted successfully! It is now under review by our team.');
+       // Force a page reload to ensure dashboard shows updated data
+       window.location.href = '/dashboard';
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit application. Please try again.');
+      console.error('Application submission error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Show loading spinner while loading data
@@ -263,6 +312,14 @@ const Application = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
+          <div className="text-left mb-4">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             {existingApplication ? (
               <Edit className="h-8 w-8 text-white" />
@@ -279,13 +336,64 @@ const Application = () => {
               : 'Complete your application for the Gulf Shores beachfront condo'
             }
           </p>
-          {existingApplication && (
-            <div className="mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Application Status: {existingApplication.status || 'Submitted'}
-              </span>
-            </div>
+          {!existingApplication && (
+            <p className="text-sm text-gray-500 mt-2">
+              You can save your application as a draft and submit it when ready, or submit it immediately.
+            </p>
           )}
+                     {existingApplication && (
+             <div className="mt-2">
+               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                 existingApplication.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                 existingApplication.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                 existingApplication.status === 'approved' ? 'bg-green-100 text-green-800' :
+                 existingApplication.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                 'bg-blue-100 text-blue-800'
+               }`}>
+                 Application Status: {
+                   existingApplication.status === 'draft' ? 'Draft' :
+                   existingApplication.status === 'pending' ? 'Submitted' :
+                   existingApplication.status === 'approved' ? 'Approved' :
+                   existingApplication.status === 'rejected' ? 'Declined' :
+                   'Unknown'
+                 }
+               </span>
+             </div>
+           )}
+                     {existingApplication && (
+             <div className="mt-3">
+               <button
+                 onClick={() => {
+                   setExistingApplication(null);
+                   setFormData({
+                     firstName: '',
+                     lastName: '',
+                     address: { street: '', city: '', state: '', zipCode: '' },
+                     phone: '',
+                     requestedMonths: '',
+                     additionalGuests: []
+                   });
+                 }}
+                 className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+               >
+                 <Plus className="h-4 w-4 mr-2" />
+                 Create New Application
+               </button>
+             </div>
+           )}
+           {/* Application Workflow Explanation */}
+           {existingApplication && (
+             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+               <h4 className="text-sm font-medium text-blue-900 mb-2">Application Workflow:</h4>
+               <div className="text-xs text-blue-800 space-y-1">
+                 <p>• <strong>Draft:</strong> Save your application and edit later</p>
+                 <p>• <strong>Submit:</strong> Click "Submit Application" to send for review</p>
+                 <p>• <strong>Under Review:</strong> Our team will review your application</p>
+                 <p>• <strong>Approved:</strong> We'll contact you to proceed with lease</p>
+                 <p>• <strong>Declined:</strong> Contact us for more information</p>
+               </div>
+             </div>
+           )}
         </div>
 
         <div className="card">
@@ -361,6 +469,49 @@ const Application = () => {
                 </div>
                 {getFieldError('phone') && (
                   <p className="form-error">{getFieldError('phone')}</p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="requestedMonths" className="form-label">
+                  When would you like to start your lease? *
+                </label>
+                <select
+                  id="requestedMonths"
+                  name="requestedMonths"
+                  required
+                  value={formData.requestedMonths}
+                  onChange={handleChange}
+                  className={`input-field ${getFieldError('requestedMonths') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                >
+                  <option value="">Select a month</option>
+                  <option value="January 2025">January 2025</option>
+                  <option value="February 2025">February 2025</option>
+                  <option value="March 2025">March 2025</option>
+                  <option value="April 2025">April 2025</option>
+                  <option value="May 2025">May 2025</option>
+                  <option value="June 2025">June 2025</option>
+                  <option value="July 2025">July 2025</option>
+                  <option value="August 2025">August 2025</option>
+                  <option value="September 2025">September 2025</option>
+                  <option value="October 2025">October 2025</option>
+                  <option value="November 2025">November 2025</option>
+                  <option value="December 2025">December 2025</option>
+                  <option value="January 2026">January 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
+                  <option value="April 2026">April 2026</option>
+                  <option value="May 2026">May 2026</option>
+                  <option value="June 2026">June 2026</option>
+                  <option value="July 2026">July 2026</option>
+                  <option value="August 2026">August 2026</option>
+                  <option value="September 2026">September 2026</option>
+                  <option value="October 2026">October 2026</option>
+                  <option value="November 2026">November 2026</option>
+                  <option value="December 2026">December 2026</option>
+                </select>
+                {getFieldError('requestedMonths') && (
+                  <p className="form-error">{getFieldError('requestedMonths')}</p>
                 )}
               </div>
             </div>
@@ -537,7 +688,7 @@ const Application = () => {
               ))}
             </div>
 
-            {/* Submit Button */}
+            {/* Form Buttons */}
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
@@ -546,18 +697,40 @@ const Application = () => {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary flex items-center"
-              >
-                {isLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {existingApplication ? 'Update Application' : 'Submit Application'}
-              </button>
+              
+                                              {existingApplication && existingApplication.status === 'draft' && (
+                   <div className="flex flex-col space-y-2">
+                     <button
+                       type="button"
+                       onClick={handleSubmitApplication}
+                       disabled={isLoading}
+                       className="btn-primary flex items-center bg-green-600 hover:bg-green-700"
+                     >
+                       {isLoading ? (
+                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                       ) : (
+                         <FileText className="h-4 w-4 mr-2" />
+                       )}
+                       Submit for Review
+                     </button>
+                     <p className="text-xs text-gray-500 text-center">
+                       After submission, your application will be reviewed by our team
+                     </p>
+                   </div>
+                 )}
+               
+               <button
+                 type="submit"
+                 disabled={isLoading}
+                 className="btn-primary flex items-center"
+               >
+                 {isLoading ? (
+                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                 ) : (
+                   <Save className="h-4 w-4 mr-2" />
+                 )}
+                 {existingApplication ? 'Save Changes' : 'Create Application'}
+               </button>
             </div>
           </form>
         </div>

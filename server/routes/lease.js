@@ -4,13 +4,18 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Generate lease agreement
-router.post('/generate', auth, async (req, res) => {
+// Generate lease agreement for a specific application
+router.post('/generate/:applicationId', auth, async (req, res) => {
   try {
+    const { applicationId } = req.params;
     const { leaseStartDate, leaseEndDate, rentalAmount = 2500, depositAmount = 500 } = req.body;
     
-    // Get user's application
-    const application = await Application.findOne({ userId: req.user._id });
+    // Get the specific application
+    const application = await Application.findOne({ 
+      _id: applicationId, 
+      userId: req.user._id 
+    });
+    
     if (!application) {
       return res.status(404).json({ error: 'Application not found. Please complete your application first.' });
     }
@@ -232,9 +237,10 @@ router.post('/sign', auth, async (req, res) => {
 // Get lease status
 router.get('/status', auth, async (req, res) => {
   try {
-    const application = await Application.findOne({ userId: req.user._id });
+    // Get all applications for the user, sorted by creation date
+    const applications = await Application.find({ userId: req.user._id }).sort({ createdAt: -1 });
     
-    if (!application) {
+    if (applications.length === 0) {
       return res.json({
         hasApplication: false,
         leaseSigned: false,
@@ -242,16 +248,30 @@ router.get('/status', auth, async (req, res) => {
       });
     }
 
-    res.json({
-      hasApplication: true,
-      isComplete: true,
-      leaseSigned: application.leaseSigned || false,
-      leaseSignedAt: application.leaseSignedAt,
-      leaseStartDate: application.leaseStartDate,
-      leaseEndDate: application.leaseEndDate,
-      rentalAmount: application.rentalAmount,
-      depositAmount: application.depositAmount
-    });
+    // Find the application with a lease (most recent one with lease info)
+    const applicationWithLease = applications.find(app => app.leaseStartDate && app.leaseEndDate);
+    
+    if (applicationWithLease) {
+      res.json({
+        hasApplication: true,
+        isComplete: true,
+        leaseSigned: applicationWithLease.leaseSigned || false,
+        leaseSignedAt: applicationWithLease.leaseSignedAt,
+        leaseStartDate: applicationWithLease.leaseStartDate,
+        leaseEndDate: applicationWithLease.leaseEndDate,
+        rentalAmount: applicationWithLease.rentalAmount,
+        depositAmount: applicationWithLease.depositAmount,
+        applicationId: applicationWithLease._id
+      });
+    } else {
+      // User has applications but no lease yet
+      res.json({
+        hasApplication: true,
+        isComplete: false,
+        leaseSigned: false,
+        message: 'Application submitted, waiting for lease generation'
+      });
+    }
   } catch (error) {
     console.error('Lease status fetch error:', error);
     res.status(500).json({ error: 'Server error fetching lease status' });

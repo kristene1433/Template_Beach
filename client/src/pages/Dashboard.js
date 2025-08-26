@@ -7,10 +7,10 @@ import {
   Building2, 
   ArrowRight,
   DollarSign,
-  Calendar,
   MapPin,
   Phone,
-  Mail
+  Mail,
+  Clock
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -24,17 +24,27 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        console.log('Fetching dashboard data...');
         const [applicationRes, leaseRes, paymentsRes] = await Promise.all([
           axios.get('/api/application/status'),
           axios.get('/api/lease/status'),
           axios.get('/api/payment/history')
         ]);
 
+        console.log('Application response:', applicationRes.data);
+        console.log('Application response status:', applicationRes.status);
+        console.log('Application response headers:', applicationRes.headers);
+        console.log('Lease response:', leaseRes.data);
+        
         setApplicationStatus(applicationRes.data);
         setLeaseStatus(leaseRes.data);
         setRecentPayments(paymentsRes.data.payments?.slice(0, 3) || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        if (error.response) {
+          console.error('Error response:', error.response.data);
+          console.error('Error status:', error.response.status);
+        }
       } finally {
         setLoading(false);
       }
@@ -50,13 +60,35 @@ const Dashboard = () => {
       case 'succeeded':
         return 'text-green-600 bg-green-100';
       case 'pending':
+        return 'text-blue-600 bg-blue-100';
       case 'processing':
         return 'text-yellow-600 bg-yellow-100';
       case 'rejected':
       case 'failed':
         return 'text-red-600 bg-red-100';
+      case 'draft':
+        return 'text-gray-600 bg-gray-100';
       default:
         return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'draft':
+        return 'Draft';
+      case 'pending':
+        return 'Submitted';
+      case 'approved':
+        return 'Approved';
+      case 'rejected':
+        return 'Declined';
+      case 'completed':
+        return 'Completed';
+      case 'not_started':
+        return 'Not Started';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -101,6 +133,35 @@ const Dashboard = () => {
     }
   };
 
+  const refreshDashboard = async () => {
+    setLoading(true);
+    try {
+      console.log('Manually refreshing dashboard...');
+      const [applicationRes, leaseRes, paymentsRes] = await Promise.all([
+        axios.get('/api/application/status'),
+        axios.get('/api/lease/status'),
+        axios.get('/api/payment/history')
+      ]);
+
+              console.log('Refresh - Application response:', applicationRes.data);
+        console.log('Refresh - Application response status:', applicationRes.status);
+        console.log('Refresh - Application response headers:', applicationRes.headers);
+        console.log('Refresh - Lease response:', leaseRes.data);
+      
+      setApplicationStatus(applicationRes.data);
+      setLeaseStatus(leaseRes.data);
+      setRecentPayments(paymentsRes.data.payments?.slice(0, 3) || []);
+    } catch (error) {
+      console.error('Error refreshing dashboard data:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -114,12 +175,30 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.firstName || user?.email || 'Guest'}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Here's an overview of your rental application and account status
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {user?.firstName || user?.email || 'Guest'}!
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Here's an overview of your rental application and account status
+              </p>
+            </div>
+            <button
+              onClick={refreshDashboard}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              ) : (
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              )}
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Status Overview Cards */}
@@ -130,29 +209,38 @@ const Dashboard = () => {
               <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-primary-600" />
               </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(applicationStatus?.status || 'not_started')}`}>
-                {applicationStatus?.status === 'not_started' ? 'Not Started' : 
-                 applicationStatus?.status === 'pending' ? 'Under Review' :
-                 applicationStatus?.status === 'approved' ? 'Approved' :
-                 applicationStatus?.status === 'rejected' ? 'Rejected' :
-                 applicationStatus?.status === 'completed' ? 'Completed' : 'Unknown'}
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(applicationStatus?.latestStatus || 'not_started')}`}>
+                {applicationStatus?.hasApplications ? 
+                  getStatusText(applicationStatus.latestStatus) : 'Not Started'}
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Rental Application
+              Rental Applications
             </h3>
             <p className="text-gray-600 text-sm mb-4">
-              {applicationStatus?.status === 'not_started' ? 'Complete your rental application to get started' :
-               applicationStatus?.status === 'pending' ? 'Your application is currently under review' :
-               applicationStatus?.status === 'approved' ? 'Congratulations! Your application has been approved' :
-               applicationStatus?.status === 'rejected' ? 'Your application was not approved' :
-               applicationStatus?.status === 'completed' ? 'Your application is complete and ready for lease signing' : 'Status unknown'}
+              {applicationStatus?.hasApplications ? 
+                `You have ${applicationStatus.totalApplications} application${applicationStatus.totalApplications > 1 ? 's' : ''}` :
+                'Complete your rental application to get started'}
             </p>
+            {/* Debug info - remove this later */}
+            {applicationStatus && (
+              <div className="text-xs text-gray-500 mt-2 space-y-1">
+                <p>Debug: hasApplications={applicationStatus.hasApplications?.toString()}, 
+                totalApplications={applicationStatus.totalApplications}, 
+                latestStatus={applicationStatus.latestStatus}</p>
+                {applicationStatus.applications && (
+                  <p>Applications array length: {applicationStatus.applications.length}</p>
+                )}
+                <p>Raw applicationStatus: {JSON.stringify(applicationStatus, null, 2)}</p>
+                <p>API Response Status: {applicationStatus.hasApplications ? 'Has Applications' : 'No Applications'}</p>
+                <p>Applications Array: {applicationStatus.applications ? 'Exists' : 'Missing'}</p>
+              </div>
+            )}
             <Link
               to="/application"
               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
-              View Details
+              {applicationStatus?.hasApplications ? 'View Applications' : 'Start Application'}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
@@ -250,44 +338,30 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Lease Information */}
-        {leaseStatus?.hasApplication ? (
+        {/* Applications Status */}
+        {applicationStatus?.hasApplications ? (
           <div className="card mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Lease Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications Status</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="flex items-center space-x-3">
-                <Building2 className="w-5 h-5 text-gray-400" />
+                <FileText className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Lease Status</p>
+                  <p className="text-sm font-medium text-gray-900">Total Applications</p>
                   <p className="text-sm text-gray-600">
-                    {leaseStatus?.leaseSigned ? 'Signed' : 'Available for Review'}
+                    {applicationStatus.totalApplications}
                   </p>
                 </div>
               </div>
               
-              {leaseStatus?.leaseStartDate && (
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Lease Start Date</p>
-                    <p className="text-sm text-gray-600">
-                      {formatDate(leaseStatus.leaseStartDate)}
-                    </p>
-                  </div>
+              <div className="flex items-center space-x-3">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Latest Status</p>
+                  <p className="text-sm text-gray-600">
+                    {getStatusText(applicationStatus.latestStatus)}
+                  </p>
                 </div>
-              )}
-              
-              {leaseStatus?.leaseEndDate && (
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Lease End Date</p>
-                    <p className="text-sm text-gray-600">
-                      {formatDate(leaseStatus.leaseEndDate)}
-                    </p>
-                  </div>
-                </div>
-              )}
+              </div>
               
               {leaseStatus?.rentalAmount && (
                 <div className="flex items-center space-x-3">
@@ -300,51 +374,126 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-              
-              {leaseStatus?.depositAmount && (
-                <div className="flex items-center space-x-3">
-                  <DollarSign className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Security Deposit</p>
-                    <p className="text-sm text-gray-600">
-                      ${leaseStatus.depositAmount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
             
             <div className="mt-4 pt-4 border-t border-gray-200">
               <Link
-                to="/lease"
+                to="/application"
                 className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
               >
-                {leaseStatus?.leaseSigned ? 'View Full Lease Agreement' : 'Review Lease'}
+                Manage Applications
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
           </div>
         ) : (
           <div className="card mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Lease Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start">
-                <Building2 className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                <FileText className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
-                  <p className="font-medium">Complete Application First</p>
+                  <p className="font-medium">No Applications Yet</p>
                   <p className="mt-1">
-                    You need to complete your rental application before you can access lease information.
+                    You need to complete your rental application to get started.
                   </p>
                   <Link
                     to="/application"
                     className="mt-2 inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
-                    Go to Application
+                    Start Application
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </Link>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Applications List */}
+        {applicationStatus?.hasApplications && (
+          <div className="card mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Your Applications</h2>
+              <Link
+                to="/application"
+                className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
+              >
+                New Application
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
+            {/* Debug info for applications list */}
+            <div className="text-xs text-gray-500 mb-4 p-2 bg-gray-100 rounded">
+              <p>Debug - Applications List Section:</p>
+              <p>hasApplications: {applicationStatus.hasApplications?.toString()}</p>
+              <p>totalApplications: {applicationStatus.totalApplications}</p>
+              <p>applications array exists: {applicationStatus.applications ? 'Yes' : 'No'}</p>
+              <p>applications length: {applicationStatus.applications?.length || 0}</p>
+            </div>
+                         <div className="space-y-4">
+               {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
+                 applicationStatus.applications.map((app) => (
+                   <div key={app.id} className="border border-gray-200 rounded-lg p-4">
+                     <div className="flex items-center justify-between mb-3">
+                       <div className="flex items-center space-x-3">
+                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
+                           {getStatusText(app.status)}
+                         </span>
+                         <span className="text-sm text-gray-500">
+                           {formatDate(app.createdAt)}
+                         </span>
+                       </div>
+                       <Link
+                         to={`/application/${app.id}`}
+                         className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                       >
+                         View Details
+                         <ArrowRight className="w-4 h-4 ml-1 inline" />
+                       </Link>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                         <p className="text-sm font-medium text-gray-900">Requested Start</p>
+                         <p className="text-sm text-gray-600">{app.requestedMonths || 'Not specified'}</p>
+                       </div>
+                       {app.submittedAt && (
+                         <div>
+                           <p className="text-sm font-medium text-gray-900">Submitted</p>
+                           <p className="text-sm text-gray-600">{formatDate(app.submittedAt)}</p>
+                         </div>
+                       )}
+                       {app.reviewedAt && (
+                         <div>
+                           <p className="text-sm font-medium text-gray-900">Reviewed</p>
+                           <p className="text-sm text-gray-600">{formatDate(app.reviewedAt)}</p>
+                         </div>
+                       )}
+                     </div>
+                     {/* Status Description */}
+                     <div className="mt-3 pt-3 border-t border-gray-200">
+                       <p className="text-sm text-gray-600">
+                         {app.status === 'draft' && 'This application is saved as a draft. Click "Submit Application" when ready to submit for review.'}
+                         {app.status === 'pending' && 'Your application has been submitted and is currently under review by our team.'}
+                         {app.status === 'approved' && 'Congratulations! Your application has been approved. We will contact you to proceed with the lease agreement.'}
+                         {app.status === 'rejected' && 'Your application was not approved at this time. Please contact us for more information.'}
+                       </p>
+                     </div>
+                     {app.notes && (
+                       <div className="mt-3 pt-3 border-t border-gray-200">
+                         <p className="text-sm font-medium text-gray-900">Admin Notes</p>
+                         <p className="text-sm text-gray-600">{app.notes}</p>
+                       </div>
+                     )}
+                   </div>
+                 ))
+               ) : (
+                 <div className="text-center py-8 text-gray-500">
+                   <p>No applications found in the array.</p>
+                   <p className="text-sm">This might indicate a data issue.</p>
+                 </div>
+               )}
+             </div>
           </div>
         )}
 

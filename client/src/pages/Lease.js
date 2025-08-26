@@ -21,7 +21,7 @@ const Lease = () => {
   const generateLeaseFromData = useCallback(async (leaseInfo) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/lease/generate', {
+      const response = await axios.post(`/api/lease/generate/${leaseInfo.applicationId}`, {
         leaseStartDate: leaseInfo?.leaseStartDate || formatDateForAPI(new Date()),
         leaseEndDate: leaseInfo?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
         rentalAmount: leaseInfo?.rentalAmount || 2500
@@ -66,7 +66,7 @@ const Lease = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/lease/generate', {
+      const response = await axios.post(`/api/lease/generate/${leaseData.applicationId}`, {
         leaseStartDate: leaseData?.leaseStartDate || formatDateForAPI(new Date()),
         leaseEndDate: leaseData?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
         rentalAmount: leaseData?.rentalAmount || 2500
@@ -303,26 +303,10 @@ const Lease = () => {
 
             {leaseContent && (
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {leaseData?.leaseSigned ? 'Your Lease Agreement' : 'Generated Lease Agreement'}
                   </h3>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={previewLease}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Preview
-                    </button>
-                    <button
-                      onClick={downloadLease}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </button>
-                  </div>
                 </div>
                 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">

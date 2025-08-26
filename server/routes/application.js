@@ -4,13 +4,27 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Get user's application
+// Get user's applications
 router.get('/', auth, async (req, res) => {
   try {
-    const application = await Application.findOne({ userId: req.user._id });
+    const applications = await Application.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json({ applications });
+  } catch (error) {
+    console.error('Applications fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching applications' });
+  }
+});
+
+// Get specific application by ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const application = await Application.findOne({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
     
     if (!application) {
-      return res.json({ application: null });
+      return res.status(404).json({ error: 'Application not found' });
     }
     
     res.json({ application });
@@ -23,25 +37,17 @@ router.get('/', auth, async (req, res) => {
 // Create new application
 router.post('/', auth, async (req, res) => {
   try {
-    // Check if user already has an application
-    const existingApplication = await Application.findOne({ userId: req.user._id });
-    if (existingApplication) {
-      return res.status(400).json({ error: 'Application already exists for this user' });
-    }
-
     const applicationData = {
       ...req.body,
-      userId: req.user._id
+      userId: req.user._id,
+      status: 'draft'
     };
 
     const application = new Application(applicationData);
     await application.save();
 
-    // Update user's application status
-    await User.findByIdAndUpdate(req.user._id, { applicationCompleted: true });
-
     res.status(201).json({
-      message: 'Application submitted successfully',
+      message: 'Application created successfully',
       application
     });
   } catch (error) {
@@ -54,9 +60,12 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update application
-router.put('/', auth, async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
-    const application = await Application.findOne({ userId: req.user._id });
+    const application = await Application.findOne({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
     
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
@@ -84,10 +93,13 @@ router.put('/', auth, async (req, res) => {
   }
 });
 
-// Submit application (mark as complete)
-router.post('/submit', auth, async (req, res) => {
+// Submit application (mark as pending)
+router.post('/:id/submit', auth, async (req, res) => {
   try {
-    const application = await Application.findOne({ userId: req.user._id });
+    const application = await Application.findOne({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
     
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
@@ -95,11 +107,8 @@ router.post('/submit', auth, async (req, res) => {
 
     // Validate required fields
     const requiredFields = [
-      'firstName', 'lastName', 'email', 'phone', 'dateOfBirth', 'ssn',
-      'currentAddress.street', 'currentAddress.city', 'currentAddress.state', 'currentAddress.zipCode',
-      'employment.employerName', 'employment.jobTitle', 'employment.monthlyIncome',
-      'rentalProperty.address.street', 'rentalProperty.address.city', 'rentalProperty.address.state', 'rentalProperty.address.zipCode',
-      'rentalProperty.rentalAmount', 'rentalProperty.depositAmount'
+      'firstName', 'lastName', 'phone', 'address.street', 'address.city', 
+      'address.state', 'address.zipCode', 'requestedMonths'
     ];
 
     const missingFields = [];
@@ -117,15 +126,11 @@ router.post('/submit', auth, async (req, res) => {
       });
     }
 
-    // Mark application as complete and submitted
-    application.isComplete = true;
+    // Mark application as submitted
     application.status = 'pending';
     application.submittedAt = new Date();
     
     await application.save();
-
-    // Update user's application status
-    await User.findByIdAndUpdate(req.user._id, { applicationCompleted: true });
 
     res.json({
       message: 'Application submitted successfully',
@@ -134,6 +139,34 @@ router.post('/submit', auth, async (req, res) => {
   } catch (error) {
     console.error('Application submission error:', error);
     res.status(500).json({ error: 'Server error submitting application' });
+  }
+});
+
+// Delete application
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const application = await Application.findOne({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
+    
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Only allow deletion of draft applications
+    if (application.status !== 'draft') {
+      return res.status(400).json({ error: 'Only draft applications can be deleted' });
+    }
+
+    await Application.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: 'Application deleted successfully'
+    });
+  } catch (error) {
+    console.error('Application deletion error:', error);
+    res.status(500).json({ error: 'Server error deleting application' });
   }
 });
 
@@ -191,28 +224,60 @@ router.delete('/documents/:documentId', auth, async (req, res) => {
   }
 });
 
-// Get application status
+// Get application status summary
 router.get('/status', auth, async (req, res) => {
   try {
-    const application = await Application.findOne({ userId: req.user._id });
+    const applications = await Application.find({ userId: req.user._id }).sort({ createdAt: -1 });
     
-    if (!application) {
+    if (applications.length === 0) {
       return res.json({ 
-        status: 'not_started',
-        message: 'No application found'
+        hasApplications: false,
+        totalApplications: 0,
+        latestStatus: 'not_started',
+        applications: []
       });
     }
-
+    
+    // Get the most recent application for overall status
+    const latestApplication = applications[0];
+    
+    // Determine the overall status based on applications
+    let overallStatus = latestApplication.status;
+    
+    // If any application is approved, show approved
+    if (applications.some(app => app.status === 'approved')) {
+      overallStatus = 'approved';
+    }
+    // If any application is pending, show pending
+    else if (applications.some(app => app.status === 'pending')) {
+      overallStatus = 'pending';
+    }
+    // If any application is rejected, show rejected
+    else if (applications.some(app => app.status === 'rejected')) {
+      overallStatus = 'rejected';
+    }
+    // If all are draft, show draft
+    else if (applications.every(app => app.status === 'draft')) {
+      overallStatus = 'draft';
+    }
+    
     res.json({
-      status: application.status,
-      isComplete: application.isComplete,
-      submittedAt: application.submittedAt,
-      reviewedAt: application.reviewedAt,
-      notes: application.notes
+      hasApplications: true,
+      totalApplications: applications.length,
+      latestStatus: overallStatus,
+      applications: applications.map(app => ({
+        id: app._id,
+        status: app.status,
+        requestedMonths: app.requestedMonths,
+        submittedAt: app.submittedAt,
+        reviewedAt: app.reviewedAt,
+        notes: app.notes,
+        createdAt: app.createdAt
+      }))
     });
   } catch (error) {
-    console.error('Status fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching status' });
+    console.error('Application status fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching application status' });
   }
 });
 
