@@ -15,7 +15,62 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-
+// Get application status summary
+router.get('/status', auth, async (req, res) => {
+  try {
+    const applications = await Application.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    
+    if (applications.length === 0) {
+      return res.json({ 
+        hasApplications: false,
+        totalApplications: 0,
+        latestStatus: 'not_started',
+        applications: []
+      });
+    }
+    
+    // Get the most recent application for overall status
+    const latestApplication = applications[0];
+    
+    // Determine the overall status based on applications
+    let overallStatus = latestApplication.status;
+    
+    // If any application is approved, show approved
+    if (applications.some(app => app.status === 'approved')) {
+      overallStatus = 'approved';
+    }
+    // If any application is pending, show pending
+    else if (applications.some(app => app.status === 'pending')) {
+      overallStatus = 'pending';
+    }
+    // If any application is rejected, show rejected
+    else if (applications.some(app => app.status === 'rejected')) {
+      overallStatus = 'rejected';
+    }
+    // If all are draft, show draft
+    else if (applications.every(app => app.status === 'draft')) {
+      overallStatus = 'draft';
+    }
+    
+    res.json({
+      hasApplications: true,
+      totalApplications: applications.length,
+      latestStatus: overallStatus,
+      applications: applications.map(app => ({
+        id: app._id,
+        status: app.status,
+        requestedMonths: app.requestedMonths,
+        submittedAt: app.submittedAt,
+        reviewedAt: app.reviewedAt,
+        notes: app.notes,
+        createdAt: app.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('Application status fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching application status' });
+  }
+});
 
 // Get specific application by ID
 router.get('/:id', auth, async (req, res) => {
@@ -223,63 +278,6 @@ router.delete('/documents/:documentId', auth, async (req, res) => {
   } catch (error) {
     console.error('Document removal error:', error);
     res.status(500).json({ error: 'Server error removing document' });
-  }
-});
-
-// Get application status summary
-router.get('/status', auth, async (req, res) => {
-  try {
-    const applications = await Application.find({ userId: req.user._id }).sort({ createdAt: -1 });
-    
-    if (applications.length === 0) {
-      return res.json({ 
-        hasApplications: false,
-        totalApplications: 0,
-        latestStatus: 'not_started',
-        applications: []
-      });
-    }
-    
-    // Get the most recent application for overall status
-    const latestApplication = applications[0];
-    
-    // Determine the overall status based on applications
-    let overallStatus = latestApplication.status;
-    
-    // If any application is approved, show approved
-    if (applications.some(app => app.status === 'approved')) {
-      overallStatus = 'approved';
-    }
-    // If any application is pending, show pending
-    else if (applications.some(app => app.status === 'pending')) {
-      overallStatus = 'pending';
-    }
-    // If any application is rejected, show rejected
-    else if (applications.some(app => app.status === 'rejected')) {
-      overallStatus = 'rejected';
-    }
-    // If all are draft, show draft
-    else if (applications.every(app => app.status === 'draft')) {
-      overallStatus = 'draft';
-    }
-    
-    res.json({
-      hasApplications: true,
-      totalApplications: applications.length,
-      latestStatus: overallStatus,
-      applications: applications.map(app => ({
-        id: app._id,
-        status: app.status,
-        requestedMonths: app.requestedMonths,
-        submittedAt: app.submittedAt,
-        reviewedAt: app.reviewedAt,
-        notes: app.notes,
-        createdAt: app.createdAt
-      }))
-    });
-  } catch (error) {
-    console.error('Application status fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching application status' });
   }
 });
 
