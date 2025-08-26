@@ -15,6 +15,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+
+
 // Get specific application by ID
 router.get('/:id', auth, async (req, res) => {
   try {
