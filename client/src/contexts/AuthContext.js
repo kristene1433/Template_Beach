@@ -56,7 +56,16 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/auth/login', { email, password });
       const { token: newToken, user: userData } = response.data;
       
+      // Set token in localStorage first
       localStorage.setItem('token', newToken);
+      
+      // Update axios headers BEFORE setting state
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // Small delay to ensure headers are set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Then update state
       setToken(newToken);
       setUser(userData);
       
@@ -75,7 +84,16 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/auth/register', { firstName, email, password });
       const { token: newToken, user: newUser } = response.data;
       
+      // Set token in localStorage first
       localStorage.setItem('token', newToken);
+      
+      // Update axios headers BEFORE setting state
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // Small delay to ensure headers are set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Then update state
       setToken(newToken);
       setUser(newUser);
       
