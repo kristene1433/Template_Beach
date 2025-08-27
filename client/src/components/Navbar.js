@@ -10,20 +10,23 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
+    const wasAdmin = user?.role === 'admin';
     await logout();
-    navigate('/');
+    navigate(wasAdmin ? '/admin/login' : '/');
     setIsMobileMenuOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
 
-  const navLinks = user ? [
+  const navLinks = user ? (user.role === 'admin' ? [
+    { path: '/admin/dashboard', label: 'Admin Dashboard', icon: Home },
+  ] : [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/application', label: 'Application', icon: FileText },
     { path: '/payment', label: 'Payment', icon: CreditCard },
     { path: '/lease', label: 'Lease', icon: Building2 },
     { path: '/contact', label: 'Contact', icon: Mail },
-  ] : [];
+  ]) : [];
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">

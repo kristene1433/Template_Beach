@@ -75,7 +75,7 @@ const AppRoutes = () => {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <Dashboard />
+            {user?.role === 'admin' ? <Navigate to="/admin/dashboard" /> : <Dashboard />}
           </ProtectedRoute>
         } 
       />

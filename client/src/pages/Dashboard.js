@@ -9,8 +9,7 @@ import {
   DollarSign,
   MapPin,
   Phone,
-  Mail,
-  Clock
+  Mail
 } from 'lucide-react';
 import axios from 'axios';
 
