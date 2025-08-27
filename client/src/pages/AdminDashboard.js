@@ -247,12 +247,17 @@ const AdminDashboard = () => {
 
   const viewSignedLease = async (applicationId) => {
     try {
+      console.log('Attempting to view signed lease for application:', applicationId);
+      console.log('User token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+      
       const response = await axios.get(`/api/lease/view-signed/${applicationId}`, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
+      console.log('Response received:', response.status, response.headers);
       
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
@@ -261,7 +266,13 @@ const AdminDashboard = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Error viewing signed lease:', error);
-      toast.error('Error viewing signed lease');
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+      toast.error(`Error viewing signed lease: ${error.response?.status || error.message}`);
     }
   };
 

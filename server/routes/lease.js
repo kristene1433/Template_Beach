@@ -520,23 +520,38 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
 router.get('/view-signed/:applicationId', auth, async (req, res) => {
   try {
     const { applicationId } = req.params;
+    console.log('View signed lease request:', { applicationId, userId: req.user._id, userRole: req.user.role });
     
     let application;
     
     // If user is admin, they can view any application's signed lease
     if (req.user.role === 'admin') {
       application = await Application.findById(applicationId);
+      console.log('Admin access - found application:', application ? 'Yes' : 'No');
     } else {
       // Regular users can only view their own signed lease
       application = await Application.findOne({ 
         _id: applicationId, 
         userId: req.user._id 
       });
+      console.log('User access - found application:', application ? 'Yes' : 'No');
     }
 
-    if (!application || !application.signedLeaseFile) {
-      return res.status(404).json({ error: 'Signed lease not found' });
+    if (!application) {
+      console.log('Application not found');
+      return res.status(404).json({ error: 'Application not found' });
     }
+    
+    if (!application.signedLeaseFile) {
+      console.log('No signed lease file found');
+      return res.status(404).json({ error: 'Signed lease file not found' });
+    }
+    
+    console.log('Signed lease file found:', {
+      hasContent: !!application.signedLeaseFile.content,
+      originalName: application.signedLeaseFile.originalName,
+      mimetype: application.signedLeaseFile.mimetype
+    });
 
     // Check if file content exists in database
     if (!application.signedLeaseFile.content) {
