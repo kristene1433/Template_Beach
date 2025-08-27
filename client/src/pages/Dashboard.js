@@ -222,20 +222,7 @@ const Dashboard = () => {
                 `You have ${applicationStatus.totalApplications} application${applicationStatus.totalApplications > 1 ? 's' : ''}` :
                 'Complete your rental application to get started'}
             </p>
-            {/* Debug info - remove this later */}
-            {applicationStatus && (
-              <div className="text-xs text-gray-500 mt-2 space-y-1">
-                <p>Debug: hasApplications={applicationStatus.hasApplications?.toString()}, 
-                totalApplications={applicationStatus.totalApplications}, 
-                latestStatus={applicationStatus.latestStatus}</p>
-                {applicationStatus.applications && (
-                  <p>Applications array length: {applicationStatus.applications.length}</p>
-                )}
-                <p>Raw applicationStatus: {JSON.stringify(applicationStatus, null, 2)}</p>
-                <p>API Response Status: {applicationStatus.hasApplications ? 'Has Applications' : 'No Applications'}</p>
-                <p>Applications Array: {applicationStatus.applications ? 'Exists' : 'Missing'}</p>
-              </div>
-            )}
+            
             <Link
               to="/application"
               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
@@ -423,14 +410,7 @@ const Dashboard = () => {
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
-            {/* Debug info for applications list */}
-            <div className="text-xs text-gray-500 mb-4 p-2 bg-gray-100 rounded">
-              <p>Debug - Applications List Section:</p>
-              <p>hasApplications: {applicationStatus.hasApplications?.toString()}</p>
-              <p>totalApplications: {applicationStatus.totalApplications}</p>
-              <p>applications array exists: {applicationStatus.applications ? 'Yes' : 'No'}</p>
-              <p>applications length: {applicationStatus.applications?.length || 0}</p>
-            </div>
+            
                          <div className="space-y-4">
                {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
                  applicationStatus.applications.map((app) => (
