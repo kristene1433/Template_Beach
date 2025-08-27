@@ -50,8 +50,8 @@ const Lease = () => {
         if (response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
         }
-        // Check if there's an uploaded signed lease
-        if (response.data.signedLeaseFile) {
+        // Check if there's an uploaded signed lease - only set if it actually exists
+        if (response.data.signedLeaseFile && response.data.signedLeaseFile.filename) {
           setUploadedLease({
             filename: response.data.signedLeaseFile.filename,
             originalName: response.data.signedLeaseFile.originalName,
@@ -59,6 +59,9 @@ const Lease = () => {
             size: response.data.signedLeaseFile.size,
             uploadedAt: response.data.signedLeaseFile.uploadedAt
           });
+        } else {
+          // Clear any existing uploaded lease state
+          setUploadedLease(null);
         }
       }
     } catch (error) {
@@ -105,18 +108,15 @@ const Lease = () => {
     }
   };
 
-  const downloadLease = async () => {
+  const downloadLease = () => {
+    if (!leaseContent) {
+      toast.error('No lease content available. Please generate the lease first.');
+      return;
+    }
+    
     try {
-      const response = await axios.get('/api/lease/download', {
-        params: {
-          leaseStartDate: leaseData?.leaseStartDate || formatDateForAPI(new Date()),
-          leaseEndDate: leaseData?.leaseEndDate || formatDateForAPI(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
-          rentalAmount: leaseData?.rentalAmount || 2500
-        },
-        responseType: 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blob = new Blob([leaseContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `lease-agreement-${user.firstName}-${user.lastName}.txt`);
@@ -127,6 +127,7 @@ const Lease = () => {
       
       toast.success('Lease agreement downloaded successfully!');
     } catch (error) {
+      console.error('Error downloading lease:', error);
       toast.error('Error downloading lease agreement');
     }
   };
@@ -426,31 +427,37 @@ const Lease = () => {
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm text-gray-700">
-                          Signed lease uploaded: {uploadedLease.originalName}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => window.open(uploadedLease.url, '_blank')}
-                          className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </button>
-                        <button
-                          onClick={removeUploadedLease}
-                          className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                                     ) : (
+                     uploadedLease && uploadedLease.filename ? (
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-2">
+                           <CheckCircle className="w-5 h-5 text-green-600" />
+                           <span className="text-sm text-gray-700">
+                             Signed lease uploaded: {uploadedLease.originalName}
+                           </span>
+                         </div>
+                         <div className="flex items-center space-x-2">
+                           <button
+                             onClick={() => window.open(uploadedLease.url, '_blank')}
+                             className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center"
+                           >
+                             <Eye className="w-4 h-4 mr-2" />
+                             View
+                           </button>
+                           <button
+                             onClick={removeUploadedLease}
+                             className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"
+                           >
+                             Remove
+                           </button>
+                         </div>
+                       </div>
+                     ) : (
+                       <div className="text-sm text-gray-500">
+                         No signed lease uploaded yet. Please scan and upload your signed lease above.
+                       </div>
+                     )
+                   )}
                   
                   <p className="text-xs text-gray-500 mt-2">
                     Supported formats: PDF, JPEG, PNG (max 10MB). Scan your signed lease and upload it here.
