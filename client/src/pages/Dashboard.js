@@ -66,8 +66,6 @@ const Dashboard = () => {
       case 'rejected':
       case 'failed':
         return 'text-red-600 bg-red-100';
-      case 'draft':
-        return 'text-gray-600 bg-gray-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -75,8 +73,6 @@ const Dashboard = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'draft':
-        return 'Draft';
       case 'pending':
         return 'Submitted';
       case 'approved':
@@ -352,13 +348,7 @@ const Dashboard = () => {
                            {formatDate(app.createdAt)}
                          </span>
                        </div>
-                       <Link
-                         to={`/application/${app.id}`}
-                         className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                       >
-                         View Details
-                         <ArrowRight className="w-4 h-4 ml-1 inline" />
-                       </Link>
+
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
@@ -381,7 +371,6 @@ const Dashboard = () => {
                      {/* Status Description */}
                      <div className="mt-3 pt-3 border-t border-gray-200">
                        <p className="text-sm text-gray-600">
-                         {app.status === 'draft' && 'This application is saved as a draft. Click "Submit Application" when ready to submit for review.'}
                          {app.status === 'pending' && 'Your application has been submitted and is currently under review by our team.'}
                          {app.status === 'approved' && 'Congratulations! Your application has been approved. We will contact you to proceed with the lease agreement.'}
                          {app.status === 'rejected' && 'Your application was not approved at this time. Please contact us for more information.'}

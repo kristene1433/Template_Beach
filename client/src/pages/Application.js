@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   User, 
@@ -8,16 +8,13 @@ import {
   Users, 
   Plus, 
   Trash2,
-  FileText,
-  Save,
-  Edit
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Application = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { id } = useParams(); // Get application ID from URL if viewing existing application
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -34,98 +31,7 @@ const Application = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
   const [errors, setErrors] = useState({});
-  const [existingApplication, setExistingApplication] = useState(null);
-  const [isViewMode, setIsViewMode] = useState(false);
-
-  // Load application data when component mounts
-  useEffect(() => {
-    if (!user) return;
-    
-    const loadApplicationData = async () => {
-      try {
-        if (id) {
-          // Loading specific application by ID
-          const response = await fetch(`/api/application/${id}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const app = data.application;
-            setExistingApplication(app);
-            setIsViewMode(true);
-            
-            // Pre-fill form with existing data
-            setFormData({
-              firstName: app.firstName || '',
-              lastName: app.lastName || '',
-              address: {
-                street: app.address?.street || '',
-                city: app.address?.city || '',
-                state: app.address?.state || '',
-                zipCode: app.address?.zipCode || '',
-              },
-              phone: app.phone || '',
-              requestedMonths: app.requestedMonths || '',
-              additionalGuests: (app.additionalGuests || []).map(guest => ({
-                ...guest,
-                id: guest.id || Date.now() + Math.random()
-              }))
-            });
-          } else {
-            toast.error('Application not found');
-            navigate('/dashboard');
-          }
-        } else {
-          // Loading most recent application (for editing)
-          const response = await fetch('/api/application', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.applications && data.applications.length > 0) {
-              const mostRecentApp = data.applications[0];
-              setExistingApplication(mostRecentApp);
-              
-              setFormData({
-                firstName: mostRecentApp.firstName || '',
-                lastName: mostRecentApp.lastName || '',
-                address: {
-                  street: mostRecentApp.address?.street || '',
-                  city: mostRecentApp.address?.city || '',
-                  state: mostRecentApp.address?.state || '',
-                  zipCode: mostRecentApp.address?.zipCode || '',
-                },
-                phone: mostRecentApp.phone || '',
-                requestedMonths: mostRecentApp.requestedMonths || '',
-                additionalGuests: (mostRecentApp.additionalGuests || []).map(guest => ({
-                  ...guest,
-                  id: guest.id || Date.now() + Math.random()
-                }))
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading application:', error);
-        if (id) {
-          toast.error('Failed to load application');
-          navigate('/dashboard');
-        }
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    loadApplicationData();
-  }, [user, id, navigate]);
 
   // Check if user is authenticated
   if (!user) {
@@ -254,15 +160,9 @@ const Application = () => {
         additionalGuests: filteredGuests
       };
 
-      // Determine if this is a create or update operation
-      const isUpdate = existingApplication !== null;
-      const method = isUpdate ? 'PUT' : 'POST';
-      const url = isUpdate ? `/api/application/${existingApplication._id}` : '/api/application';
-      const successMessage = isUpdate ? 'Application updated successfully!' : 'Application created successfully!';
-
-      // Send the data to the backend
-      const response = await fetch(url, {
-        method: method,
+      // Create the application
+      const response = await fetch('/api/application', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -272,19 +172,30 @@ const Application = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${isUpdate ? 'update' : 'submit'} application`);
+        throw new Error(errorData.error || 'Failed to create application');
       }
 
       const result = await response.json();
       
-      // Update the existing application state
-      setExistingApplication(result.application);
+      // Submit the application immediately
+      const submitResponse = await fetch(`/api/application/${result.application._id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!submitResponse.ok) {
+        const submitErrorData = await submitResponse.json();
+        throw new Error(submitErrorData.error || 'Failed to submit application');
+      }
+
+      toast.success('Application submitted successfully!');
       
-             toast.success(successMessage);
-       // Force a page reload to ensure dashboard shows updated data
-       window.location.href = '/dashboard';
+      // Navigate back to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      toast.error(error.message || `Failed to ${existingApplication ? 'update' : 'submit'} application. Please try again.`);
+      toast.error(error.message || 'Failed to submit application. Please try again.');
       console.error('Application submission error:', error);
     } finally {
       setIsLoading(false);
@@ -295,148 +206,25 @@ const Application = () => {
     return errors[fieldName] || '';
   };
 
-  const handleSubmitApplication = async () => {
-    if (!existingApplication) {
-      toast.error('Please save your application first before submitting');
-      return;
-    }
-
-    if (!validateForm()) {
-      toast.error('Please fix the errors before submitting');
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch(`/api/application/${existingApplication._id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit application');
-      }
-
-      const result = await response.json();
-      
-      // Update the existing application state
-      setExistingApplication(result.application);
-      
-                    toast.success('Application submitted successfully! It is now under review by our team.');
-       // Force a page reload to ensure dashboard shows updated data
-       window.location.href = '/dashboard';
-    } catch (error) {
-      toast.error(error.message || 'Failed to submit application. Please try again.');
-      console.error('Application submission error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Show loading spinner while loading data
-  if (isLoadingData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading application...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="text-left mb-4">
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Rental Application</h1>
+              <p className="text-gray-600 mt-2">
+                Complete your rental application to get started
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="btn-secondary"
             >
-              ← Back to Dashboard
-            </Link>
+              Back to Dashboard
+            </button>
           </div>
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            {existingApplication ? (
-              <Edit className="h-8 w-8 text-white" />
-            ) : (
-              <FileText className="h-8 w-8 text-white" />
-            )}
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isViewMode ? 'View Application' : existingApplication ? 'Edit Application' : 'Rental Application'}
-          </h1>
-          <p className="text-lg text-gray-600">
-            {isViewMode 
-              ? 'Review your submitted rental application details' 
-              : existingApplication 
-                ? 'Update your rental application information' 
-                : 'Complete your application for the Gulf Shores beachfront condo'
-            }
-          </p>
-          {!existingApplication && (
-            <p className="text-sm text-gray-500 mt-2">
-              You can save your application as a draft and submit it when ready, or submit it immediately.
-            </p>
-          )}
-                     {existingApplication && (
-             <div className="mt-2">
-               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                 existingApplication.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                 existingApplication.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                 existingApplication.status === 'approved' ? 'bg-green-100 text-green-800' :
-                 existingApplication.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                 'bg-blue-100 text-blue-800'
-               }`}>
-                 Application Status: {
-                   existingApplication.status === 'draft' ? 'Draft' :
-                   existingApplication.status === 'pending' ? 'Submitted' :
-                   existingApplication.status === 'approved' ? 'Approved' :
-                   existingApplication.status === 'rejected' ? 'Declined' :
-                   'Unknown'
-                 }
-               </span>
-             </div>
-           )}
-                     {existingApplication && !isViewMode && (
-             <div className="mt-3">
-               <button
-                 onClick={() => {
-                   setExistingApplication(null);
-                   setFormData({
-                     firstName: '',
-                     lastName: '',
-                     address: { street: '', city: '', state: '', zipCode: '' },
-                     phone: '',
-                     requestedMonths: '',
-                     additionalGuests: []
-                   });
-                 }}
-                 className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-               >
-                 <Plus className="h-4 w-4 mr-2" />
-                 Create New Application
-               </button>
-             </div>
-           )}
-           {/* Application Workflow Explanation */}
-           {existingApplication && !isViewMode && (
-             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-               <h4 className="text-sm font-medium text-blue-900 mb-2">Application Workflow:</h4>
-               <div className="text-xs text-blue-800 space-y-1">
-                 <p>• <strong>Draft:</strong> Save your application and edit later</p>
-                 <p>• <strong>Submit:</strong> Click "Submit Application" to send for review</p>
-                 <p>• <strong>Under Review:</strong> Our team will review your application</p>
-                 <p>• <strong>Approved:</strong> We'll contact you to proceed with lease</p>
-                 <p>• <strong>Declined:</strong> Contact us for more information</p>
-               </div>
-             </div>
-           )}
         </div>
 
         <div className="card">
@@ -461,8 +249,7 @@ const Application = () => {
                     required
                     value={formData.firstName}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field ${getFieldError('firstName') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`input-field ${getFieldError('firstName') ? 'border-red-300 focus:ring-red-500' : ''}`}
                     placeholder="Enter your first name"
                   />
                   {getFieldError('firstName') && (
@@ -482,8 +269,7 @@ const Application = () => {
                     required
                     value={formData.lastName}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field ${getFieldError('lastName') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`input-field ${getFieldError('lastName') ? 'border-red-300 focus:ring-red-500' : ''}`}
                     placeholder="Enter your last name"
                   />
                   {getFieldError('lastName') && (
@@ -508,8 +294,7 @@ const Application = () => {
                     required
                     value={formData.phone}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field pl-10 ${getFieldError('phone') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`input-field pl-10 ${getFieldError('phone') ? 'border-red-300 focus:ring-red-500' : ''}`}
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -528,8 +313,7 @@ const Application = () => {
                   required
                   value={formData.requestedMonths}
                   onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`input-field ${getFieldError('requestedMonths') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  className={`input-field ${getFieldError('requestedMonths') ? 'border-red-300 focus:ring-red-500' : ''}`}
                 >
                   <option value="">Select a month</option>
                   <option value="January 2025">January 2025</option>
@@ -563,11 +347,11 @@ const Application = () => {
               </div>
             </div>
 
-            {/* Address Section */}
+            {/* Current Address Section */}
             <div className="form-section">
               <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                 <MapPin className="h-5 w-5 mr-2 text-blue-600" />
-                Address
+                Current Address
               </h3>
               
               <div className="form-group">
@@ -582,9 +366,8 @@ const Application = () => {
                   required
                   value={formData.address.street}
                   onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`input-field ${getFieldError('address.street') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                  placeholder="Enter street address"
+                  className={`input-field ${getFieldError('address.street') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                  placeholder="Enter your street address"
                 />
                 {getFieldError('address.street') && (
                   <p className="form-error">{getFieldError('address.street')}</p>
@@ -604,9 +387,8 @@ const Application = () => {
                     required
                     value={formData.address.city}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field ${getFieldError('address.city') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    placeholder="City"
+                    className={`input-field ${getFieldError('address.city') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    placeholder="Enter your city"
                   />
                   {getFieldError('address.city') && (
                     <p className="form-error">{getFieldError('address.city')}</p>
@@ -617,18 +399,67 @@ const Application = () => {
                   <label htmlFor="address.state" className="form-label">
                     State *
                   </label>
-                  <input
+                  <select
                     id="address.state"
                     name="address.state"
-                    type="text"
-                    autoComplete="address-level1"
                     required
                     value={formData.address.state}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field ${getFieldError('address.state') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    placeholder="State"
-                  />
+                    className={`input-field ${getFieldError('address.state') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                  >
+                    <option value="">Select state</option>
+                    <option value="AL">Alabama</option>
+                    <option value="AK">Alaska</option>
+                    <option value="AZ">Arizona</option>
+                    <option value="AR">Arkansas</option>
+                    <option value="CA">California</option>
+                    <option value="CO">Colorado</option>
+                    <option value="CT">Connecticut</option>
+                    <option value="DE">Delaware</option>
+                    <option value="DC">District Of Columbia</option>
+                    <option value="FL">Florida</option>
+                    <option value="GA">Georgia</option>
+                    <option value="HI">Hawaii</option>
+                    <option value="ID">Idaho</option>
+                    <option value="IL">Illinois</option>
+                    <option value="IN">Indiana</option>
+                    <option value="IA">Iowa</option>
+                    <option value="KS">Kansas</option>
+                    <option value="KY">Kentucky</option>
+                    <option value="LA">Louisiana</option>
+                    <option value="ME">Maine</option>
+                    <option value="MD">Maryland</option>
+                    <option value="MA">Massachusetts</option>
+                    <option value="MI">Michigan</option>
+                    <option value="MN">Minnesota</option>
+                    <option value="MS">Mississippi</option>
+                    <option value="MO">Missouri</option>
+                    <option value="MT">Montana</option>
+                    <option value="NE">Nebraska</option>
+                    <option value="NV">Nevada</option>
+                    <option value="NH">New Hampshire</option>
+                    <option value="NJ">New Jersey</option>
+                    <option value="NM">New Mexico</option>
+                    <option value="NY">New York</option>
+                    <option value="NC">North Carolina</option>
+                    <option value="ND">North Dakota</option>
+                    <option value="OH">Ohio</option>
+                    <option value="OK">Oklahoma</option>
+                    <option value="OR">Oregon</option>
+                    <option value="PA">Pennsylvania</option>
+                    <option value="RI">Rhode Island</option>
+                    <option value="SC">South Carolina</option>
+                    <option value="SD">South Dakota</option>
+                    <option value="TN">Tennessee</option>
+                    <option value="TX">Texas</option>
+                    <option value="UT">Utah</option>
+                    <option value="VT">Vermont</option>
+                    <option value="VA">Virginia</option>
+                    <option value="WA">Washington</option>
+                    <option value="WV">West Virginia</option>
+                    <option value="WI">Wisconsin</option>
+                    <option value="WY">Wyoming</option>
+                  </select>
                   {getFieldError('address.state') && (
                     <p className="form-error">{getFieldError('address.state')}</p>
                   )}
@@ -646,9 +477,8 @@ const Application = () => {
                     required
                     value={formData.address.zipCode}
                     onChange={handleChange}
-                    disabled={isViewMode}
-                    className={`input-field ${getFieldError('address.zipCode') ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    placeholder="ZIP Code"
+                    className={`input-field ${getFieldError('address.zipCode') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    placeholder="Enter your ZIP code"
                   />
                   {getFieldError('address.zipCode') && (
                     <p className="form-error">{getFieldError('address.zipCode')}</p>
@@ -664,37 +494,31 @@ const Application = () => {
                   <Users className="h-5 w-5 mr-2 text-blue-600" />
                   Additional Guests
                 </h3>
-                {!isViewMode && (
-                  <button
-                    type="button"
-                    onClick={addGuest}
-                    className="btn-secondary flex items-center"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Guest
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={addGuest}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Guest
+                </button>
               </div>
 
               {formData.additionalGuests.length === 0 && (
-                <p className="text-gray-500 text-center py-4">
-                  No additional guests added yet. Click "Add Guest" to include family members or roommates.
-                </p>
+                <p className="text-gray-500 text-sm">No additional guests added yet.</p>
               )}
 
               {formData.additionalGuests.map((guest, index) => (
                 <div key={guest.id} className="border border-gray-200 rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900">Guest {index + 1}</h4>
-                    {!isViewMode && (
-                      <button
-                        type="button"
-                        onClick={() => removeGuest(guest.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
+                    <h4 className="text-sm font-medium text-gray-900">Guest {index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => removeGuest(guest.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -704,8 +528,7 @@ const Application = () => {
                         type="text"
                         value={guest.firstName}
                         onChange={(e) => updateGuest(guest.id, 'firstName', e.target.value)}
-                        disabled={isViewMode}
-                        className={`input-field ${getFieldError(`guest${index}FirstName`) ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        className={`input-field ${getFieldError(`guest${index}FirstName`) ? 'border-red-300 focus:ring-red-500' : ''}`}
                         placeholder="First name"
                       />
                       {getFieldError(`guest${index}FirstName`) && (
@@ -719,8 +542,7 @@ const Application = () => {
                         type="text"
                         value={guest.lastName}
                         onChange={(e) => updateGuest(guest.id, 'lastName', e.target.value)}
-                        disabled={isViewMode}
-                        className={`input-field ${getFieldError(`guest${index}LastName`) ? 'border-red-300 focus:ring-red-500' : ''} ${isViewMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        className={`input-field ${getFieldError(`guest${index}LastName`) ? 'border-red-300 focus:ring-red-500' : ''}`}
                         placeholder="Last name"
                       />
                       {getFieldError(`guest${index}LastName`) && (
@@ -730,14 +552,13 @@ const Application = () => {
                   </div>
 
                   <div className="flex items-center">
-                                      <input
-                    id={`adult-${guest.id}`}
-                    type="checkbox"
-                    checked={guest.isAdult}
-                    onChange={(e) => updateGuest(guest.id, 'isAdult', e.target.checked)}
-                    disabled={isViewMode}
-                    className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${isViewMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  />
+                    <input
+                      id={`adult-${guest.id}`}
+                      type="checkbox"
+                      checked={guest.isAdult}
+                      onChange={(e) => updateGuest(guest.id, 'isAdult', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
                     <label htmlFor={`adult-${guest.id}`} className="ml-2 text-sm text-gray-700">
                       Adult (18+ years old)
                     </label>
@@ -748,59 +569,26 @@ const Application = () => {
 
             {/* Form Buttons */}
             <div className="flex justify-end space-x-4">
-              {isViewMode ? (
-                <button
-                  type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className="btn-primary"
-                >
-                  Back to Dashboard
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/dashboard')}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  
-                  {existingApplication && existingApplication.status === 'draft' && (
-                    <div className="flex flex-col space-y-2">
-                      <button
-                        type="button"
-                        onClick={handleSubmitApplication}
-                        disabled={isLoading}
-                        className="btn-primary flex items-center bg-green-600 hover:bg-green-700"
-                      >
-                        {isLoading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        ) : (
-                          <FileText className="h-4 w-4 mr-2" />
-                        )}
-                        Submit for Review
-                      </button>
-                      <p className="text-xs text-gray-500 text-center">
-                        After submission, your application will be reviewed by our team
-                      </p>
-                    </div>
-                  )}
-                  
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="btn-primary flex items-center"
-                  >
-                    {isLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    {existingApplication ? 'Save Changes' : 'Create Application'}
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-primary flex items-center"
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <FileText className="h-4 w-4 mr-2" />
+                )}
+                Submit Application
+              </button>
             </div>
           </form>
         </div>
