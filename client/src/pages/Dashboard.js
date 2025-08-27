@@ -284,7 +284,7 @@ const Dashboard = () => {
         {/* Property Information */}
         <div className="card mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Property Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center space-x-3">
               <MapPin className="w-5 h-5 text-gray-400" />
               <div>
@@ -295,16 +295,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <DollarSign className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
-                <p className="text-sm text-gray-600">
-                  {leaseStatus?.rentalAmount ? `$${leaseStatus.rentalAmount.toLocaleString()}` : 
-                   leaseStatus?.hasApplication ? 'Pending lease generation' : 'Not specified'}
-                </p>
-              </div>
-            </div>
+            
             
             <div className="flex items-center space-x-3">
               <DollarSign className="w-5 h-5 text-gray-400" />
@@ -345,7 +336,7 @@ const Dashboard = () => {
                             {getStatusText(app.status)}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {formatDate(app.createdAt)}
+                            {formatDate(app.submittedAt)}
                           </span>
                         </div>
                         <Link
@@ -365,12 +356,6 @@ const Dashboard = () => {
                          <div>
                            <p className="text-sm font-medium text-gray-900">Submitted</p>
                            <p className="text-sm text-gray-600">{formatDate(app.submittedAt)}</p>
-                         </div>
-                       )}
-                       {app.reviewedAt && (
-                         <div>
-                           <p className="text-sm font-medium text-gray-900">Reviewed</p>
-                           <p className="text-sm text-gray-600">{formatDate(app.reviewedAt)}</p>
                          </div>
                        )}
                      </div>

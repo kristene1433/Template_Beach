@@ -1,8 +1,46 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/signed-leases';
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Allow only PDF and image files
+    if (file.mimetype === 'application/pdf' || 
+        file.mimetype === 'image/jpeg' || 
+        file.mimetype === 'image/jpg' || 
+        file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF, JPEG, and PNG files are allowed'), false);
+    }
+  }
+});
 
 // Generate lease agreement for a specific application
 router.post('/generate/:applicationId', auth, async (req, res) => {
@@ -261,7 +299,8 @@ router.get('/status', auth, async (req, res) => {
         leaseEndDate: applicationWithLease.leaseEndDate,
         rentalAmount: applicationWithLease.rentalAmount,
         depositAmount: applicationWithLease.depositAmount,
-        applicationId: applicationWithLease._id
+        applicationId: applicationWithLease._id,
+        signedLeaseFile: applicationWithLease.signedLeaseFile
       });
     } else {
       // User has applications but no lease yet
@@ -436,5 +475,121 @@ Tenant: ${application.firstName} ${application.lastName}
 Phone: ${application.phone}
 Email: ${application.userId ? application.userId.email : 'N/A'}`;
 }
+
+// Upload signed lease
+router.post('/upload-signed', auth, upload.single('signedLease'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { applicationId } = req.body;
+    
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID is required' });
+    }
+
+    // Find the application
+    const application = await Application.findOne({ 
+      _id: applicationId, 
+      userId: req.user._id 
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Save file information to the application
+    application.signedLeaseFile = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      path: req.file.path,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      uploadedAt: new Date()
+    };
+
+    // Mark lease as signed
+    application.leaseSigned = true;
+    application.leaseSignedAt = new Date();
+
+    await application.save();
+
+    res.json({
+      message: 'Signed lease uploaded successfully',
+      uploadedLease: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        url: `/api/lease/view-signed/${applicationId}`,
+        size: req.file.size,
+        uploadedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error uploading signed lease:', error);
+    res.status(500).json({ error: 'Server error uploading signed lease' });
+  }
+});
+
+// View signed lease
+router.get('/view-signed/:applicationId', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    
+    const application = await Application.findOne({ 
+      _id: applicationId, 
+      userId: req.user._id 
+    });
+
+    if (!application || !application.signedLeaseFile) {
+      return res.status(404).json({ error: 'Signed lease not found' });
+    }
+
+    const filePath = application.signedLeaseFile.path;
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    res.sendFile(path.resolve(filePath));
+  } catch (error) {
+    console.error('Error viewing signed lease:', error);
+    res.status(500).json({ error: 'Server error viewing signed lease' });
+  }
+});
+
+// Remove signed lease
+router.delete('/remove-signed/:applicationId', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    
+    const application = await Application.findOne({ 
+      _id: applicationId, 
+      userId: req.user._id 
+    });
+
+    if (!application || !application.signedLeaseFile) {
+      return res.status(404).json({ error: 'Signed lease not found' });
+    }
+
+    // Remove file from server
+    const filePath = application.signedLeaseFile.path;
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Clear file information from application
+    application.signedLeaseFile = undefined;
+    application.leaseSigned = false;
+    application.leaseSignedAt = undefined;
+
+    await application.save();
+
+    res.json({ message: 'Signed lease removed successfully' });
+  } catch (error) {
+    console.error('Error removing signed lease:', error);
+    res.status(500).json({ error: 'Server error removing signed lease' });
+  }
+});
 
 module.exports = router;

@@ -114,7 +114,17 @@ const applicationSchema = new mongoose.Schema({
   leaseSignedAt: Date,
   leaseSignature: String,
   rentalAmount: Number,
-  depositAmount: Number
+  depositAmount: Number,
+  
+  // Signed Lease File
+  signedLeaseFile: {
+    filename: String,
+    originalName: String,
+    path: String,
+    mimetype: String,
+    size: Number,
+    uploadedAt: Date
+  }
 }, {
   timestamps: true
 });

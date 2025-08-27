@@ -7,7 +7,9 @@ import {
   FileText,
   Download,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  CheckCircle
 } from 'lucide-react';
 
 const Lease = () => {
@@ -17,6 +19,9 @@ const Lease = () => {
   const [leaseData, setLeaseData] = useState(null);
   const [leaseContent, setLeaseContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [signedLeaseFile, setSignedLeaseFile] = useState(null);
+  const [uploadedLease, setUploadedLease] = useState(null);
 
   const generateLeaseFromData = useCallback(async (leaseInfo) => {
     try {
@@ -44,6 +49,16 @@ const Lease = () => {
         // If there's a lease agreement, automatically generate and display it
         if (response.data.leaseSigned || response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
+        }
+        // Check if there's an uploaded signed lease
+        if (response.data.signedLeaseFile) {
+          setUploadedLease({
+            filename: response.data.signedLeaseFile.filename,
+            originalName: response.data.signedLeaseFile.originalName,
+            url: `/api/lease/view-signed/${response.data.applicationId}`,
+            size: response.data.signedLeaseFile.size,
+            uploadedAt: response.data.signedLeaseFile.uploadedAt
+          });
         }
       }
     } catch (error) {
@@ -113,6 +128,73 @@ const Lease = () => {
       toast.success('Lease agreement downloaded successfully!');
     } catch (error) {
       toast.error('Error downloading lease agreement');
+    }
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a PDF, JPEG, or PNG file');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      
+      setSignedLeaseFile(file);
+      toast.success('File selected successfully');
+    }
+  };
+
+  const uploadSignedLease = async () => {
+    if (!signedLeaseFile) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('signedLease', signedLeaseFile);
+      formData.append('applicationId', leaseData.applicationId);
+
+      const response = await axios.post('/api/lease/upload-signed', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUploadedLease(response.data.uploadedLease);
+      setSignedLeaseFile(null);
+      toast.success('Signed lease uploaded successfully!');
+      
+      // Refresh lease status to show uploaded file
+      await loadLeaseStatus();
+    } catch (error) {
+      console.error('Error uploading signed lease:', error);
+      toast.error(error.response?.data?.error || 'Error uploading signed lease');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeUploadedLease = async () => {
+    if (!uploadedLease) return;
+    
+    try {
+      await axios.delete(`/api/lease/remove-signed/${leaseData.applicationId}`);
+      setUploadedLease(null);
+      toast.success('Signed lease removed successfully');
+      await loadLeaseStatus();
+    } catch (error) {
+      console.error('Error removing signed lease:', error);
+      toast.error('Error removing signed lease');
     }
   };
 
@@ -296,10 +378,86 @@ const Lease = () => {
                     </>
                   )}
                 </div>
+
+                {/* Signed Lease Upload Section */}
+                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Upload Signed Lease</h4>
+                  
+                  {!uploadedLease ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="file"
+                          id="signedLeaseUpload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="signedLeaseUpload"
+                          className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer flex items-center"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Choose File
+                        </label>
+                        {signedLeaseFile && (
+                          <span className="text-sm text-gray-600">
+                            {signedLeaseFile.name}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {signedLeaseFile && (
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={uploadSignedLease}
+                            disabled={uploading}
+                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            {uploading ? 'Uploading...' : 'Upload Signed Lease'}
+                          </button>
+                          <button
+                            onClick={() => setSignedLeaseFile(null)}
+                            className="bg-gray-500 text-white px-3 py-2 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span className="text-sm text-gray-700">
+                          Signed lease uploaded: {uploadedLease.originalName}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => window.open(uploadedLease.url, '_blank')}
+                          className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </button>
+                        <button
+                          onClick={removeUploadedLease}
+                          className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500 mt-2">
+                    Supported formats: PDF, JPEG, PNG (max 10MB). Scan your signed lease and upload it here.
+                  </p>
+                </div>
               </div>
             )}
-
-
 
             {leaseContent && (
               <div className="bg-white border border-gray-200 rounded-lg p-6">
