@@ -166,11 +166,7 @@ const ApplicationView = () => {
               {getStatusText(application.status)}
             </span>
           </div>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="font-medium text-gray-700">Created:</span>
-              <span className="ml-2 text-gray-600">{formatDate(application.createdAt)}</span>
-            </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {application.submittedAt && (
               <div>
                 <span className="font-medium text-gray-700">Submitted:</span>
