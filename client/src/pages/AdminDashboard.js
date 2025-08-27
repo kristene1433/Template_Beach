@@ -96,7 +96,6 @@ const AdminDashboard = () => {
     setShowLeaseModal(true);
   };
 
-  // Function to refresh the selected application data
   const refreshSelectedApplication = async (applicationId) => {
     try {
       const response = await fetch(`/api/application/admin/${applicationId}`, {
@@ -115,7 +114,6 @@ const AdminDashboard = () => {
   };
 
   const handleViewApplication = async (application) => {
-    // Refresh the application data before showing the modal
     await refreshSelectedApplication(application._id);
     setSelectedApplication(application);
   };
@@ -137,8 +135,8 @@ const AdminDashboard = () => {
         },
         body: JSON.stringify({
           applicationId: selectedApplicationForLease._id,
-          leaseStartDate: leaseFormData.leaseStartDate, // Send date string directly
-          leaseEndDate: leaseFormData.leaseEndDate, // Send date string directly
+          leaseStartDate: leaseFormData.leaseStartDate,
+          leaseEndDate: leaseFormData.leaseEndDate,
           rentalAmount: parseInt(leaseFormData.rentalAmount),
           depositAmount: parseInt(leaseFormData.depositAmount)
         })
@@ -146,18 +144,13 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Server response data:', data);
-        console.log('Lease agreement content:', data.leaseAgreement);
         setLeaseContent(data.leaseAgreement);
         setLeaseGenerated(true);
         toast.success('Lease agreement generated successfully!');
         
-        // Refresh applications to show updated lease information
         await loadApplications();
         
-        // Update the selectedApplication if it's the same application that was just updated
         if (selectedApplication && selectedApplication._id === selectedApplicationForLease._id) {
-          // Create updated application object with new lease data
           const updatedApp = {
             ...selectedApplication,
             leaseStartDate: leaseFormData.leaseStartDate,
@@ -167,7 +160,6 @@ const AdminDashboard = () => {
           };
           setSelectedApplication(updatedApp);
           
-          // Also update the applications list to reflect the change
           setApplications(prevApps => 
             prevApps.map(app => 
               app._id === selectedApplicationForLease._id 
@@ -187,16 +179,11 @@ const AdminDashboard = () => {
   };
 
   const viewLease = () => {
-    // Debug: Check what's in leaseContent
-    console.log('Lease Content:', leaseContent);
-    console.log('Lease Content Length:', leaseContent ? leaseContent.length : 'No content');
-    
     if (!leaseContent) {
       toast.error('No lease content available. Please generate the lease first.');
       return;
     }
     
-    // Create a new window/tab to display the lease content
     const newWindow = window.open('', '_blank');
     newWindow.document.write(`
       <html>
@@ -259,17 +246,14 @@ const AdminDashboard = () => {
 
   const viewSignedLease = async (applicationId) => {
     try {
-      // Open the signed lease in a new tab
       const response = await axios.get(`/api/lease/view-signed/${applicationId}`, {
         responseType: 'blob'
       });
       
-      // Create a blob URL and open in new tab
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       
-      // Clean up the blob URL
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Error viewing signed lease:', error);
@@ -323,15 +307,12 @@ const AdminDashboard = () => {
     }
   };
 
-  // Helper function to format dates consistently
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set';
     
     try {
-      // Handle both date strings and Date objects
       let dateObj;
       if (typeof dateString === 'string') {
-        // If it's a date string like "2025-01-01", parse it directly
         if (dateString.includes('-')) {
           const [year, month, day] = dateString.split('-').map(Number);
           dateObj = new Date(year, month - 1, day);
@@ -342,7 +323,6 @@ const AdminDashboard = () => {
         dateObj = new Date(dateString);
       }
       
-      // Check if the date is valid
       if (isNaN(dateObj.getTime())) {
         return 'Invalid Date';
       }
@@ -857,174 +837,165 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </div>
-                     </div>
-         </div>
-       )}
+          </div>
+        </div>
+      )}
 
-       {/* Lease Generation Modal */}
-       {showLeaseModal && selectedApplicationForLease && (
-         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
-             <div className="mt-3">
-               <div className="flex items-center justify-between mb-6">
-                 <h3 className="text-lg font-medium text-gray-900">
-                   {leaseGenerated ? 'Lease Generated Successfully' : 'Generate Lease Agreement'}
-                 </h3>
-                 <button
-                   onClick={resetLeaseModal}
-                   className="text-gray-400 hover:text-gray-600"
-                 >
-                   <XCircle className="h-6 w-6" />
-                 </button>
-               </div>
+      {/* Lease Generation Modal */}
+      {showLeaseModal && selectedApplicationForLease && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {leaseGenerated ? 'Lease Generated Successfully' : 'Generate Lease Agreement'}
+                </h3>
+                <button
+                  onClick={resetLeaseModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
 
-               <div className="mb-4">
-                 <p className="text-sm text-gray-600">
-                   {leaseGenerated ? 'Lease for:' : 'Generating lease for:'} <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
-                 </p>
-               </div>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  {leaseGenerated ? 'Lease for:' : 'Generating lease for:'} <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
+                </p>
+              </div>
 
-               {!leaseGenerated ? (
-                 <form onSubmit={handleLeaseSubmit} className="space-y-4">
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Lease Start Date *
-                     </label>
-                     <input
-                       type="date"
-                       required
-                       value={leaseFormData.leaseStartDate}
-                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseStartDate: e.target.value }))}
-                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                     />
-                   </div>
+              {!leaseGenerated ? (
+                <form onSubmit={handleLeaseSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Lease Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={leaseFormData.leaseStartDate}
+                      onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseStartDate: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Lease End Date *
-                     </label>
-                     <input
-                       type="date"
-                       required
-                       value={leaseFormData.leaseEndDate}
-                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseEndDate: e.target.value }))}
-                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                     />
-                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Lease End Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={leaseFormData.leaseEndDate}
+                      onChange={(e) => setLeaseFormData(prev => ({ ...prev, leaseEndDate: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Monthly Rental Amount ($) *
-                     </label>
-                     <input
-                       type="number"
-                       required
-                       min="0"
-                       step="100"
-                       value={leaseFormData.rentalAmount}
-                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, rentalAmount: parseInt(e.target.value) || 0 }))}
-                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                     />
-                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Monthly Rental Amount ($) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="100"
+                      value={leaseFormData.rentalAmount}
+                      onChange={(e) => setLeaseFormData(prev => ({ ...prev, rentalAmount: parseInt(e.target.value) || 0 }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Security Deposit Amount ($) *
-                     </label>
-                     <input
-                       type="number"
-                       required
-                       min="0"
-                       step="100"
-                       value={leaseFormData.depositAmount}
-                       onChange={(e) => setLeaseFormData(prev => ({ ...prev, depositAmount: parseInt(e.target.value) || 0 }))}
-                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                     />
-                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Security Deposit Amount ($) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="100"
+                      value={leaseFormData.depositAmount}
+                      onChange={(e) => setLeaseFormData(prev => ({ ...prev, depositAmount: parseInt(e.target.value) || 0 }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
 
-                   <div className="flex justify-end space-x-3 pt-4">
-                     <button
-                       type="button"
-                       onClick={resetLeaseModal}
-                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                     >
-                       Cancel
-                     </button>
-                     <button
-                       type="submit"
-                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                     >
-                       Generate Lease
-                     </button>
-                   </div>
-                 </form>
-               ) : (
-                                   <div className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                      <p className="text-sm text-green-800">
-                        Lease agreement has been generated successfully! You can now view, download, or send it via email.
-                      </p>
-                    </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={resetLeaseModal}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Generate Lease
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                    <p className="text-sm text-green-800">
+                      Lease agreement has been generated successfully! You can now view, download, or send it via email.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-3">
+                    <button
+                      onClick={viewLease}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View Lease</span>
+                    </button>
                     
-                    {/* Debug info - remove this after testing */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                      <p className="text-sm text-blue-800">
-                        <strong>Debug Info:</strong><br/>
-                        Lease Content Length: {leaseContent ? leaseContent.length : 'No content'}<br/>
-                        First 100 chars: {leaseContent ? leaseContent.substring(0, 100) + '...' : 'No content'}
-                      </p>
-                    </div>
+                    <button
+                      onClick={downloadLease}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Download Lease</span>
+                    </button>
                     
-                    <div className="flex flex-col space-y-3">
-                     <button
-                       onClick={viewLease}
-                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                     >
-                       <Eye className="h-4 w-4" />
-                       <span>View Lease</span>
-                     </button>
-                     
-                     <button
-                       onClick={downloadLease}
-                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                     >
-                       <Download className="h-4 w-4" />
-                       <span>Download Lease</span>
-                     </button>
-                     
-                     <button
-                       onClick={sendLeaseEmail}
-                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                     >
-                       <Mail className="h-4 w-4" />
-                       <span>Send to Tenant</span>
-                     </button>
-                     
-                     <button
-                       onClick={() => sendLeaseEmail(true)}
-                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                     >
-                       <Mail className="h-4 w-4" />
-                       <span>Send to Manager</span>
-                     </button>
-                   </div>
-                   
-                   <div className="flex justify-end pt-4">
-                     <button
-                       onClick={resetLeaseModal}
-                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                     >
-                       Close
-                     </button>
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
-         </div>
-       )}
-     </div>
-   );
- };
+                    <button
+                      onClick={sendLeaseEmail}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>Send to Tenant</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => sendLeaseEmail(true)}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>Send to Manager</span>
+                    </button>
+                  </div>
+                  
+                  <div className="flex justify-end pt-4">
+                    <button
+                      onClick={resetLeaseModal}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default AdminDashboard;
