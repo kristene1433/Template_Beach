@@ -259,8 +259,14 @@ const AdminDashboard = () => {
       
       console.log('Response received:', response.status, response.headers);
       
-      const blob = new Blob([response.data]);
+      // Get the MIME type from the response headers or default to PDF
+      const contentType = response.headers['content-type'] || 'application/pdf';
+      
+      // Create blob with proper MIME type
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
+      
+      // Open in new tab
       window.open(url, '_blank');
       
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
