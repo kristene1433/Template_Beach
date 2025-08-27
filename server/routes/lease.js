@@ -503,7 +503,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
     res.json({
       message: 'Signed lease uploaded successfully',
       uploadedLease: {
-        filename: req.file.filename,
+        filename: `signed-lease-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`,
         originalName: req.file.originalname,
         url: `/api/lease/view-signed/${applicationId}`,
         size: req.file.size,
@@ -521,10 +521,18 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
   try {
     const { applicationId } = req.params;
     
-    const application = await Application.findOne({ 
-      _id: applicationId, 
-      userId: req.user._id 
-    });
+    let application;
+    
+    // If user is admin, they can view any application's signed lease
+    if (req.user.role === 'admin') {
+      application = await Application.findById(applicationId);
+    } else {
+      // Regular users can only view their own signed lease
+      application = await Application.findOne({ 
+        _id: applicationId, 
+        userId: req.user._id 
+      });
+    }
 
     if (!application || !application.signedLeaseFile) {
       return res.status(404).json({ error: 'Signed lease not found' });
@@ -566,11 +574,7 @@ router.delete('/remove-signed/:applicationId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Signed lease not found' });
     }
 
-    // Remove file from server
-    const filePath = application.signedLeaseFile.path;
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // No filesystem cleanup needed since files are stored in database
 
     // Clear file information from application
     application.signedLeaseFile = undefined;
