@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Home, User, FileText, CreditCard, LogOut, Building2, Mail } from 'lucide-react';
+import { Menu, X, Home, FileText, CreditCard, LogOut, Building2, Mail } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -22,7 +22,6 @@ const Navbar = () => {
     { path: '/application', label: 'Application', icon: FileText },
     { path: '/payment', label: 'Payment', icon: CreditCard },
     { path: '/lease', label: 'Lease', icon: Building2 },
-    { path: '/profile', label: 'Profile', icon: User },
     { path: '/contact', label: 'Contact', icon: Mail },
   ] : [];
 
