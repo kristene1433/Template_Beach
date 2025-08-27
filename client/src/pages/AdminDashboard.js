@@ -47,6 +47,7 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Admin applications data:', data.applications);
         setApplications(data.applications || []);
       } else {
         toast.error('Failed to load applications');
@@ -566,6 +567,11 @@ const AdminDashboard = () => {
                             View Signed Lease
                           </button>
                         )}
+                        {/* Debug info */}
+                        <div className="text-xs text-gray-500 mt-1">
+                          signedLeaseFile: {application.signedLeaseFile ? 'Yes' : 'No'}
+                          {application.signedLeaseFile && ` - ${application.signedLeaseFile.originalName}`}
+                        </div>
                       </div>
                     </div>
                   </div>
