@@ -256,6 +256,26 @@ const AdminDashboard = () => {
     }
   };
 
+  const viewSignedLease = async (applicationId) => {
+    try {
+      // Open the signed lease in a new tab
+      const response = await axios.get(`/api/lease/view-signed/${applicationId}`, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL and open in new tab
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Clean up the blob URL
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error viewing signed lease:', error);
+      toast.error('Error viewing signed lease');
+    }
+  };
+
   const resetLeaseModal = () => {
     setShowLeaseModal(false);
     setSelectedApplicationForLease(null);
@@ -528,6 +548,14 @@ const AdminDashboard = () => {
                             <span className={getStatusBadge(application.status)}>
                               {application.status}
                             </span>
+                            {application.signedLeaseFile && (
+                              <div className="ml-2 flex items-center">
+                                <svg className="h-4 w-4 text-green-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-xs text-green-600 font-medium">Signed</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -546,6 +574,15 @@ const AdminDashboard = () => {
                           >
                             <Download className="h-4 w-4 mr-1" />
                             Generate Lease
+                          </button>
+                        )}
+                        {application.signedLeaseFile && (
+                          <button
+                            onClick={() => viewSignedLease(application._id)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Signed
                           </button>
                         )}
                       </div>
@@ -650,6 +687,17 @@ const AdminDashboard = () => {
                         </span>
                       </span>
                     </div>
+                    {selectedApplication.signedLeaseFile && (
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm">
+                          <strong>Lease Signed:</strong> 
+                          <span className="text-green-600 ml-2">{formatDate(selectedApplication.signedLeaseFile.uploadedAt)}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-4">
@@ -711,6 +759,57 @@ const AdminDashboard = () => {
                         </span>
                       </div>
                     )}
+                    {selectedApplication.signedLeaseFile && (
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm">
+                          <strong>Signed Lease:</strong> 
+                          <span className="text-green-600 ml-1">Uploaded</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Signed Lease Notification */}
+              {selectedApplication.signedLeaseFile && (
+                <div className="mt-6">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h4 className="text-sm font-medium text-green-800">
+                          Signed Lease Uploaded!
+                        </h4>
+                        <div className="mt-2 text-sm text-green-700">
+                          <p>The tenant has uploaded their signed lease agreement.</p>
+                          <div className="mt-2 flex items-center space-x-2">
+                            <span className="text-xs text-green-600">
+                              File: {selectedApplication.signedLeaseFile.originalName}
+                            </span>
+                            <span className="text-xs text-green-600">
+                              Uploaded: {formatDate(selectedApplication.signedLeaseFile.uploadedAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={() => viewSignedLease(selectedApplication._id)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Signed Lease
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
