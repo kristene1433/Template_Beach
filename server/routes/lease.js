@@ -467,6 +467,15 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    console.log('File upload debug:', {
+      hasFile: !!req.file,
+      hasBuffer: !!req.file.buffer,
+      bufferSize: req.file.buffer ? req.file.buffer.length : 'N/A',
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
     const { applicationId } = req.body;
     
     if (!applicationId) {
@@ -484,6 +493,13 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
     }
 
     // Save file information to the application (storing file content in database for Heroku compatibility)
+    const fileContent = req.file.buffer ? req.file.buffer.toString('base64') : null;
+    
+    if (!fileContent) {
+      console.error('No file buffer content available');
+      return res.status(500).json({ error: 'File content could not be processed' });
+    }
+
     application.signedLeaseFile = {
       filename: `signed-lease-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`,
       originalName: req.file.originalname,
@@ -491,7 +507,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       size: req.file.size,
       uploadedAt: new Date(),
       // Store file content as base64 for Heroku compatibility
-      content: req.file.buffer.toString('base64')
+      content: fileContent
     };
 
     // Mark lease as signed
