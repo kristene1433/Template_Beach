@@ -161,16 +161,24 @@ const Lease = () => {
 
     setUploading(true);
     try {
+      console.log('Starting file upload...');
+      console.log('File:', signedLeaseFile);
+      console.log('Application ID:', leaseData.applicationId);
+      
       const formData = new FormData();
       formData.append('signedLease', signedLeaseFile);
       formData.append('applicationId', leaseData.applicationId);
 
+      console.log('FormData created, sending request...');
+      
       const response = await axios.post('/api/lease/upload-signed', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      console.log('Upload response:', response.data);
+      
       setUploadedLease(response.data.uploadedLease);
       setSignedLeaseFile(null);
       toast.success('Signed lease uploaded successfully!');
@@ -179,6 +187,7 @@ const Lease = () => {
       await loadLeaseStatus();
     } catch (error) {
       console.error('Error uploading signed lease:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.error || 'Error uploading signed lease');
     } finally {
       setUploading(false);

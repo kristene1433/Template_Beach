@@ -479,13 +479,20 @@ Email: ${application.userId ? application.userId.email : 'N/A'}`;
 // Upload signed lease
 router.post('/upload-signed', auth, upload.single('signedLease'), async (req, res) => {
   try {
+    console.log('Upload request received');
+    console.log('File:', req.file);
+    console.log('Body:', req.body);
+    
     if (!req.file) {
+      console.log('No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const { applicationId } = req.body;
+    console.log('Application ID from body:', applicationId);
     
     if (!applicationId) {
+      console.log('No application ID provided');
       return res.status(400).json({ error: 'Application ID is required' });
     }
 
@@ -499,6 +506,10 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       return res.status(404).json({ error: 'Application not found' });
     }
 
+    console.log('Saving file info to application...');
+    console.log('File path:', req.file.path);
+    console.log('File exists:', fs.existsSync(req.file.path));
+    
     // Save file information to the application
     application.signedLeaseFile = {
       filename: req.file.filename,
@@ -513,7 +524,9 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
     application.leaseSigned = true;
     application.leaseSignedAt = new Date();
 
+    console.log('Application before save:', application.signedLeaseFile);
     await application.save();
+    console.log('Application saved successfully');
 
     res.json({
       message: 'Signed lease uploaded successfully',
