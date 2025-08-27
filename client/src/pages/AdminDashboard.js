@@ -248,7 +248,10 @@ const AdminDashboard = () => {
   const viewSignedLease = async (applicationId) => {
     try {
       const response = await axios.get(`/api/lease/view-signed/${applicationId}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
       const blob = new Blob([response.data]);
