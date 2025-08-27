@@ -123,7 +123,8 @@ const applicationSchema = new mongoose.Schema({
     path: String,
     mimetype: String,
     size: Number,
-    uploadedAt: Date
+    uploadedAt: Date,
+    content: String  // Base64-encoded file content for database storage
   }
 }, {
   timestamps: true
