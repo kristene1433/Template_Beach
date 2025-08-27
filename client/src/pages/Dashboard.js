@@ -217,19 +217,17 @@ const Dashboard = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Rental Applications
             </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              {applicationStatus?.hasApplications ? 
-                `You have ${applicationStatus.totalApplications} application${applicationStatus.totalApplications > 1 ? 's' : ''}` :
-                'Complete your rental application to get started'}
-            </p>
-            
-            <Link
-              to="/application"
-              className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
-            >
-              {applicationStatus?.hasApplications ? 'View Applications' : 'Start Application'}
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
+                         <p className="text-gray-600 text-sm mb-4">
+               Complete your rental application to get started
+             </p>
+             
+             <Link
+               to="/application"
+               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
+             >
+               Start Application
+               <ArrowRight className="w-4 h-4 ml-1" />
+             </Link>
           </div>
 
           {/* Lease Status */}
@@ -325,77 +323,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Applications Status */}
-        {applicationStatus?.hasApplications ? (
-          <div className="card mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications Status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="flex items-center space-x-3">
-                <FileText className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Total Applications</p>
-                  <p className="text-sm text-gray-600">
-                    {applicationStatus.totalApplications}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <Clock className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Latest Status</p>
-                  <p className="text-sm text-gray-600">
-                    {getStatusText(applicationStatus.latestStatus)}
-                  </p>
-                </div>
-              </div>
-              
-              {leaseStatus?.rentalAmount && (
-                <div className="flex items-center space-x-3">
-                  <DollarSign className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
-                    <p className="text-sm text-gray-600">
-                      ${leaseStatus.rentalAmount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to="/application"
-                className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
-              >
-                Manage Applications
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="card mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications</h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <FileText className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium">No Applications Yet</p>
-                  <p className="mt-1">
-                    You need to complete your rental application to get started.
-                  </p>
-                  <Link
-                    to="/application"
-                    className="mt-2 inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
-                  >
-                    Start Application
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        
 
         {/* Applications List */}
         {applicationStatus?.hasApplications && (
