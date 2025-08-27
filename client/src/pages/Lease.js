@@ -47,7 +47,7 @@ const Lease = () => {
       if (response.data.hasApplication) {
         setLeaseData(response.data);
         // If there's a lease agreement, automatically generate and display it
-        if (response.data.leaseSigned || response.data.leaseStartDate) {
+        if (response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
         }
         // Check if there's an uploaded signed lease
@@ -267,17 +267,17 @@ const Lease = () => {
               <FileText className="mr-3 h-6 w-6" />
               Lease Agreement
             </h1>
-            {leaseData && (
-              <div className="mt-2 text-primary-light">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  leaseData.leaseSigned 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {leaseData.leaseSigned ? 'Signed' : 'Available for Review'}
-                </span>
-              </div>
-            )}
+                                      {leaseData && (
+               <div className="mt-2 text-primary-light">
+                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                   leaseData.signedLeaseFile 
+                     ? 'bg-green-100 text-green-800' 
+                     : 'bg-yellow-100 text-yellow-800'
+                 }`}>
+                   {leaseData.signedLeaseFile ? 'Signed' : 'Available for Review'}
+                 </span>
+               </div>
+             )}
           </div>
 
           <div className="p-6">
@@ -303,34 +303,34 @@ const Lease = () => {
             )}
 
             {/* Lease Status Display */}
-            {leaseData && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">
-                      {leaseData.leaseSigned ? 'Lease Agreement Signed' : 'Lease Agreement Available'}
-                    </p>
-                    <p className="mt-1">
-                      {leaseData.leaseSigned 
-                        ? 'Your lease agreement has been signed and is active. You can view and download it below.'
-                        : 'Your lease agreement is ready for review. You can generate, preview, and download it below.'
-                      }
-                    </p>
-                    {leaseData.leaseStartDate && leaseData.leaseEndDate && (
-                      <p className="mt-1 text-xs">
-                        Lease Period: {formatDate(leaseData.leaseStartDate)} - {formatDate(leaseData.leaseEndDate)}
-                      </p>
-                    )}
-                    {leaseData.rentalAmount && (
-                      <p className="mt-1 text-xs">
-                        Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+                                      {leaseData && (
+               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                 <div className="flex items-start">
+                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                   <div className="text-sm text-blue-800">
+                     <p className="font-medium">
+                       {leaseData.signedLeaseFile ? 'Lease Agreement Signed' : 'Lease Agreement Available'}
+                     </p>
+                     <p className="mt-1">
+                       {leaseData.signedLeaseFile 
+                         ? 'Your lease agreement has been signed and uploaded. You can view and download it below.'
+                         : 'Your lease agreement is ready for review. You can generate, preview, and download it below.'
+                       }
+                     </p>
+                     {leaseData.leaseStartDate && leaseData.leaseEndDate && (
+                       <p className="mt-1 text-xs">
+                         Lease Period: {formatDate(leaseData.leaseStartDate)} - {formatDate(leaseData.leaseEndDate)}
+                       </p>
+                     )}
+                     {leaseData.rentalAmount && (
+                       <p className="mt-1 text-xs">
+                         Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}
+                       </p>
+                     )}
+                   </div>
+                 </div>
+               </div>
+             )}
 
             {/* Lease Actions */}
             {leaseData && (
@@ -459,21 +459,21 @@ const Lease = () => {
               </div>
             )}
 
-            {leaseContent && (
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {leaseData?.leaseSigned ? 'Your Lease Agreement' : 'Generated Lease Agreement'}
-                  </h3>
-                </div>
-                
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
-                    {leaseContent}
-                  </pre>
-                </div>
-              </div>
-            )}
+                                      {leaseContent && (
+               <div className="bg-white border border-gray-200 rounded-lg p-6">
+                 <div className="mb-4">
+                   <h3 className="text-lg font-semibold text-gray-900">
+                     {leaseData?.signedLeaseFile ? 'Your Lease Agreement' : 'Generated Lease Agreement'}
+                   </h3>
+                 </div>
+                 
+                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                   <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
+                     {leaseContent}
+                   </pre>
+                 </div>
+               </div>
+             )}
           </div>
         </div>
       </div>
