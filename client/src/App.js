@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Application from './pages/Application';
+import ApplicationView from './pages/ApplicationView';
 import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
@@ -83,6 +84,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Application />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/application/:id" 
+        element={
+          <ProtectedRoute>
+            <ApplicationView />
           </ProtectedRoute>
         } 
       />

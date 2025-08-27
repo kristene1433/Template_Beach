@@ -339,17 +339,23 @@ const Dashboard = () => {
                {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
                  applicationStatus.applications.map((app) => (
                    <div key={app.id} className="border border-gray-200 rounded-lg p-4">
-                     <div className="flex items-center justify-between mb-3">
-                       <div className="flex items-center space-x-3">
-                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                           {getStatusText(app.status)}
-                         </span>
-                         <span className="text-sm text-gray-500">
-                           {formatDate(app.createdAt)}
-                         </span>
-                       </div>
-
-                     </div>
+                                           <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
+                            {getStatusText(app.status)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {formatDate(app.createdAt)}
+                          </span>
+                        </div>
+                        <Link
+                          to={`/application/${app.id}`}
+                          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                        >
+                          View Details
+                          <ArrowRight className="w-4 h-4 ml-1 inline" />
+                        </Link>
+                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
                          <p className="text-sm font-medium text-gray-900">Requested Start</p>
