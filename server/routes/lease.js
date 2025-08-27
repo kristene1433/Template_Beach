@@ -7,25 +7,9 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/signed-leases';
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for memory storage (for Heroku compatibility)
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -479,20 +463,13 @@ Email: ${application.userId ? application.userId.email : 'N/A'}`;
 // Upload signed lease
 router.post('/upload-signed', auth, upload.single('signedLease'), async (req, res) => {
   try {
-    console.log('Upload request received');
-    console.log('File:', req.file);
-    console.log('Body:', req.body);
-    
     if (!req.file) {
-      console.log('No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const { applicationId } = req.body;
-    console.log('Application ID from body:', applicationId);
     
     if (!applicationId) {
-      console.log('No application ID provided');
       return res.status(400).json({ error: 'Application ID is required' });
     }
 
@@ -506,27 +483,22 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    console.log('Saving file info to application...');
-    console.log('File path:', req.file.path);
-    console.log('File exists:', fs.existsSync(req.file.path));
-    
-    // Save file information to the application
+    // Save file information to the application (storing file content in database for Heroku compatibility)
     application.signedLeaseFile = {
-      filename: req.file.filename,
+      filename: `signed-lease-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`,
       originalName: req.file.originalname,
-      path: req.file.path,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
+      // Store file content as base64 for Heroku compatibility
+      content: req.file.buffer.toString('base64')
     };
 
     // Mark lease as signed
     application.leaseSigned = true;
     application.leaseSignedAt = new Date();
 
-    console.log('Application before save:', application.signedLeaseFile);
     await application.save();
-    console.log('Application saved successfully');
 
     res.json({
       message: 'Signed lease uploaded successfully',
@@ -558,18 +530,27 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Signed lease not found' });
     }
 
-    const filePath = application.signedLeaseFile.path;
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on server' });
+    // Check if file content exists in database
+    if (!application.signedLeaseFile.content) {
+      return res.status(404).json({ error: 'File content not found' });
     }
 
-    res.sendFile(path.resolve(filePath));
+    // Convert base64 content back to buffer
+    const fileBuffer = Buffer.from(application.signedLeaseFile.content, 'base64');
+    
+    // Set appropriate headers
+    res.set({
+      'Content-Type': application.signedLeaseFile.mimetype,
+      'Content-Disposition': `inline; filename="${application.signedLeaseFile.originalName}"`,
+      'Content-Length': fileBuffer.length
+    });
+
+    res.send(fileBuffer);
   } catch (error) {
     console.error('Error viewing signed lease:', error);
     res.status(500).json({ error: 'Server error viewing signed lease' });
   }
-});
+ });
 
 // Remove signed lease
 router.delete('/remove-signed/:applicationId', auth, async (req, res) => {
