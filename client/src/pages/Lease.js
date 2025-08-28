@@ -248,15 +248,15 @@ const Lease = () => {
             </h1>
                                       {leaseData && (
                <div className="mt-2 text-primary-light">
-                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                   leaseData.signedLeaseFile 
-                     ? 'bg-green-100 text-green-800' 
-                     : leaseData.leaseStartDate && leaseData.leaseEndDate
-                     ? 'bg-yellow-100 text-yellow-800'
-                     : 'bg-gray-100 text-gray-800'
-                 }`}>
-                   {leaseData.signedLeaseFile ? 'Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Available for Review' : 'Not Started'}
-                 </span>
+                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    leaseData.signedLeaseFile 
+                      ? 'bg-green-100 text-green-800' 
+                      : leaseData.leaseStartDate && leaseData.leaseEndDate
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {leaseData.signedLeaseFile ? 'Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Available to Sign' : 'Not Started'}
+                  </span>
                </div>
              )}
           </div>
@@ -300,11 +300,11 @@ const Lease = () => {
                          : 'Your lease agreement has not been generated yet. Please wait for an administrator to create your lease.'
                        }
                      </p>
-                     {leaseData.leaseStartDate && leaseData.leaseEndDate && (
-                       <p className="mt-1 text-xs">
-                         Lease Period: {formatDate(leaseData.leaseStartDate)} - {formatDate(leaseData.leaseEndDate)}
-                       </p>
-                     )}
+                                           {leaseData.leaseStartDate && leaseData.leaseEndDate && (
+                        <p className="mt-1 text-xs">
+                          Lease Period: {new Date(leaseData.leaseStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(leaseData.leaseEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      )}
                      {leaseData.rentalAmount && (
                        <p className="mt-1 text-xs">
                          Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}

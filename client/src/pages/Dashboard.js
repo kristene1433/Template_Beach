@@ -55,9 +55,10 @@ const Dashboard = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'approved':
-      case 'completed':
       case 'succeeded':
         return 'text-green-600 bg-green-100';
+      case 'completed':
+        return 'text-blue-600 bg-blue-100';
       case 'pending':
         return 'text-blue-600 bg-blue-100';
       case 'processing':
