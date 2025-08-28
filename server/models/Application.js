@@ -72,9 +72,14 @@ const applicationSchema = new mongoose.Schema({
     default: 'draft'
   },
   
-  // Requested Lease Start
-  requestedMonths: {
-    type: String,
+  // Requested Lease Dates
+  requestedStartDate: {
+    type: String, // Store as YYYY-MM-DD string to avoid timezone issues
+    required: true,
+    trim: true
+  },
+  requestedEndDate: {
+    type: String, // Store as YYYY-MM-DD string to avoid timezone issues
     required: true,
     trim: true
   },

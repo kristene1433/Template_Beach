@@ -196,8 +196,13 @@ const ApplicationView = () => {
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Requested Start</p>
-                      <p className="text-gray-600">{application.requestedMonths || 'Not specified'}</p>
+                                              <p className="text-sm font-medium text-gray-900">Requested Dates</p>
+                      <p className="text-gray-600">
+                      {application.requestedStartDate && application.requestedEndDate 
+                        ? `${new Date(application.requestedStartDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                        : 'Not specified'
+                      }
+                    </p>
                     </div>
                   </div>
                 </div>

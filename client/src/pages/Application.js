@@ -26,7 +26,8 @@ const Application = () => {
       zipCode: ''
     },
     phone: '',
-    requestedMonths: '',
+    requestedStartDate: '',
+    requestedEndDate: '',
     additionalGuests: []
   });
 
@@ -56,6 +57,18 @@ const Application = () => {
         ...prev,
         [name]: value
       }));
+    }
+    
+    // If start date changes, reset end date if it's before the new start date
+    if (name === 'requestedStartDate' && value && formData.requestedEndDate) {
+      const startDate = new Date(value);
+      const endDate = new Date(formData.requestedEndDate);
+      if (endDate <= startDate) {
+        setFormData(prev => ({
+          ...prev,
+          requestedEndDate: ''
+        }));
+      }
     }
     
     // Clear error when user starts typing
@@ -105,7 +118,8 @@ const Application = () => {
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!formData.requestedMonths.trim()) newErrors.requestedMonths = 'Please select when you would like to start your lease';
+    if (!formData.requestedStartDate.trim()) newErrors.requestedStartDate = 'Please select your desired lease start date';
+    if (!formData.requestedEndDate.trim()) newErrors.requestedEndDate = 'Please select your desired lease end date';
     if (!formData.address.street.trim()) newErrors['address.street'] = 'Street address is required';
     if (!formData.address.city.trim()) newErrors['address.city'] = 'City is required';
     if (!formData.address.state.trim()) newErrors['address.state'] = 'State is required';
@@ -119,6 +133,15 @@ const Application = () => {
     // ZIP code validation
     if (formData.address.zipCode && !/^\d{5}(-\d{4})?$/.test(formData.address.zipCode)) {
       newErrors['address.zipCode'] = 'Please enter a valid ZIP code';
+    }
+
+    // Date validation
+    if (formData.requestedStartDate && formData.requestedEndDate) {
+      const startDate = new Date(formData.requestedStartDate);
+      const endDate = new Date(formData.requestedEndDate);
+      if (endDate <= startDate) {
+        newErrors.requestedEndDate = 'End date must be after start date';
+      }
     }
 
     // Validate additional guests
@@ -303,47 +326,44 @@ const Application = () => {
                 )}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="requestedMonths" className="form-label">
-                  When would you like to start your lease? *
-                </label>
-                <select
-                  id="requestedMonths"
-                  name="requestedMonths"
-                  required
-                  value={formData.requestedMonths}
-                  onChange={handleChange}
-                  className={`input-field ${getFieldError('requestedMonths') ? 'border-red-300 focus:ring-red-500' : ''}`}
-                >
-                  <option value="">Select a month</option>
-                  <option value="January 2025">January 2025</option>
-                  <option value="February 2025">February 2025</option>
-                  <option value="March 2025">March 2025</option>
-                  <option value="April 2025">April 2025</option>
-                  <option value="May 2025">May 2025</option>
-                  <option value="June 2025">June 2025</option>
-                  <option value="July 2025">July 2025</option>
-                  <option value="August 2025">August 2025</option>
-                  <option value="September 2025">September 2025</option>
-                  <option value="October 2025">October 2025</option>
-                  <option value="November 2025">November 2025</option>
-                  <option value="December 2025">December 2025</option>
-                  <option value="January 2026">January 2026</option>
-                  <option value="February 2026">February 2026</option>
-                  <option value="March 2026">March 2026</option>
-                  <option value="April 2026">April 2026</option>
-                  <option value="May 2026">May 2026</option>
-                  <option value="June 2026">June 2026</option>
-                  <option value="July 2026">July 2026</option>
-                  <option value="August 2026">August 2026</option>
-                  <option value="September 2026">September 2026</option>
-                  <option value="October 2026">October 2026</option>
-                  <option value="November 2026">November 2026</option>
-                  <option value="December 2026">December 2026</option>
-                </select>
-                {getFieldError('requestedMonths') && (
-                  <p className="form-error">{getFieldError('requestedMonths')}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="form-group">
+                  <label htmlFor="requestedStartDate" className="form-label">
+                    Desired Lease Start Date *
+                  </label>
+                  <input
+                    id="requestedStartDate"
+                    name="requestedStartDate"
+                    type="date"
+                    required
+                    value={formData.requestedStartDate}
+                    onChange={handleChange}
+                    className={`input-field ${getFieldError('requestedStartDate') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                  {getFieldError('requestedStartDate') && (
+                    <p className="form-error">{getFieldError('requestedStartDate')}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="requestedEndDate" className="form-label">
+                    Desired Lease End Date *
+                  </label>
+                  <input
+                    id="requestedEndDate"
+                    name="requestedEndDate"
+                    type="date"
+                    required
+                    value={formData.requestedEndDate}
+                    onChange={handleChange}
+                    className={`input-field ${getFieldError('requestedEndDate') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    min={formData.requestedStartDate || new Date().toISOString().split('T')[0]}
+                  />
+                  {getFieldError('requestedEndDate') && (
+                    <p className="form-error">{getFieldError('requestedEndDate')}</p>
+                  )}
+                </div>
               </div>
             </div>
 

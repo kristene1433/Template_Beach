@@ -105,14 +105,12 @@ const Lease = () => {
       doc.setFontSize(10);
       const splitText = doc.splitTextToSize(leaseContent, 170);
       
-      let yPosition = 40;
-      let currentPage = 1;
+             let yPosition = 40;
       
       for (let i = 0; i < splitText.length; i++) {
         // Check if we need a new page
         if (yPosition > 270) {
           doc.addPage();
-          currentPage++;
           yPosition = 20;
         }
         

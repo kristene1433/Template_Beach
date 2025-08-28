@@ -59,7 +59,8 @@ router.get('/status', auth, async (req, res) => {
       applications: applications.map(app => ({
         id: app._id,
         status: app.status,
-        requestedMonths: app.requestedMonths,
+        requestedStartDate: app.requestedStartDate,
+        requestedEndDate: app.requestedEndDate,
         submittedAt: app.submittedAt,
         reviewedAt: app.reviewedAt,
         notes: app.notes,
@@ -168,7 +169,7 @@ router.post('/:id/submit', auth, async (req, res) => {
     // Validate required fields
     const requiredFields = [
       'firstName', 'lastName', 'phone', 'address.street', 'address.city', 
-      'address.state', 'address.zipCode', 'requestedMonths'
+              'address.state', 'address.zipCode', 'requestedStartDate', 'requestedEndDate'
     ];
 
     const missingFields = [];

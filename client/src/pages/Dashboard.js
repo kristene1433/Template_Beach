@@ -335,8 +335,13 @@ const Dashboard = () => {
                       </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
-                         <p className="text-sm font-medium text-gray-900">Month Requested</p>
-                         <p className="text-sm text-gray-600">{app.requestedMonths || 'Not specified'}</p>
+                         <p className="text-sm font-medium text-gray-900">Requested Dates</p>
+                         <p className="text-sm text-gray-600">
+                          {app.requestedStartDate && app.requestedEndDate 
+                            ? `${new Date(app.requestedStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(app.requestedEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                            : 'Not specified'
+                          }
+                        </p>
                        </div>
                        {app.submittedAt && (
                          <div>
