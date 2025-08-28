@@ -334,31 +334,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const fixSubmittedAtDates = async () => {
-    if (!window.confirm('This will fix all applications with missing or invalid submittedAt dates. Continue?')) {
-      return;
-    }
-    
-    try {
-      const response = await fetch('/api/application/admin/fix-submitted-at', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.message);
-        // Reload applications to show the updated dates
-        loadApplications();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to fix submittedAt dates');
-      }
-    } catch (error) {
-      console.error('Error fixing submittedAt dates:', error);
-      toast.error('Error fixing submittedAt dates');
-    }
-  };
+  
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
@@ -578,29 +554,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Admin Tools */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Admin Tools</h3>
-          </div>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">Fix Submitted Date Issues</h4>
-                <p className="text-sm text-gray-500 mt-1">
-                  Fix applications that have missing or invalid submittedAt dates by setting them to their creation date.
-                </p>
-              </div>
-              <button
-                onClick={fixSubmittedAtDates}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Fix Dates
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Applications List */}
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -766,6 +720,12 @@ const AdminDashboard = () => {
                         </span>
                       </div>
                     )}
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 text-gray-400 mr-2" />
+                      <span className="text-sm">
+                        <strong>Requested Months:</strong> {selectedApplication.requestedMonths || 'Not specified'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
