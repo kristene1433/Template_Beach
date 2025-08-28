@@ -410,7 +410,7 @@ Period, under the same or better terms. The rental period begins at 4 P.M. on th
 and ends at 10:00 A.M. the last day of the rental period.
 
 2. **Deposit & Payment**: A $500 US dollar deposit towards the Rental Fee is due upon
-execution of this Agreement. The balance of the Rental Fee ($${rentalAmount}), is due on or before ${sixtyDaysBeforeFormatted}. Following the renter's departure, an inspection of the premises will
+execution of this Agreement. The balance of the Rental Fee $${rentalAmount} is due on or before ${sixtyDaysBeforeFormatted}. Following the renter's departure, an inspection of the premises will
 be conducted. Based upon the condition of the Premises, all, a portion of, or none of the
 Security Deposit may be refunded, depending on whether any damage, beyond normal
 wear and tear, has occurred.

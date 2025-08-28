@@ -324,9 +324,6 @@ const Dashboard = () => {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
                             {getStatusText(app.status)}
                           </span>
-                          <span className="text-sm text-gray-500">
-                            {formatDate(app.submittedAt)}
-                          </span>
                         </div>
                         <Link
                           to={`/application/${app.id}`}
@@ -338,7 +335,7 @@ const Dashboard = () => {
                       </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
-                         <p className="text-sm font-medium text-gray-900">Requested Start</p>
+                         <p className="text-sm font-medium text-gray-900">Month Requested</p>
                          <p className="text-sm text-gray-600">{app.requestedMonths || 'Not specified'}</p>
                        </div>
                        {app.submittedAt && (

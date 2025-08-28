@@ -224,18 +224,34 @@ const AdminDashboard = () => {
     doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
     doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
     
-    // Add lease content
+    // Add lease content with proper page handling
     doc.setFontSize(10);
     const splitText = doc.splitTextToSize(leaseContent, 170);
-    doc.text(splitText, 20, 100);
     
-         // Open PDF in new window
-     const pdfBlob = doc.output('blob');
-     const pdfUrl = URL.createObjectURL(pdfBlob);
-     window.open(pdfUrl, '_blank');
-     
-     // Clean up URL after a delay
-     setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+    let yPosition = 100;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    
+    for (let i = 0; i < splitText.length; i++) {
+      const line = splitText[i];
+      
+      // Check if we need to add a new page
+      if (yPosition > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+      
+      doc.text(line, 20, yPosition);
+      yPosition += 7; // Line height
+    }
+    
+    // Open PDF in new window
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+    
+    // Clean up URL after a delay
+    setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
   };
 
   const downloadLease = () => {
@@ -257,10 +273,26 @@ const AdminDashboard = () => {
     doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
     doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
     
-    // Add lease content
+    // Add lease content with proper page handling
     doc.setFontSize(10);
     const splitText = doc.splitTextToSize(leaseContent, 170);
-    doc.text(splitText, 20, 100);
+    
+    let yPosition = 100;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    
+    for (let i = 0; i < splitText.length; i++) {
+      const line = splitText[i];
+      
+      // Check if we need to add a new page
+      if (yPosition > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+      
+      doc.text(line, 20, yPosition);
+      yPosition += 7; // Line height
+    }
     
     // Download PDF
     doc.save(`lease-agreement-${selectedApplicationForLease.firstName}-${selectedApplicationForLease.lastName}.pdf`);
