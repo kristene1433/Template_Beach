@@ -29,6 +29,8 @@ const AdminDashboard = () => {
   const [selectedApplicationForLease, setSelectedApplicationForLease] = useState(null);
   const [leaseContent, setLeaseContent] = useState('');
   const [leaseGenerated, setLeaseGenerated] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [selectedApplicationForDocuments, setSelectedApplicationForDocuments] = useState(null);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -213,22 +215,11 @@ const AdminDashboard = () => {
     doc.setFontSize(20);
     doc.text('Lease Agreement', 105, 20, { align: 'center' });
     
-    // Set subtitle with tenant name
-    doc.setFontSize(14);
-    doc.text(`Tenant: ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}`, 20, 35);
-    
-    // Set lease details
-    doc.setFontSize(12);
-    doc.text(`Lease Start Date: ${leaseFormData.leaseStartDate}`, 20, 50);
-    doc.text(`Lease End Date: ${leaseFormData.leaseEndDate}`, 20, 60);
-    doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
-    doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
-    
     // Add lease content with proper page handling
     doc.setFontSize(10);
     const splitText = doc.splitTextToSize(leaseContent, 170);
     
-    let yPosition = 100;
+    let yPosition = 40;
     const pageHeight = doc.internal.pageSize.height;
     const margin = 20;
     
@@ -262,22 +253,11 @@ const AdminDashboard = () => {
     doc.setFontSize(20);
     doc.text('Lease Agreement', 105, 20, { align: 'center' });
     
-    // Set subtitle with tenant name
-    doc.setFontSize(14);
-    doc.text(`Tenant: ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}`, 20, 35);
-    
-    // Set lease details
-    doc.setFontSize(12);
-    doc.text(`Lease Start Date: ${leaseFormData.leaseStartDate}`, 20, 50);
-    doc.text(`Lease End Date: ${leaseFormData.leaseEndDate}`, 20, 60);
-    doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
-    doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
-    
     // Add lease content with proper page handling
     doc.setFontSize(10);
     const splitText = doc.splitTextToSize(leaseContent, 170);
     
-    let yPosition = 100;
+    let yPosition = 40;
     const pageHeight = doc.internal.pageSize.height;
     const margin = 20;
     
@@ -361,6 +341,11 @@ const AdminDashboard = () => {
       });
       toast.error(`Error viewing signed lease: ${error.response?.status || error.message}`);
     }
+  };
+
+  const reviewDocuments = (application) => {
+    setSelectedApplicationForDocuments(application);
+    setShowDocumentsModal(true);
   };
 
   const resetLeaseModal = () => {
@@ -679,6 +664,15 @@ const AdminDashboard = () => {
                             Generate Lease
                           </button>
                         )}
+                        {application.documents && application.documents.length > 0 && (
+                          <button
+                            onClick={() => reviewDocuments(application)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Review Documents ({application.documents.length})
+                          </button>
+                        )}
                         {application.signedLeaseFile && (
                           <button
                             onClick={() => viewSignedLease(application._id)}
@@ -690,7 +684,7 @@ const AdminDashboard = () => {
                         )}
                         <button
                           onClick={() => deleteApplication(application._id)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-offset-2 focus:ring-red-500"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete
@@ -891,6 +885,47 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Documents Section */}
+              {selectedApplication.documents && selectedApplication.documents.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4">
+                    Uploaded Documents ({selectedApplication.documents.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedApplication.documents.map((document, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-900">{document.name}</h5>
+                            <p className="text-xs text-gray-500">{document.type}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {formatDate(document.uploadedAt)}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => window.open(document.url, '_blank')}
+                              className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </button>
+                            <a
+                              href={document.url}
+                              download={document.name}
+                              className="inline-flex items-center px-2 py-1 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Signed Lease Notification */}
               {selectedApplication.signedLeaseFile && (
                 <div className="mt-6">
@@ -956,6 +991,15 @@ const AdminDashboard = () => {
 
               {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                {selectedApplication.documents && selectedApplication.documents.length > 0 && (
+                  <button
+                    onClick={() => reviewDocuments(selectedApplication)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Review Documents ({selectedApplication.documents.length})
+                  </button>
+                )}
                 {selectedApplication.status === 'approved' && (
                   <button
                     onClick={() => generateLease(selectedApplication)}
@@ -1133,6 +1177,78 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Review Modal */}
+      {showDocumentsModal && selectedApplicationForDocuments && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Review Documents - {selectedApplicationForDocuments.firstName} {selectedApplicationForDocuments.lastName}
+                </h3>
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {selectedApplicationForDocuments.documents && selectedApplicationForDocuments.documents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedApplicationForDocuments.documents.map((document, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900">{document.name}</h4>
+                            <p className="text-xs text-gray-500">{document.type}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {formatDate(document.uploadedAt)}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => window.open(document.url, '_blank')}
+                              className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </button>
+                            <a
+                              href={document.url}
+                              download={document.name}
+                              className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500">No documents have been uploaded for this application.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-6 border-t mt-6">
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

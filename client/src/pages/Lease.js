@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import jsPDF from 'jspdf';
 import {
   FileText,
   Download,
@@ -93,17 +94,36 @@ const Lease = () => {
     }
     
     try {
-      const blob = new Blob([leaseContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `lease-agreement-${user.firstName}-${user.lastName}.txt`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      // Generate PDF
+      const doc = new jsPDF();
       
-      toast.success('Lease agreement downloaded successfully!');
+      // Set title
+      doc.setFontSize(20);
+      doc.text('Lease Agreement', 105, 20, { align: 'center' });
+      
+      // Add lease content with proper page handling
+      doc.setFontSize(10);
+      const splitText = doc.splitTextToSize(leaseContent, 170);
+      
+      let yPosition = 40;
+      let currentPage = 1;
+      
+      for (let i = 0; i < splitText.length; i++) {
+        // Check if we need a new page
+        if (yPosition > 270) {
+          doc.addPage();
+          currentPage++;
+          yPosition = 20;
+        }
+        
+        doc.text(splitText[i], 20, yPosition);
+        yPosition += 7;
+      }
+      
+      // Save the PDF
+      doc.save(`lease-agreement-${user.firstName}-${user.lastName}.pdf`);
+      
+      toast.success('Lease agreement downloaded successfully as PDF!');
     } catch (error) {
       console.error('Error downloading lease:', error);
       toast.error('Error downloading lease agreement');
@@ -272,13 +292,13 @@ const Lease = () => {
                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                    <div className="text-sm text-blue-800">
                      <p className="font-medium">
-                       {leaseData.signedLeaseFile ? 'Lease Agreement Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Lease Agreement Available' : 'Lease Agreement Not Started'}
+                       {leaseData.signedLeaseFile ? 'Lease Agreement Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Lease Available to Sign' : 'Lease Agreement Not Started'}
                      </p>
                      <p className="mt-1">
                        {leaseData.signedLeaseFile 
                          ? 'Your lease agreement has been signed and uploaded. You can view and download it below.'
                          : leaseData.leaseStartDate && leaseData.leaseEndDate
-                         ? 'Your lease agreement is ready for review. You can preview and download it below.'
+                         ? 'Your lease agreement is available to be signed. You can preview and download it below.'
                          : 'Your lease agreement has not been generated yet. Please wait for an administrator to create your lease.'
                        }
                      </p>
