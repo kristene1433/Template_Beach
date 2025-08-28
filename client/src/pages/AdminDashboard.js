@@ -48,6 +48,14 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Admin applications data:', data.applications);
+        
+        // Debug: Log submittedAt field for each application
+        if (data.applications && data.applications.length > 0) {
+          data.applications.forEach((app, index) => {
+            console.log(`App ${index + 1}: ${app.firstName} ${app.lastName} - submittedAt:`, app.submittedAt, 'createdAt:', app.createdAt);
+          });
+        }
+        
         setApplications(data.applications || []);
       } else {
         toast.error('Failed to load applications');
