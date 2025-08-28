@@ -6,7 +6,7 @@ import axios from 'axios';
 import {
   Users, FileText, Search, Eye, Download, Calendar, 
   Phone, Mail, MapPin, UserCheck, Clock, CheckCircle,
-  XCircle, AlertCircle, LogOut, Shield, DollarSign
+  XCircle, AlertCircle, LogOut, Shield, DollarSign, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -293,6 +293,37 @@ const AdminDashboard = () => {
     });
     setLeaseContent('');
     setLeaseGenerated(false);
+  };
+
+  const deleteApplication = async (applicationId) => {
+    if (!window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/application/admin/${applicationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Application deleted successfully');
+        // Remove from local state
+        setApplications(prevApps => prevApps.filter(app => app._id !== applicationId));
+        // Close modal if the deleted application was selected
+        if (selectedApplication && selectedApplication._id === applicationId) {
+          setSelectedApplication(null);
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete application');
+      }
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      toast.error('Error deleting application');
+    }
   };
 
   const filteredApplications = applications.filter(app => {
@@ -587,6 +618,13 @@ const AdminDashboard = () => {
                             View Signed Lease
                           </button>
                         )}
+                        <button
+                          onClick={() => deleteApplication(application._id)}
+                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </button>
                         {/* Debug info */}
                         <div className="text-xs text-gray-500 mt-1">
                           signedLeaseFile: {application.signedLeaseFile ? 'Yes' : 'No'}
@@ -855,6 +893,13 @@ const AdminDashboard = () => {
                     Generate Lease Agreement
                   </button>
                 )}
+                <button
+                  onClick={() => deleteApplication(selectedApplication._id)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Application
+                </button>
                 <button
                   onClick={() => setSelectedApplication(null)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

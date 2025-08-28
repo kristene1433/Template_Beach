@@ -356,4 +356,31 @@ router.put('/admin/:applicationId/status', auth, async (req, res) => {
   }
 });
 
+// Admin: Delete application
+router.delete('/admin/:applicationId', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    const application = await Application.findById(applicationId);
+    
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Admin can delete any application regardless of status
+    await Application.findByIdAndDelete(applicationId);
+
+    res.json({
+      message: 'Application deleted successfully'
+    });
+  } catch (error) {
+    console.error('Admin application deletion error:', error);
+    res.status(500).json({ error: 'Server error deleting application' });
+  }
+});
+
 module.exports = router;
