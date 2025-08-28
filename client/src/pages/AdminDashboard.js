@@ -720,7 +720,7 @@ const AdminDashboard = () => {
                     <div className="flex items-center">
                       <Calendar className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-sm">
-                        <strong>Submitted:</strong> {formatDate(selectedApplication.submittedAt)}
+                        <strong>Submitted:</strong> {formatDate(selectedApplication.submittedAt || selectedApplication.createdAt)}
                       </span>
                     </div>
                     <div className="flex items-center">
