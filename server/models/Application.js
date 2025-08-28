@@ -149,11 +149,19 @@ applicationSchema.pre('save', function(next) {
   // If this is a new application and submittedAt is not set, set it to current date
   if (this.isNew && !this.submittedAt) {
     this.submittedAt = new Date();
+    console.log('Pre-save: Set submittedAt for new application');
   }
   
   // If status is being changed to 'pending' and submittedAt is not set, set it
   if (this.isModified('status') && this.status === 'pending' && !this.submittedAt) {
     this.submittedAt = new Date();
+    console.log('Pre-save: Set submittedAt for status change to pending');
+  }
+  
+  // Ensure submittedAt is always set for any application
+  if (!this.submittedAt) {
+    this.submittedAt = this.createdAt || new Date();
+    console.log('Pre-save: Set submittedAt fallback');
   }
   
   next();

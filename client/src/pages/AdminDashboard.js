@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendLeaseNotification } from '../utils/emailjs';
 import axios from 'axios';
+import jsPDF from 'jspdf';
 import {
   Users, FileText, Search, Eye, Download, Calendar, 
   Phone, Mail, MapPin, UserCheck, Clock, CheckCircle,
@@ -155,7 +156,7 @@ const AdminDashboard = () => {
         const data = await response.json();
         setLeaseContent(data.leaseAgreement);
         setLeaseGenerated(true);
-        toast.success('Lease agreement generated successfully!');
+                 toast.success('Lease agreement generated successfully as a PDF!');
         
         await loadApplications();
         
@@ -193,37 +194,65 @@ const AdminDashboard = () => {
       return;
     }
     
-    const newWindow = window.open('', '_blank');
-    newWindow.document.write(`
-      <html>
-        <head>
-          <title>Lease Agreement - ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-            pre { white-space: pre-wrap; font-family: inherit; }
-          </style>
-        </head>
-        <body>
-          <h1>Lease Agreement</h1>
-          <pre>${leaseContent}</pre>
-        </body>
-      </html>
-    `);
-    newWindow.document.close();
+    // Generate PDF
+    const doc = new jsPDF();
+    
+    // Set title
+    doc.setFontSize(20);
+    doc.text('Lease Agreement', 105, 20, { align: 'center' });
+    
+    // Set subtitle with tenant name
+    doc.setFontSize(14);
+    doc.text(`Tenant: ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}`, 20, 35);
+    
+    // Set lease details
+    doc.setFontSize(12);
+    doc.text(`Lease Start Date: ${leaseFormData.leaseStartDate}`, 20, 50);
+    doc.text(`Lease End Date: ${leaseFormData.leaseEndDate}`, 20, 60);
+    doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
+    doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
+    
+    // Add lease content
+    doc.setFontSize(10);
+    const splitText = doc.splitTextToSize(leaseContent, 170);
+    doc.text(splitText, 20, 100);
+    
+         // Open PDF in new window
+     const pdfBlob = doc.output('blob');
+     const pdfUrl = URL.createObjectURL(pdfBlob);
+     window.open(pdfUrl, '_blank');
+     
+     // Clean up URL after a delay
+     setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
   };
 
   const downloadLease = () => {
-    const blob = new Blob([leaseContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `lease-agreement-${selectedApplicationForLease.firstName}-${selectedApplicationForLease.lastName}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    toast.success('Lease downloaded successfully!');
+    // Generate PDF
+    const doc = new jsPDF();
+    
+    // Set title
+    doc.setFontSize(20);
+    doc.text('Lease Agreement', 105, 20, { align: 'center' });
+    
+    // Set subtitle with tenant name
+    doc.setFontSize(14);
+    doc.text(`Tenant: ${selectedApplicationForLease.firstName} ${selectedApplicationForLease.lastName}`, 20, 35);
+    
+    // Set lease details
+    doc.setFontSize(12);
+    doc.text(`Lease Start Date: ${leaseFormData.leaseStartDate}`, 20, 50);
+    doc.text(`Lease End Date: ${leaseFormData.leaseEndDate}`, 20, 60);
+    doc.text(`Monthly Rent: $${leaseFormData.rentalAmount.toLocaleString()}`, 20, 70);
+    doc.text(`Security Deposit: $${leaseFormData.depositAmount.toLocaleString()}`, 20, 80);
+    
+    // Add lease content
+    doc.setFontSize(10);
+    const splitText = doc.splitTextToSize(leaseContent, 170);
+    doc.text(splitText, 20, 100);
+    
+    // Download PDF
+    doc.save(`lease-agreement-${selectedApplicationForLease.firstName}-${selectedApplicationForLease.lastName}.pdf`);
+    toast.success('Lease PDF downloaded successfully!');
   };
 
   const sendLeaseEmail = async (sendToManager = false) => {
@@ -334,7 +363,31 @@ const AdminDashboard = () => {
     }
   };
 
-  
+  const fixSubmittedAtDates = async () => {
+    if (!window.confirm('This will fix all applications with missing or invalid submittedAt dates. Continue?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/application/admin/fix-submitted-at', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message);
+        // Reload applications to show the updated dates
+        loadApplications();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to fix submittedAt dates');
+      }
+    } catch (error) {
+      console.error('Error fixing submittedAt dates:', error);
+      toast.error('Error fixing submittedAt dates');
+    }
+  };
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
@@ -554,7 +607,29 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-
+        {/* Admin Tools */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Admin Tools</h3>
+          </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900">Fix Submitted Date Issues</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fix applications that have missing or invalid submittedAt dates by setting them to their creation date.
+                </p>
+              </div>
+              <button
+                onClick={fixSubmittedAtDates}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Fix Dates
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Applications List */}
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -1029,28 +1104,28 @@ const AdminDashboard = () => {
                 </form>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                    <p className="text-sm text-green-800">
-                      Lease agreement has been generated successfully! You can now view, download, or send it via email.
-                    </p>
-                  </div>
+                                     <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                     <p className="text-sm text-green-800">
+                       Lease agreement has been generated successfully as a PDF! You can now view, download, or send it via email.
+                     </p>
+                   </div>
                   
                   <div className="flex flex-col space-y-3">
-                    <button
-                      onClick={viewLease}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>View Lease</span>
-                    </button>
-                    
-                    <button
-                      onClick={downloadLease}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>Download Lease</span>
-                    </button>
+                                         <button
+                       onClick={viewLease}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     >
+                       <Eye className="h-4 w-4" />
+                       <span>View PDF</span>
+                     </button>
+                     
+                     <button
+                       onClick={downloadLease}
+                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                     >
+                       <Download className="h-4 w-4" />
+                       <span>Download PDF</span>
+                     </button>
                     
                     <button
                       onClick={sendLeaseEmail}
