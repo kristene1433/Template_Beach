@@ -109,35 +109,20 @@ const ApplicationView = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    
-    try {
-      let dateObj;
-      if (typeof dateString === 'string') {
-        if (dateString.includes('-')) {
-          const [year, month, day] = dateString.split('-').map(Number);
-          dateObj = new Date(year, month - 1, day);
-        } else {
-          dateObj = new Date(dateString);
-        }
-      } else {
-        dateObj = new Date(dateString);
-      }
-      
-      if (isNaN(dateObj.getTime())) {
-        return 'Invalid Date';
-      }
-      
-      return dateObj.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
+  const formatDate = (value) => {
+    if (!value) return 'Not set';
+
+    // If it's already a Date instance
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return 'Invalid Date';
+      return value.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
+
+    // If it's a number (timestamp) or string (ISO) – let Date handle it
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return 'Invalid Date';
+
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (

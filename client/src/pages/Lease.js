@@ -177,38 +177,20 @@ const Lease = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    
-    try {
-      // Handle both date strings and Date objects
-      let dateObj;
-      if (typeof dateString === 'string') {
-        // If it's a date string like "2025-01-01", parse it directly
-        if (dateString.includes('-')) {
-          const [year, month, day] = dateString.split('-').map(Number);
-          dateObj = new Date(year, month - 1, day);
-        } else {
-          dateObj = new Date(dateString);
-        }
-      } else {
-        dateObj = new Date(dateString);
-      }
-      
-      // Check if the date is valid
-      if (isNaN(dateObj.getTime())) {
-        return 'Invalid Date';
-      }
-      
-      return dateObj.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
+  const formatDate = (value) => {
+    if (!value) return 'Not set';
+
+    // If it's already a Date instance
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return 'Invalid Date';
+      return value.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
+
+    // If it's a number (timestamp) or string (ISO) – let Date handle it
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return 'Invalid Date';
+
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   // Helper function to format dates for API calls (YYYY-MM-DD format)

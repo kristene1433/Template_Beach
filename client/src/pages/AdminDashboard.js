@@ -128,13 +128,9 @@ const AdminDashboard = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Application details loaded:', data.application);
-        console.log('submittedAt field:', data.application.submittedAt);
-        console.log('createdAt field:', data.application.createdAt);
         setSelectedApplication(data.application);
       } else {
         // Fallback to the application data from the list if the detailed fetch fails
-        console.log('Fallback to list data:', application);
         setSelectedApplication(application);
       }
     } catch (error) {
@@ -414,33 +410,20 @@ const AdminDashboard = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    
-    console.log('formatDate called with:', dateString, 'type:', typeof dateString);
-    
-    try {
-      // Handle ISO date strings (like from MongoDB)
-      const dateObj = new Date(dateString);
-      
-      console.log('Created Date object:', dateObj, 'isValid:', !isNaN(dateObj.getTime()));
-      
-      if (isNaN(dateObj.getTime())) {
-        return 'Invalid Date';
-      }
-      
-      const formatted = dateObj.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-      
-      console.log('Formatted result:', formatted);
-      return formatted;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
+  const formatDate = (value) => {
+    if (!value) return 'Not set';
+
+    // If it's already a Date instance
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return 'Invalid Date';
+      return value.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
+
+    // If it's a number (timestamp) or string (ISO) – let Date handle it
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return 'Invalid Date';
+
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   if (isLoading) {
