@@ -397,17 +397,8 @@ const AdminDashboard = () => {
     if (!dateString) return 'Not set';
     
     try {
-      let dateObj;
-      if (typeof dateString === 'string') {
-        if (dateString.includes('-')) {
-          const [year, month, day] = dateString.split('-').map(Number);
-          dateObj = new Date(year, month - 1, day);
-        } else {
-          dateObj = new Date(dateString);
-        }
-      } else {
-        dateObj = new Date(dateString);
-      }
+      // Handle ISO date strings (like from MongoDB)
+      const dateObj = new Date(dateString);
       
       if (isNaN(dateObj.getTime())) {
         return 'Invalid Date';
