@@ -94,8 +94,11 @@ router.get('/:id', auth, async (req, res) => {
 // Create new application
 router.post('/', auth, async (req, res) => {
   try {
+    // Remove any client-provided submittedAt to prevent tampering
+    const { submittedAt, ...cleanData } = req.body;
+    
     const applicationData = {
-      ...req.body,
+      ...cleanData,
       userId: req.user._id,
       status: 'draft'
     };
@@ -128,9 +131,9 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
-    // Update application fields
+    // Update application fields (excluding sensitive fields)
     Object.keys(req.body).forEach(key => {
-      if (key !== 'userId' && key !== '_id') {
+      if (key !== 'userId' && key !== '_id' && key !== 'submittedAt') {
         application[key] = req.body[key];
       }
     });
@@ -383,66 +386,6 @@ router.delete('/admin/:applicationId', auth, async (req, res) => {
   }
 });
 
-// Admin: Fix submittedAt fields for all applications
-router.post('/admin/fix-submitted-at', auth, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    console.log('Admin requested fix for submittedAt fields...');
-    
-    // Find all applications
-    const allApplications = await Application.find({});
-    console.log(`Total applications found: ${allApplications.length}`);
-    
-    // Find applications without submittedAt or with invalid submittedAt
-    const applicationsToFix = await Application.find({
-      $or: [
-        { submittedAt: { $exists: false } },
-        { submittedAt: null },
-        { submittedAt: { $type: "invalid" } }
-      ]
-    });
-    
-    console.log(`Applications that need fixing: ${applicationsToFix.length}`);
-    
-    if (applicationsToFix.length === 0) {
-      return res.json({ 
-        message: 'All applications already have valid submittedAt field',
-        fixedCount: 0,
-        totalApplications: allApplications.length
-      });
-    }
-    
-    // Fix each application
-    let fixedCount = 0;
-    for (const app of applicationsToFix) {
-      console.log(`Fixing application ${app._id} for ${app.firstName} ${app.lastName}`);
-      
-      // Use createdAt if available, otherwise use current date
-      const submittedAt = app.createdAt || new Date();
-      
-      await Application.findByIdAndUpdate(app._id, {
-        submittedAt: submittedAt
-      });
-      
-      fixedCount++;
-      console.log(`Fixed application ${app._id}: set submittedAt to ${submittedAt}`);
-    }
-    
-    console.log(`Successfully fixed ${fixedCount} applications`);
-    
-    res.json({ 
-      message: `Successfully fixed ${fixedCount} applications`,
-      fixedCount: fixedCount,
-      totalApplications: allApplications.length
-    });
-    
-  } catch (error) {
-    console.error('Error fixing submittedAt fields:', error);
-    res.status(500).json({ error: 'Server error fixing submittedAt fields' });
-  }
-});
+
 
 module.exports = router;
