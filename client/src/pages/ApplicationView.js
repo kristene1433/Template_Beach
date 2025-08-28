@@ -198,10 +198,10 @@ const ApplicationView = () => {
                     <div>
                                               <p className="text-sm font-medium text-gray-900">Requested Dates</p>
                       <p className="text-gray-600">
-                      {application.requestedStartDate && application.requestedEndDate 
-                        ? `${new Date(application.requestedStartDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-                        : 'Not specified'
-                      }
+                                  {application.requestedStartDate && application.requestedEndDate 
+              ? `${new Date(application.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+              : 'Not specified'
+            }
                     </p>
                     </div>
                   </div>

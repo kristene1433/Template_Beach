@@ -771,10 +771,10 @@ const AdminDashboard = () => {
                     <div className="flex items-center">
                       <Calendar className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-sm">
-                        <strong>Requested Dates:</strong> {selectedApplication.requestedStartDate && selectedApplication.requestedEndDate 
-                          ? `${new Date(selectedApplication.requestedStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(selectedApplication.requestedEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                          : 'Not specified'
-                        }
+                                    <strong>Requested Dates:</strong> {selectedApplication.requestedStartDate && selectedApplication.requestedEndDate 
+              ? `${new Date(selectedApplication.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(selectedApplication.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : 'Not specified'
+            }
                       </span>
                     </div>
                   </div>
