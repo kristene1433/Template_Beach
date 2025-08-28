@@ -58,9 +58,9 @@ const Dashboard = () => {
       case 'succeeded':
         return 'text-green-600 bg-green-100';
       case 'completed':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-gray-600 bg-gray-100';
       case 'pending':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-green-600 bg-green-100';
       case 'processing':
         return 'text-yellow-600 bg-yellow-100';
       case 'rejected':
@@ -84,11 +84,11 @@ const Dashboard = () => {
       case 'rejected':
         return 'Declined';
       case 'completed':
-        return 'Completed';
+        return 'Start';
       case 'not_started':
-        return 'Not Started';
+        return 'Start';
       default:
-        return 'Unknown';
+        return 'Start';
     }
   };
 
@@ -185,32 +185,32 @@ const Dashboard = () => {
 
         {/* Status Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Application Status */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary-600" />
+                                {/* Application Status */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-12 h-12 ${applicationStatus?.hasApplications ? 'bg-green-100' : 'bg-gray-100'} rounded-lg flex items-center justify-center`}>
+                  <FileText className={`w-6 h-6 ${applicationStatus?.hasApplications ? 'text-green-600' : 'text-gray-600'}`} />
+                </div>
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(applicationStatus?.latestStatus || 'not_started')}`}>
+                  {applicationStatus?.hasApplications ? 
+                    getStatusText(applicationStatus.latestStatus) : 'Start'}
+                </div>
               </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(applicationStatus?.latestStatus || 'not_started')}`}>
-                {applicationStatus?.hasApplications ? 
-                  getStatusText(applicationStatus.latestStatus) : 'Not Started'}
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Rental Applications
+              </h3>
+                           <p className="text-gray-600 text-sm mb-4">
+                 Complete your rental application to get started
+               </p>
+               
+               <Link
+                 to="/application"
+                 className="inline-flex items-center text-gray-600 hover:text-gray-700 text-sm font-medium"
+               >
+                 Get Started
+                 <ArrowRight className="w-4 h-4 ml-1" />
+               </Link>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Rental Applications
-            </h3>
-                         <p className="text-gray-600 text-sm mb-4">
-               Complete your rental application to get started
-             </p>
-             
-             <Link
-               to="/application"
-               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
-             >
-               Start Application
-               <ArrowRight className="w-4 h-4 ml-1" />
-             </Link>
-          </div>
 
           {/* Lease Status */}
           <div className="card">
