@@ -255,7 +255,7 @@ const Dashboard = () => {
               to={leaseStatus?.hasApplication ? "/lease" : "/application"}
               className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
-              {leaseStatus?.leaseSigned ? 'View Lease' : leaseStatus?.isComplete ? 'Review Lease' : leaseStatus?.hasApplication ? 'View Application' : 'Start Application'}
+              {leaseStatus?.leaseSigned ? 'View Lease' : leaseStatus?.isComplete ? 'Review Lease' : leaseStatus?.hasApplication ? 'View Lease' : 'Start Application'}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
