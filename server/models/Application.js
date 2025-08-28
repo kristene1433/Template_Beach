@@ -144,6 +144,21 @@ applicationSchema.virtual('fullAddress').get(function() {
   return `${this.address.street}, ${this.address.city}, ${this.address.state} ${this.address.zipCode}`;
 });
 
+// Pre-save middleware to automatically set submittedAt if not set
+applicationSchema.pre('save', function(next) {
+  // If this is a new application and submittedAt is not set, set it to current date
+  if (this.isNew && !this.submittedAt) {
+    this.submittedAt = new Date();
+  }
+  
+  // If status is being changed to 'pending' and submittedAt is not set, set it
+  if (this.isModified('status') && this.status === 'pending' && !this.submittedAt) {
+    this.submittedAt = new Date();
+  }
+  
+  next();
+});
+
 // Ensure virtuals are serialized
 applicationSchema.set('toJSON', { virtuals: true });
 applicationSchema.set('toObject', { virtuals: true });
