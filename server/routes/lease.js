@@ -553,6 +553,12 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
     const { applicationId } = req.params;
     console.log('View signed lease request:', { applicationId, userId: req.user._id, userRole: req.user.role });
     
+    // Validate applicationId
+    if (!applicationId || !require('mongoose').Types.ObjectId.isValid(applicationId)) {
+      console.log('Invalid application ID:', applicationId);
+      return res.status(400).json({ error: 'Invalid application ID' });
+    }
+    
     let application;
     
     // If user is admin, they can view any application's signed lease
@@ -569,23 +575,25 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
     }
 
     if (!application) {
-      console.log('Application not found');
+      console.log('Application not found for ID:', applicationId);
       return res.status(404).json({ error: 'Application not found' });
     }
     
     if (!application.signedLeaseFile) {
-      console.log('No signed lease file found');
+      console.log('No signed lease file found for application:', applicationId);
       return res.status(404).json({ error: 'Signed lease file not found' });
     }
     
     console.log('Signed lease file found:', {
       hasContent: !!application.signedLeaseFile.content,
       originalName: application.signedLeaseFile.originalName,
-      mimetype: application.signedLeaseFile.mimetype
+      mimetype: application.signedLeaseFile.mimetype,
+      contentLength: application.signedLeaseFile.content ? application.signedLeaseFile.content.length : 0
     });
 
     // Check if file content exists in database
     if (!application.signedLeaseFile.content) {
+      console.log('File content is missing for application:', applicationId);
       return res.status(404).json({ error: 'File content not found' });
     }
 
@@ -594,8 +602,8 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
     
     // Set appropriate headers
     res.set({
-      'Content-Type': application.signedLeaseFile.mimetype,
-      'Content-Disposition': `inline; filename="${application.signedLeaseFile.originalName}"`,
+      'Content-Type': application.signedLeaseFile.mimetype || 'application/octet-stream',
+      'Content-Disposition': `inline; filename="${application.signedLeaseFile.originalName || 'lease.pdf'}"`,
       'Content-Length': fileBuffer.length
     });
 

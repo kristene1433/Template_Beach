@@ -91,6 +91,8 @@ const ApplicationView = () => {
         return 'text-blue-600 bg-blue-100';
       case 'rejected':
         return 'text-red-600 bg-red-100';
+      case 'completed':
+        return 'text-blue-600 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -104,6 +106,8 @@ const ApplicationView = () => {
         return 'Approved';
       case 'rejected':
         return 'Declined';
+      case 'completed':
+        return 'Complete';
       default:
         return 'Unknown';
     }
