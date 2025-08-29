@@ -84,7 +84,7 @@ const Dashboard = () => {
       case 'rejected':
         return 'Declined';
       case 'completed':
-        return 'Start';
+        return 'Complete';
       case 'not_started':
         return 'Start';
       default:
@@ -322,8 +322,8 @@ const Dashboard = () => {
                    <div key={app.id} className="border border-gray-200 rounded-lg p-4">
                                            <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                            {getStatusText(app.status)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status === 'completed' ? 'completed' : app.status)}`}>
+                            {getStatusText(app.status === 'completed' ? 'completed' : app.status)}
                           </span>
                         </div>
                         <Link
