@@ -270,8 +270,15 @@ router.get('/status', auth, async (req, res) => {
       });
     }
 
-    // Find the application with a lease (most recent one with lease info)
-    const applicationWithLease = applications.find(app => app.leaseStartDate && app.leaseEndDate);
+    // Find the most recent application that's not completed
+    const mostRecentActiveApplication = applications.find(app => app.status !== 'completed');
+    
+    // Find the application with a lease (most recent one with lease info that's not completed)
+    const applicationWithLease = applications.find(app => 
+      app.leaseStartDate && 
+      app.leaseEndDate && 
+      app.status !== 'completed'
+    );
     
     if (applicationWithLease) {
       res.json({
@@ -286,13 +293,21 @@ router.get('/status', auth, async (req, res) => {
         applicationId: applicationWithLease._id,
         signedLeaseFile: applicationWithLease.signedLeaseFile
       });
-    } else {
-      // User has applications but no lease yet
+    } else if (mostRecentActiveApplication) {
+      // User has active applications but no lease yet
       res.json({
         hasApplication: true,
         isComplete: false,
         leaseSigned: false,
         message: 'Application submitted, waiting for lease generation'
+      });
+    } else {
+      // All applications are completed, return to default state
+      res.json({
+        hasApplication: false,
+        isComplete: false,
+        leaseSigned: false,
+        message: 'No active applications found'
       });
     }
   } catch (error) {

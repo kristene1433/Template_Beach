@@ -589,7 +589,7 @@ const AdminDashboard = () => {
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="rejected">Declined</option>
                   <option value="completed">Completed</option>
                 </select>
               </div>
@@ -829,7 +829,7 @@ const AdminDashboard = () => {
                         onClick={() => updateApplicationStatus(selectedApplication._id, 'rejected')}
                         className="px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                       >
-                        Reject
+                        Decline
                       </button>
                       <button
                         onClick={() => updateApplicationStatus(selectedApplication._id, 'completed')}
@@ -1201,6 +1201,21 @@ const AdminDashboard = () => {
                   <XCircle className="h-6 w-6" />
                 </button>
               </div>
+
+              {/* Completed Application Notice */}
+              {selectedApplicationForDocuments.status === 'completed' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Application Completed</p>
+                      <p className="mt-1">
+                        This application has been marked as completed. All documents are preserved for record-keeping and cannot be modified.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {selectedApplicationForDocuments.documents && selectedApplicationForDocuments.documents.length > 0 ? (

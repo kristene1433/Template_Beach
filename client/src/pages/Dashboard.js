@@ -58,7 +58,7 @@ const Dashboard = () => {
       case 'succeeded':
         return 'text-green-600 bg-green-100';
       case 'completed':
-        return 'text-gray-600 bg-gray-100';
+        return 'text-blue-600 bg-blue-100';
       case 'pending':
         return 'text-green-600 bg-green-100';
       case 'processing':
@@ -186,16 +186,12 @@ const Dashboard = () => {
         {/* Status Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                 {/* Application Status */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${applicationStatus?.hasApplications ? 'bg-green-100' : 'bg-gray-100'} rounded-lg flex items-center justify-center`}>
-                  <FileText className={`w-6 h-6 ${applicationStatus?.hasApplications ? 'text-green-600' : 'text-gray-600'}`} />
-                </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(applicationStatus?.latestStatus || 'not_started')}`}>
-                  {applicationStatus?.hasApplications ? 
-                    getStatusText(applicationStatus.latestStatus) : 'Start'}
-                </div>
-              </div>
+                         <div className="card">
+               <div className="flex items-center justify-between mb-4">
+                 <div className={`w-12 h-12 ${applicationStatus?.hasApplications ? 'bg-green-100' : 'bg-gray-100'} rounded-lg flex items-center justify-center`}>
+                   <FileText className={`w-6 h-6 ${applicationStatus?.hasApplications ? 'text-green-600' : 'text-gray-600'}`} />
+                 </div>
+               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Rental Applications
               </h3>
@@ -212,16 +208,13 @@ const Dashboard = () => {
                </Link>
             </div>
 
-          {/* Lease Status */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-accent-600" />
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(leaseStatus?.leaseSigned ? 'completed' : leaseStatus?.isComplete ? 'pending' : leaseStatus?.hasApplication ? 'not_started' : 'no_application')}`}>
-                {leaseStatus?.leaseSigned ? 'Signed' : leaseStatus?.isComplete ? 'Available' : leaseStatus?.hasApplication ? 'Not Started' : 'No Application'}
-              </div>
-            </div>
+                     {/* Lease Status */}
+           <div className="card">
+             <div className="flex items-center justify-between mb-4">
+               <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center">
+                 <Building2 className="w-6 h-6 text-accent-600" />
+               </div>
+             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Lease Agreement
             </h3>
@@ -243,16 +236,13 @@ const Dashboard = () => {
             </Link>
           </div>
 
-          {/* Payment Status */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
-                Active
-              </div>
-            </div>
+                     {/* Payment Status */}
+           <div className="card">
+             <div className="flex items-center justify-between mb-4">
+               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                 <CreditCard className="w-6 h-6 text-green-600" />
+               </div>
+             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Payment Portal
             </h3>
@@ -356,7 +346,7 @@ const Dashboard = () => {
                        <p className="text-sm text-gray-600">
                          {app.status === 'pending' && 'Your application has been submitted and is currently under review by our team.'}
                          {app.status === 'approved' && 'Congratulations! Your application has been approved. We will contact you to proceed with the lease agreement.'}
-                         {app.status === 'rejected' && 'Your application was not approved at this time. Please contact us for more information.'}
+                                                   {app.status === 'rejected' && 'Your application was declined at this time. Please contact us for more information.'}
                        </p>
                      </div>
                      {app.notes && (

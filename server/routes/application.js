@@ -268,6 +268,13 @@ router.delete('/documents/:documentId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
+    // Prevent deletion of documents from completed applications
+    if (application.status === 'completed') {
+      return res.status(403).json({ 
+        error: 'Cannot delete documents from completed applications. Documents are preserved for record-keeping.' 
+      });
+    }
+
     // Remove document by ID
     application.documents = application.documents.filter(
       doc => doc._id.toString() !== documentId

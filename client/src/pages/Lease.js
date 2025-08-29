@@ -283,40 +283,61 @@ const Lease = () => {
               </div>
             )}
 
+            {/* All Applications Completed - Return to Default State */}
+            {leaseData && leaseData.message === 'No active applications found' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">All Applications Completed</p>
+                    <p className="mt-1">
+                      Your previous rental applications have been completed. You can start a new application for future rentals.
+                    </p>
+                    <button
+                      onClick={() => navigate('/application')}
+                      className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Start New Application
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Lease Status Display */}
-                                      {leaseData && (
-               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                 <div className="flex items-start">
-                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                   <div className="text-sm text-blue-800">
-                     <p className="font-medium">
-                       {leaseData.signedLeaseFile ? 'Lease Agreement Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Lease Available to Sign' : 'Lease Agreement Not Started'}
-                     </p>
-                     <p className="mt-1">
-                       {leaseData.signedLeaseFile 
-                         ? 'Your lease agreement has been signed and uploaded. You can view and download it below.'
-                         : leaseData.leaseStartDate && leaseData.leaseEndDate
-                         ? 'Your lease agreement is available to be signed. You can preview and download it below.'
-                         : 'Your lease agreement has not been generated yet. Please wait for an administrator to create your lease.'
-                       }
-                     </p>
-                                           {leaseData.leaseStartDate && leaseData.leaseEndDate && (
-                        <p className="mt-1 text-xs">
-                          Lease Period: {new Date(leaseData.leaseStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(leaseData.leaseEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                        </p>
-                      )}
-                     {leaseData.rentalAmount && (
-                       <p className="mt-1 text-xs">
-                         Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}
-                       </p>
-                     )}
-                   </div>
-                 </div>
-               </div>
-             )}
+            {leaseData && leaseData.message !== 'No active applications found' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">
+                      {leaseData.signedLeaseFile ? 'Lease Agreement Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Lease Available to Sign' : 'Lease Agreement Not Started'}
+                    </p>
+                    <p className="mt-1">
+                      {leaseData.signedLeaseFile 
+                        ? 'Your lease agreement has been signed and uploaded. You can view and download it below.'
+                        : leaseData.leaseStartDate && leaseData.leaseEndDate
+                        ? 'Your lease agreement is available to be signed. You can preview and download it below.'
+                        : 'Your lease agreement has not been generated yet. Please wait for an administrator to create your lease.'
+                      }
+                    </p>
+                    {leaseData.leaseStartDate && leaseData.leaseEndDate && (
+                      <p className="mt-1 text-xs">
+                        Lease Period: {new Date(leaseData.leaseStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(leaseData.leaseEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    )}
+                    {leaseData.rentalAmount && (
+                      <p className="mt-1 text-xs">
+                        Monthly Rent: ${leaseData.rentalAmount.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Lease Actions */}
-            {leaseData && (
+            {leaseData && leaseData.message !== 'No active applications found' && (
               <div className="mb-6">
                 {/* Admin-only notice */}
                 {!leaseContent && (
@@ -457,21 +478,21 @@ const Lease = () => {
               </div>
             )}
 
-                                      {leaseContent && (
-               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                 <div className="mb-4">
-                   <h3 className="text-lg font-semibold text-gray-900">
-                     Your Lease Agreement
-                   </h3>
-                 </div>
-                 
-                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                   <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
-                     {leaseContent}
-                   </pre>
-                 </div>
-               </div>
-             )}
+            {leaseContent && leaseData && leaseData.message !== 'No active applications found' && (
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Your Lease Agreement
+                  </h3>
+                </div>
+                
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
+                    {leaseContent}
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
