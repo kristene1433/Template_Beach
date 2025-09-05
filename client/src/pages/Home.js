@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Navigation from '../components/Navigation';
 import { 
   Star,
   Phone,
@@ -14,8 +15,6 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
-  Menu,
-  X,
   ArrowRight,
   CheckCircle,
   Calendar,
@@ -28,7 +27,6 @@ import {
 } from 'lucide-react';
 
 const Home = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reviews, setReviews] = useState([
     {
       id: 1,
@@ -107,7 +105,7 @@ const Home = () => {
     { icon: Bed, label: '2 Bedrooms' },
     { icon: Bath, label: '2 Bathrooms' },
     { icon: Users, label: 'Sleeps 4' },
-    { icon: Square, label: '1000 sq ft' },
+    { icon: Square, label: '990 sq ft' },
     { icon: Building2, label: 'Community Pool' },
     { icon: Waves, label: 'Gulf Front View' }
   ];
@@ -117,57 +115,14 @@ const Home = () => {
     { icon: Building2, label: 'Community Center' },
     { icon: Coffee, label: 'Fully Equipped Kitchen' },
     { icon: Car, label: 'Dedicated Parking' },
-    { icon: Calendar, label: 'Flexible Check-in' },
-    { icon: Heart, label: 'Pet Friendly' }
+    { icon: Calendar, label: 'Flexible Check-in' }
   ];
 
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  <span className="text-green-600">Palm</span> Run
-                </h1>
-              </div>
-            </div>
-            
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-8">
-                <Link to="/" className="text-gray-900 hover:text-green-600 px-3 py-2 text-sm font-medium">Home</Link>
-                <Link to="/application" className="text-gray-600 hover:text-green-600 px-3 py-2 text-sm font-medium">Apply</Link>
-                <Link to="/login" className="text-gray-600 hover:text-green-600 px-3 py-2 text-sm font-medium">Login</Link>
-                <Link to="/contact" className="text-gray-600 hover:text-green-600 px-3 py-2 text-sm font-medium">Contact</Link>
-              </div>
-            </div>
-
-            <div className="md:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-600 hover:text-gray-900 p-2"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link to="/" className="block px-3 py-2 text-gray-900 hover:text-green-600">Home</Link>
-              <Link to="/application" className="block px-3 py-2 text-gray-600 hover:text-green-600">Apply</Link>
-              <Link to="/login" className="block px-3 py-2 text-gray-600 hover:text-green-600">Login</Link>
-              <Link to="/contact" className="block px-3 py-2 text-gray-600 hover:text-green-600">Contact</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -208,7 +163,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              retreat
+              Beach Paradise
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               You don't have to travel far to get lost in paradise. Enjoy stunning Gulf views paired with top-notch beachfront living just steps from the sugar-white sands of Indian Shores.

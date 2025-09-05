@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import { Mail, Lock, Eye, EyeOff, Building2 } from 'lucide-react';
 
 const Login = () => {
@@ -72,20 +73,23 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
-            <Building2 className="w-7 h-7 text-white" />
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="flex justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Building2 className="w-7 h-7 text-white" />
+            </div>
           </div>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+            Welcome Back
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Sign in to your Palm Run LLC tenant account
+          </p>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Welcome Back
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to your Palm Run LLC tenant account
-        </p>
-      </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="card">
@@ -172,7 +176,7 @@ const Login = () => {
             <div className="text-center">
               <a
                 href="#forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-500 transition-colors duration-200"
+                className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
               >
                 Forgot your password?
               </a>
@@ -207,10 +211,10 @@ const Login = () => {
           <p className="text-sm text-gray-600">
             Need help? Contact us at{' '}
             <a
-              href="mailto:support@palmrunllc.com"
-              className="text-primary-600 hover:text-primary-500 font-medium"
+              href="mailto:palmrunbeachcondo@gmail.com"
+              className="text-blue-600 hover:text-blue-500 font-medium"
             >
-              support@palmrunllc.com
+              palmrunbeachcondo@gmail.com
             </a>
           </p>
         </div>

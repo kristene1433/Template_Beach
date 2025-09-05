@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import {
@@ -156,8 +157,11 @@ const Payment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gray-50 min-h-screen py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Payment Form */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -402,6 +406,7 @@ const Payment = () => {
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

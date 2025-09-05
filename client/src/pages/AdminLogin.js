@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import toast from 'react-hot-toast';
 
 const AdminLogin = () => {
@@ -54,11 +55,14 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto h-16 w-16 bg-red-600 rounded-full flex items-center justify-center">
-          <Shield className="h-8 w-8 text-white" />
-        </div>
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+            <Shield className="h-8 w-8 text-white" />
+          </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
           Admin Portal
         </h2>
@@ -131,7 +135,7 @@ const AdminLogin = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center">
@@ -164,6 +168,7 @@ const AdminLogin = () => {
               </Link>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import { sendLeaseNotification } from '../utils/emailjs';
 import axios from 'axios';
 import jsPDF from 'jspdf';
@@ -452,10 +453,13 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gray-50 min-h-screen">
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-red-600 mr-3" />
@@ -1271,6 +1275,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

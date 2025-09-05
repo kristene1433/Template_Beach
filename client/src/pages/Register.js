@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import toast from 'react-hot-toast';
 
 const Register = () => {
@@ -52,19 +53,22 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
-            <UserPlus className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
+              <UserPlus className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="mt-6 text-3xl font-bold text-gray-900">
+              Create Your Account
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Join Palm Run LLC to manage your rental application
+            </p>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create Your Account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Join Palm Run LLC to manage your rental application
-          </p>
-        </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">

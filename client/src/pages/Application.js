@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import { 
   User, 
   MapPin, 
@@ -230,8 +231,11 @@ const Application = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      
+      <div className="pt-16 bg-gray-50 min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -612,6 +616,7 @@ const Application = () => {
             </div>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );
