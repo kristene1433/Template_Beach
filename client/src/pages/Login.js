@@ -22,7 +22,7 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -53,20 +53,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setLoading(true);
-    
     try {
       const result = await login(formData.email, formData.password);
-      if (result.success) {
+      if (result?.success) {
         navigate('/dashboard');
+      } else {
+        // Surface a generic auth error
+        setErrors(prev => ({
+          ...prev,
+          password: 'Invalid email or password'
+        }));
       }
     } catch (error) {
       console.error('Login error:', error);
+      setErrors(prev => ({
+        ...prev,
+        password: 'Something went wrong. Please try again.'
+      }));
     } finally {
       setLoading(false);
     }
@@ -75,7 +82,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
-      
+
       <div className="pt-16 bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">
@@ -91,132 +98,137 @@ const Login = () => {
           </p>
         </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="card">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email Field */}
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    placeholder="Enter your email"
+                  />
                 </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:ring-red-500' : ''}`}
-                  placeholder="Enter your email"
-                />
+                {errors.email && (
+                  <p className="form-error">{errors.email}</p>
+                )}
               </div>
-              {errors.email && (
-                <p className="form-error">{errors.email}</p>
-              )}
-            </div>
 
-            {/* Password Field */}
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+              {/* Password Field */}
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:ring-red-500' : ''}`}
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:ring-red-500' : ''}`}
-                  placeholder="Enter your password"
-                />
+                {errors.password && (
+                  <p className="form-error">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div>
                 <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full flex justify-center items-center disabled:opacity-75"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    'Sign In'
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="form-error">{errors.password}</p>
-              )}
+
+              {/* Forgot Password Link */}
+              <div className="text-center">
+                <a
+                  href="#forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                >
+                  Forgot your password?
+                </a>
+              </div>
+            </form>
+
+            {/* Divider */}
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+                </div>
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full flex justify-center items-center"
+            {/* Register Link */}
+            <div className="mt-6">
+              <Link
+                to="/register"
+                className="btn-outline w-full flex justify-center items-center"
               >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
+                Create New Account
+              </Link>
             </div>
+          </div>
 
-            {/* Forgot Password Link */}
-            <div className="text-center">
+          {/* Additional Info */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Need help? Contact us at{' '}
               <a
-                href="#forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                href="mailto:palmrunbeachcondo@gmail.com"
+                className="text-blue-600 hover:text-blue-500 font-medium"
               >
-                Forgot your password?
+                palmrunbeachcondo@gmail.com
               </a>
-            </div>
-          </form>
-
-          {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
-              </div>
-            </div>
+            </p>
           </div>
-
-          {/* Register Link */}
-          <div className="mt-6">
-            <Link
-              to="/register"
-              className="btn-outline w-full flex justify-center items-center"
-            >
-              Create New Account
-            </Link>
-          </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Need help? Contact us at{' '}
-            <a
-              href="mailto:palmrunbeachcondo@gmail.com"
-              className="text-blue-600 hover:text-blue-500 font-medium"
-            >
-              palmrunbeachcondo@gmail.com
-            </a>
-          </p>
         </div>
       </div>
     </div>
