@@ -17,7 +17,16 @@ const Navigation = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center text-2xl font-bold text-gray-900">
-                <TreePine className="h-8 w-8 text-blue-600 mr-2" />
+                <div className="mr-2">
+                  <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none">
+                    {/* Palm tree trunk (brown) */}
+                    <rect x="14" y="20" width="4" height="12" fill="#8B4513" rx="2"/>
+                    {/* Palm tree leaves (green) */}
+                    <path d="M16 4 L8 16 L12 14 L16 8 L20 14 L24 16 Z" fill="#228B22"/>
+                    <path d="M16 6 L6 18 L10 16 L16 10 L22 16 L26 18 Z" fill="#32CD32"/>
+                    <path d="M16 8 L4 20 L8 18 L16 12 L24 18 L28 20 Z" fill="#228B22"/>
+                  </svg>
+                </div>
                 <span className="text-blue-600">Palm</span> Run
               </Link>
             </div>
