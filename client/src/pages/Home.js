@@ -90,41 +90,41 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Video */}
+        {/* Background Image/Video */}
         <div className="absolute inset-0 z-0">
-          <video
-            className="w-full h-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            onLoadStart={() => console.log('Video loading started')}
-            onCanPlay={() => console.log('Video can play')}
-            onError={(e) => {
-              console.log('Video failed to load:', e);
-              // Hide video and show fallback image
-              e.target.style.display = 'none';
-              const fallbackImg = e.target.nextElementSibling;
-              if (fallbackImg) {
-                fallbackImg.style.display = 'block';
-              }
-            }}
-          >
-            <source src="/videos/beach-video.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          {/* Fallback image if video doesn't load */}
+          {/* Show image by default */}
           <img
             src="/images/image1.jpg"
             alt="Gulf Shores Beachfront Condo"
             className="w-full h-full object-cover"
-            style={{ display: 'none' }}
             onError={(e) => {
-              console.log('Fallback image failed, using Unsplash');
+              console.log('Image failed, using Unsplash');
               e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
             }}
           />
+          {/* Video overlay - only shows if video loads successfully */}
+          <video
+            className="w-full h-full object-cover absolute inset-0"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            style={{ display: 'none' }}
+            onCanPlay={() => {
+              console.log('Video can play, showing video');
+              // Hide image and show video
+              const img = document.querySelector('img[alt="Gulf Shores Beachfront Condo"]');
+              if (img) img.style.display = 'none';
+              this.style.display = 'block';
+            }}
+            onError={(e) => {
+              console.log('Video failed to load, keeping image');
+              // Keep image visible, video stays hidden
+            }}
+          >
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 

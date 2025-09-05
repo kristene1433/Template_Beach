@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import Navigation from '../components/Navigation';
 import toast from 'react-hot-toast';
 
 const AdminLogin = () => {
@@ -56,9 +55,54 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
+      {/* Admin Login Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="flex items-center text-2xl font-bold text-gray-900">
+                  <div className="mr-2">
+                    <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none">
+                      {/* Palm tree trunk (brown) */}
+                      <rect x="14" y="20" width="4" height="12" fill="#8B4513" rx="2"/>
+                      {/* Curved palm tree leaves (green) */}
+                      <path d="M16 4 Q8 12 12 18 Q16 14 20 18 Q24 12 16 4" fill="#228B22"/>
+                      <path d="M16 6 Q6 14 10 20 Q16 16 22 20 Q26 14 16 6" fill="#32CD32"/>
+                      <path d="M16 8 Q4 16 8 22 Q16 18 24 22 Q28 16 16 8" fill="#228B22"/>
+                      <path d="M16 2 Q10 8 12 14 Q16 10 20 14 Q22 8 16 2" fill="#32CD32"/>
+                      <path d="M16 3 Q12 6 14 12 Q16 8 18 12 Q20 6 16 3" fill="#228B22"/>
+                    </svg>
+                  </div>
+                  <span className="text-blue-600">Palm</span> Run LLC
+                </div>
+              </div>
+              <div className="ml-6">
+                <div className="flex items-center">
+                  <Shield className="h-6 w-6 text-red-600 mr-2" />
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">Admin Portal</h1>
+                    <p className="text-sm text-gray-600">Property Management</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Back to Home Link */}
+            <div className="flex items-center">
+              <Link
+                to="/"
+                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                ← Back to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
       
-      <div className="pt-16 bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
             <Shield className="h-8 w-8 text-white" />
