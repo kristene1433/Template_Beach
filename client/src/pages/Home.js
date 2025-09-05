@@ -32,33 +32,33 @@ const Home = () => {
   const [reviews, setReviews] = useState([
     {
       id: 1,
-      name: 'Tyler Remmie',
+      name: 'Terry and Linda T.',
       rating: 5,
-      date: '2024-12-15',
-      title: 'Perfect Weekend Getaway',
-      content: 'Enjoyed the cabin for a weekend get-away for my girlfriend\'s birthday. The home was clean and beautifully designed with everything we needed. The location by the water was absolutely stunning, and we loved the peaceful atmosphere. Will definitely be back!',
+      date: '2023-04-11',
+      title: 'Beautiful Condo with Sun, Sand and Surf',
+      content: 'We stayed for the entire month of March. Second floor, mid-building, convenient to elevator, pool, community room, and quick beach access. 2 good-sized bedrooms and baths with plenty of storage. We could turn off AC, open a large window facing the beach, and fall asleep to the sound of the surf.',
       verified: true,
-      stayed: 'December 2024',
+      stayed: 'March 2023',
       expanded: false
     },
     {
       id: 2,
-      name: 'Sarah M.',
+      name: 'Lourdes T.',
       rating: 5,
-      date: '2024-11-28',
-      title: 'Amazing Experience!',
-      content: 'This place exceeded all our expectations. The modern amenities combined with the natural setting created the perfect retreat. The hosts were incredibly responsive and helpful. The views from the property are breathtaking, especially at sunset.',
+      date: '2025-08-07',
+      title: 'What a fabulous experience!',
+      content: 'Everything was perfect! Location, Owners, Access to the beach and pool. From the moment you walk in you can sense the love the owners have put into their property. The kitchen is fully stocked, their washer/dryer combo is state of the art, the beds are great.',
       verified: true,
-      stayed: 'November 2024',
+      stayed: 'September 2025',
       expanded: false
     },
     {
       id: 3,
-      name: 'Michael R.',
+      name: 'Jill H.',
       rating: 5,
-      date: '2024-10-12',
-      title: 'Luxury in Nature',
-      content: 'What a wonderful place to unwind! The cabin has everything you need for a comfortable stay while being surrounded by beautiful nature. The design is modern yet cozy, and the location is perfect for both relaxation and outdoor activities.',
+      date: '2025-03-13',
+      title: 'WONDERFUL PLACE!',
+      content: 'I had a wonderful stay at this beautiful condo and the hosts were fantastic! The condo had everything you can possibly need without bringing it from home! It\'s located on the 2nd floor which is convenient to both the elevator and the stairs.',
       verified: true,
       stayed: 'October 2024',
       expanded: false
@@ -107,16 +107,16 @@ const Home = () => {
     { icon: Bed, label: '2 Bedrooms' },
     { icon: Bath, label: '2 Bathrooms' },
     { icon: Users, label: 'Sleeps 4' },
-    { icon: Square, label: '1200 sq ft' },
-    { icon: Wifi, label: 'High-Speed WiFi' },
-    { icon: Car, label: 'Parking Included' }
+    { icon: Square, label: '1000 sq ft' },
+    { icon: Building2, label: 'Community Pool' },
+    { icon: Waves, label: 'Gulf Front View' }
   ];
 
   const amenities = [
-    { icon: Water, label: 'Waterfront Access' },
-    { icon: TreePine, label: 'Private Deck' },
+    { icon: Waves, label: 'Beach Access' },
+    { icon: Building2, label: 'Community Center' },
     { icon: Coffee, label: 'Fully Equipped Kitchen' },
-    { icon: Mountain, label: 'Mountain Views' },
+    { icon: Car, label: 'Dedicated Parking' },
     { icon: Calendar, label: 'Flexible Check-in' },
     { icon: Heart, label: 'Pet Friendly' }
   ];
@@ -174,9 +174,12 @@ const Home = () => {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80"
-            alt="Luxury cabin by the lake"
+            src="/images/image1.jpg"
+            alt="Gulf Shores Beachfront Condo"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+            }}
           />
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
@@ -184,18 +187,18 @@ const Home = () => {
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Seven Stunning Cabins
-            <span className="block text-green-300">Nestled in the Heart of</span>
-            <span className="block text-green-300">Texas</span>
+            Gulf Shores
+            <span className="block text-blue-300">Beachfront Condo</span>
+            <span className="block text-blue-300">Indian Shores, FL</span>
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto">
-            where cozy meets luxury
+            where luxury meets the ocean
           </p>
           <Link
             to="/register"
-            className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200"
           >
-            BOOK NOW
+            APPLY NOW
           </Link>
         </div>
       </section>
@@ -208,7 +211,7 @@ const Home = () => {
               retreat
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              You don't have to travel far to get lost in nature. Enjoy stunning natural beauty paired with top-notch minimalist design just 10 minutes from downtown Waco.
+              You don't have to travel far to get lost in paradise. Enjoy stunning Gulf views paired with top-notch beachfront living just steps from the sugar-white sands of Indian Shores.
             </p>
           </div>
 
@@ -217,7 +220,7 @@ const Home = () => {
               unplug
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Get away from the hustle and bustle and come sleep under the stars...in a luxurious bed with soft linens.
+              Get away from the hustle and bustle and come sleep to the sound of the surf...in a luxurious beachfront condo with modern amenities.
             </p>
           </div>
 
@@ -226,7 +229,7 @@ const Home = () => {
               recharge
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Take a quiet stroll to the waters edge under the canopy of majestic Live Oaks or slip into a kayak for a sunset paddle around the pond.
+              Take a quiet stroll along the beach at sunrise or enjoy a sunset swim in the community pool. Perfect for all-year-round entertainment with tons of activities along the coast.
             </p>
           </div>
         </div>
@@ -237,10 +240,10 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Luxury Cabin Features
+              Beachfront Condo Features
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Experience the perfect blend of modern comfort and natural beauty
+              Experience the perfect blend of modern comfort and oceanfront living
             </p>
           </div>
 
@@ -249,8 +252,8 @@ const Home = () => {
               const Icon = feature.icon;
               return (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-8 h-8 text-green-600" />
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon className="w-8 h-8 text-blue-600" />
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     {feature.label}
@@ -265,8 +268,8 @@ const Home = () => {
               const Icon = amenity.icon;
               return (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon className="w-8 h-8 text-green-600" />
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     {amenity.label}
@@ -354,15 +357,15 @@ const Home = () => {
       <section className="py-20 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Experience Nature's Luxury?
+            Ready to Experience Beachfront Luxury?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Book your stay at one of our stunning cabins and create memories that will last a lifetime.
+            Apply for your perfect beachfront condo and create memories that will last a lifetime.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200 inline-flex items-center justify-center"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200 inline-flex items-center justify-center"
             >
               Apply Now
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -383,10 +386,10 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <h3 className="text-2xl font-bold mb-4">
-                <span className="text-green-400">Palm</span> Run
+                <span className="text-blue-400">Palm</span> Run
               </h3>
               <p className="text-gray-400 mb-4 max-w-md">
-                Seven stunning cabins nestled in the heart of Texas. Experience luxury in nature with our modern amenities and breathtaking views.
+                Gulf Shores beachfront condo in Indian Shores, FL. Experience luxury oceanfront living with modern amenities and breathtaking Gulf views.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -433,7 +436,7 @@ const Home = () => {
                 </div>
                 <div className="flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
-                  <span>Texas, USA</span>
+                  <span>18650 Gulf Blvd Unit 207<br />Indian Shores, FL 33785</span>
                 </div>
               </div>
             </div>
