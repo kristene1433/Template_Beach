@@ -36,7 +36,7 @@ app.use(helmet({
 // Rate limiting - Updated for Heroku compatibility
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 200, // Increased limit for better user experience
   trustProxy: true,
   standardHeaders: true,
   legacyHeaders: false,
@@ -45,8 +45,15 @@ const limiter = rateLimit({
     // Use X-Forwarded-For header if available (Heroku), otherwise use IP
     return req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
   },
-  // Skip rate limiting for health checks
-  skip: (req) => req.path === '/api/health'
+  // Skip rate limiting for health checks and static files
+  skip: (req) => {
+    return req.path === '/api/health' || 
+           req.path.startsWith('/static/') ||
+           req.path.endsWith('.css') ||
+           req.path.endsWith('.js') ||
+           req.path.endsWith('.ico') ||
+           req.path.endsWith('.json');
+  }
 });
 app.use(limiter);
 
@@ -83,7 +90,18 @@ app.get('/api/health', (req, res) => {
 
 // Serve static files from the React build
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
+  // Serve static files with proper MIME types
+  app.use(express.static(path.join(__dirname, '../client/build'), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      } else if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (path.endsWith('.json')) {
+        res.setHeader('Content-Type', 'application/json');
+      }
+    }
+  }));
 }
 
 // Error handling middleware

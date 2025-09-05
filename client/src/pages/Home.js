@@ -98,19 +98,33 @@ const Home = () => {
             muted
             loop
             playsInline
+            preload="auto"
+            onLoadStart={() => console.log('Video loading started')}
+            onCanPlay={() => console.log('Video can play')}
+            onError={(e) => {
+              console.log('Video failed to load:', e);
+              // Hide video and show fallback image
+              e.target.style.display = 'none';
+              const fallbackImg = e.target.nextElementSibling;
+              if (fallbackImg) {
+                fallbackImg.style.display = 'block';
+              }
+            }}
           >
             <source src="/videos/beach-video.mp4" type="video/mp4" />
-          
-            {/* Fallback image if video doesn't load */}
-            <img
-              src="/images/image1.jpg"
-              alt="Gulf Shores Beachfront Condo"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
-              }}
-            />
+            Your browser does not support the video tag.
           </video>
+          {/* Fallback image if video doesn't load */}
+          <img
+            src="/images/image1.jpg"
+            alt="Gulf Shores Beachfront Condo"
+            className="w-full h-full object-cover"
+            style={{ display: 'none' }}
+            onError={(e) => {
+              console.log('Fallback image failed, using Unsplash');
+              e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+            }}
+          />
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 

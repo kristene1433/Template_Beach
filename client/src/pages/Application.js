@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Navigation from '../components/Navigation';
+import Navbar from '../components/Navbar';
 import { 
   User, 
   MapPin, 
@@ -232,7 +232,7 @@ const Application = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
+      <Navbar />
       
       <div className="pt-16 bg-gray-50 min-h-screen py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
