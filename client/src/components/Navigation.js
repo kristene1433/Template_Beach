@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TreePine } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,10 +21,12 @@ const Navigation = () => {
                   <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none">
                     {/* Palm tree trunk (brown) */}
                     <rect x="14" y="20" width="4" height="12" fill="#8B4513" rx="2"/>
-                    {/* Palm tree leaves (green) */}
-                    <path d="M16 4 L8 16 L12 14 L16 8 L20 14 L24 16 Z" fill="#228B22"/>
-                    <path d="M16 6 L6 18 L10 16 L16 10 L22 16 L26 18 Z" fill="#32CD32"/>
-                    <path d="M16 8 L4 20 L8 18 L16 12 L24 18 L28 20 Z" fill="#228B22"/>
+                    {/* Curved palm tree leaves (green) */}
+                    <path d="M16 4 Q8 12 12 18 Q16 14 20 18 Q24 12 16 4" fill="#228B22"/>
+                    <path d="M16 6 Q6 14 10 20 Q16 16 22 20 Q26 14 16 6" fill="#32CD32"/>
+                    <path d="M16 8 Q4 16 8 22 Q16 18 24 22 Q28 16 16 8" fill="#228B22"/>
+                    <path d="M16 2 Q10 8 12 14 Q16 10 20 14 Q22 8 16 2" fill="#32CD32"/>
+                    <path d="M16 3 Q12 6 14 12 Q16 8 18 12 Q20 6 16 3" fill="#228B22"/>
                   </svg>
                 </div>
                 <span className="text-blue-600">Palm</span> Run

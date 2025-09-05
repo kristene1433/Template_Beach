@@ -6,7 +6,6 @@ import { StripeProvider } from './contexts/StripeContext';
 
 // Components
 import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 
 // Pages
 import Home from './pages/Home';
@@ -159,7 +158,6 @@ function App() {
             <main className="flex-1">
               <AppRoutes />
             </main>
-            <Footer />
             <Toaster 
               position="top-right"
               toastOptions={{

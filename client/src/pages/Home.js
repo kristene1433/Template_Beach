@@ -6,7 +6,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Heart,
   Bed,
   Bath,
   Users,
@@ -15,15 +14,10 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
-  ArrowRight,
-  CheckCircle,
   Calendar,
-  Wifi,
   Car,
   Coffee,
-  Waves as Water,
-  TreePine,
-  Mountain
+  Settings
 } from 'lucide-react';
 
 const Home = () => {
@@ -63,35 +57,7 @@ const Home = () => {
     }
   ]);
 
-  const [newReview, setNewReview] = useState({
-    name: '',
-    rating: 5,
-    title: '',
-    content: '',
-    stayed: ''
-  });
 
-  const [showReviewForm, setShowReviewForm] = useState(false);
-
-  const handleReviewSubmit = (e) => {
-    e.preventDefault();
-    if (newReview.name && newReview.content && newReview.title) {
-      const review = {
-        id: Date.now(),
-        name: newReview.name,
-        rating: newReview.rating,
-        date: new Date().toISOString().split('T')[0],
-        title: newReview.title,
-        content: newReview.content,
-        stayed: newReview.stayed || 'Recent',
-        verified: false,
-        expanded: false
-      };
-      setReviews([review, ...reviews]);
-      setNewReview({ name: '', rating: 5, title: '', content: '', stayed: '' });
-      setShowReviewForm(false);
-    }
-  };
 
   const toggleReviewExpansion = (reviewId) => {
     setReviews(reviews.map(review => 
@@ -115,7 +81,8 @@ const Home = () => {
     { icon: Building2, label: 'Community Center' },
     { icon: Coffee, label: 'Fully Equipped Kitchen' },
     { icon: Car, label: 'Dedicated Parking' },
-    { icon: Calendar, label: 'Flexible Check-in' }
+    { icon: Calendar, label: 'Flexible Check-in' },
+    { icon: Settings, label: 'Fullsize Washer/Dryer' }
   ];
 
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
