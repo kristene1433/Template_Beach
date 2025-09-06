@@ -90,9 +90,8 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image/Video */}
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
-          {/* Show image by default */}
           <img
             src="/images/image1.jpg"
             alt="Gulf Shores Beachfront Condo"
@@ -102,29 +101,6 @@ const Home = () => {
               e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
             }}
           />
-          {/* Video overlay - only shows if video loads successfully */}
-          <video
-            className="w-full h-full object-cover absolute inset-0"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            style={{ display: 'none' }}
-            onCanPlay={() => {
-              console.log('Video can play, showing video');
-              // Hide image and show video
-              const img = document.querySelector('img[alt="Gulf Shores Beachfront Condo"]');
-              if (img) img.style.display = 'none';
-              this.style.display = 'block';
-            }}
-            onError={(e) => {
-              console.log('Video failed to load, keeping image');
-              // Keep image visible, video stays hidden
-            }}
-          >
-            <source src="/videos/beach-video.mp4" type="video/mp4" />
-          </video>
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
