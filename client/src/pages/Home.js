@@ -90,17 +90,19 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
+        {/* Background Video */}
         <div className="absolute inset-0 z-0">
-          <img
-            src="/images/image1.jpg"
-            alt="Gulf Shores Beachfront Condo"
+          <video
             className="w-full h-full object-cover"
-            onError={(e) => {
-              console.log('Image failed, using Unsplash');
-              e.target.src = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
-            }}
-          />
+            poster="/images/image1.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 

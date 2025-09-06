@@ -83,23 +83,41 @@ const Login = () => {
     <div className="min-h-screen bg-white">
       <Navigation />
 
-      <div className="pt-16 bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <Building2 className="w-7 h-7 text-white" />
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your Palm Run LLC tenant account
-          </p>
+      {/* Beach video background to match Home */}
+      <section className="relative min-h-screen overflow-hidden pt-16 flex items-center">
+        {/* Background video */}
+        <div className="absolute inset-0 z-0">
+          <video
+            className="w-full h-full object-cover"
+            poster="/images/image1.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="card">
+        {/* Foreground content */}
+        <div className="relative z-10 w-full sm:px-6 lg:px-8">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-medium">
+                <Building2 className="w-7 h-7 text-white" />
+              </div>
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-bold text-white">
+              Welcome Back
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-200">
+              Sign in to your Palm Run LLC tenant account
+            </p>
+          </div>
+
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="card bg-white/90 backdrop-blur-md border-white/30 shadow-medium">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="form-group">
@@ -198,10 +216,10 @@ const Login = () => {
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
+                  <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+                  <span className="px-2 bg-white/90 backdrop-blur-md text-gray-600">Don't have an account?</span>
                 </div>
               </div>
             </div>
@@ -216,21 +234,21 @@ const Login = () => {
               </Link>
             </div>
           </div>
-
-          {/* Additional Info */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Need help? Contact us at{' '}
-              <a
-                href="mailto:palmrunbeachcondo@gmail.com"
-                className="text-blue-600 hover:text-blue-500 font-medium"
-              >
-                palmrunbeachcondo@gmail.com
-              </a>
-            </p>
+            {/* Additional Info */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-200">
+                Need help? Contact us at{' '}
+                <a
+                  href="mailto:palmrunbeachcondo@gmail.com"
+                  className="text-blue-200 hover:text-blue-100 font-medium"
+                >
+                  palmrunbeachcondo@gmail.com
+                </a>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
