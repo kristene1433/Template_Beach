@@ -72,12 +72,16 @@ const Gallery = () => {
       <div className="bg-gray-50 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {images.map((img) => (
+            {images.map((img, idx) => (
               <figure key={img.key} className="bg-white/90 backdrop-blur-md border border-white/30 rounded-xl shadow-medium overflow-hidden">
                 <img
                   src={img.src}
                   alt={img.title}
-                  loading="lazy"
+                  loading={idx < 3 ? 'eager' : 'auto'}
+                  fetchpriority={idx < 3 ? 'high' : 'auto'}
+                  decoding="async"
+                  width="1200"
+                  height="800"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
                   onError={(e) => {
                     // Minimal, fast fallback: try same base with jpg/jpeg/png, then Unsplash
