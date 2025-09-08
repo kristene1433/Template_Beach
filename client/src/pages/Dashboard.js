@@ -157,7 +157,7 @@ const Dashboard = () => {
       {/* Hero header to match Home */}
       <section className="relative pt-16">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-56 md:h-72 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-40 md:h-48 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
@@ -173,20 +173,7 @@ const Dashboard = () => {
                   Here's an overview of your rental application and account status
                 </p>
               </div>
-              <button
-                onClick={refreshDashboard}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                )}
-                Refresh
-              </button>
+              {/* Refresh button removed per request */}
             </div>
           </div>
         </div>
