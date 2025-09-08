@@ -5,47 +5,48 @@ import Navigation from '../components/Navigation';
 // Avoid referencing global `process` directly in runtime.
 const PUBLIC_BASE = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
+const VER = 'v=3';
 const images = [
   {
     key: 'patio',
     title: 'Patio • Gulf of Mexico',
-    src: `${PUBLIC_BASE}/images/patio.jpg`,
+    src: `${PUBLIC_BASE}/images/patio.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'kitchen',
     title: 'Kitchen',
-    src: `${PUBLIC_BASE}/images/kitchen.jpg`,
+    src: `${PUBLIC_BASE}/images/kitchen.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'living',
     title: 'Living Room',
-    src: `${PUBLIC_BASE}/images/livingroom.jpg`,
+    src: `${PUBLIC_BASE}/images/livingroom.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c003?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed1',
     title: 'Bedroom 1',
-    src: `${PUBLIC_BASE}/images/bedroom1.jpg`,
+    src: `${PUBLIC_BASE}/images/bedroom1.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed2',
     title: 'Bedroom 2',
-    src: `${PUBLIC_BASE}/images/bedroom2.jpg`,
+    src: `${PUBLIC_BASE}/images/bedroom2.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1521782462922-9318be1a1e8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath1',
     title: 'Bathroom 1',
-    src: `${PUBLIC_BASE}/images/bathroom1.jpg`,
+    src: `${PUBLIC_BASE}/images/bathroom1.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath2',
     title: 'Bathroom 2',
-    src: `${PUBLIC_BASE}/images/bathroom2.jpg`,
+    src: `${PUBLIC_BASE}/images/bathroom2.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1584624272454-98a70b1a308c?q=80&w=1600&auto=format&fit=crop'
   }
 ];
@@ -86,13 +87,6 @@ const Gallery = () => {
                   width="1200"
                   height="800"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
-                  onError={(e) => {
-                    // Simple fallback to placeholder if not found
-                    if (!e.currentTarget.dataset.fallbackUsed) {
-                      e.currentTarget.dataset.fallbackUsed = 'true';
-                      e.currentTarget.src = img.fallback;
-                    }
-                  }}
                 />
                 <figcaption className="p-4 text-sm text-gray-700 font-medium">{img.title}</figcaption>
               </figure>
