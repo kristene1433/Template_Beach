@@ -1,47 +1,48 @@
 import React from 'react';
 import Navigation from '../components/Navigation';
 
+const ver = 'v=2';
 const images = [
   {
     key: 'patio',
     title: 'Patio • Gulf of Mexico',
-    src: '/images/patio.jpg',
+    src: `/images/patio.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'kitchen',
     title: 'Kitchen',
-    src: '/images/kitchen.jpg',
+    src: `/images/kitchen.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'living',
     title: 'Living Room',
-    src: '/images/livingroom.jpg',
+    src: `/images/livingroom.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c003?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed1',
     title: 'Bedroom 1',
-    src: '/images/bedroom1.jpg',
+    src: `/images/bedroom1.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed2',
     title: 'Bedroom 2',
-    src: '/images/bedroom2.jpg',
+    src: `/images/bedroom2.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1521782462922-9318be1a1e8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath1',
     title: 'Bathroom 1',
-    src: '/images/bathroom1.jpg',
+    src: `/images/bathroom1.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath2',
     title: 'Bathroom 2',
-    src: '/images/bathroom2.jpg',
+    src: `/images/bathroom2.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1584624272454-98a70b1a308c?q=80&w=1600&auto=format&fit=crop'
   }
 ];
@@ -81,11 +82,12 @@ const Gallery = () => {
                   onError={(e) => {
                     // Minimal, fast fallback: try same base with jpg/jpeg/png, then Unsplash
                     const tried = parseInt(e.currentTarget.dataset.tryIndex || '0', 10);
-                    const base = img.src.replace(/\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)$/,'');
+                    const srcNoQuery = img.src.split('?')[0];
+                    const base = srcNoQuery.replace(/\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)$/,'');
                     const attempts = [`${base}.jpg`, `${base}.jpeg`, `${base}.png`];
                     if (tried < attempts.length) {
                       e.currentTarget.dataset.tryIndex = String(tried + 1);
-                      e.currentTarget.src = attempts[tried];
+                      e.currentTarget.src = `${attempts[tried]}?${ver}`;
                       return;
                     }
                     if (!e.currentTarget.dataset.fallbackUsed) {
