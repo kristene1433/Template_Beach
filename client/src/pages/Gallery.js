@@ -1,48 +1,48 @@
 import React from 'react';
 import Navigation from '../components/Navigation';
 
-const VER = 'v=3';
+const VER = 'v=4';
 const images = [
   {
     key: 'patio',
     title: 'Patio • Gulf of Mexico',
-    src: `images/patio.jpg?${VER}`,
+    src: `/images/patio.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'kitchen',
     title: 'Kitchen',
-    src: `images/kitchen.jpg?${VER}`,
+    src: `/images/kitchen.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'living',
     title: 'Living Room',
-    src: `images/livingroom.jpg?${VER}`,
+    src: `/images/livingroom.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c003?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed1',
     title: 'Bedroom 1',
-    src: `images/bedroom1.jpg?${VER}`,
+    src: `/images/bedroom1.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed2',
     title: 'Bedroom 2',
-    src: `images/bedroom2.jpg?${VER}`,
+    src: `/images/bedroom2.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1521782462922-9318be1a1e8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath1',
     title: 'Bathroom 1',
-    src: `images/bathroom1.jpg?${VER}`,
+    src: `/images/bathroom1.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath2',
     title: 'Bathroom 2',
-    src: `images/bathroom2.jpg?${VER}`,
+    src: `/images/bathroom2.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1584624272454-98a70b1a308c?q=80&w=1600&auto=format&fit=crop'
   }
 ];
@@ -55,8 +55,8 @@ const Gallery = () => {
       {/* Hero */}
       <section className="relative pt-16">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-40 md:h-56 object-cover" poster="images/image1.jpg" autoPlay muted loop playsInline>
-            <source src="videos/beach-video.mp4" type="video/mp4" />
+          <video className="w-full h-40 md:h-56 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
         </div>
