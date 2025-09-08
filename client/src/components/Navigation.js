@@ -53,6 +53,16 @@ const Navigation = () => {
                 Home
               </Link>
               <Link 
+                to="/gallery" 
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive('/gallery') 
+                    ? 'text-blue-600' 
+                    : 'text-gray-600 hover:text-blue-600'
+                }`}
+              >
+                Gallery
+              </Link>
+              <Link 
                 to="/register" 
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   isActive('/register') 
@@ -109,6 +119,17 @@ const Navigation = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
+            </Link>
+            <Link 
+              to="/gallery" 
+              className={`block px-3 py-2 transition-colors ${
+                isActive('/gallery') 
+                  ? 'text-blue-600' 
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Gallery
             </Link>
             <Link 
               to="/register" 
