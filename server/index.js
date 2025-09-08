@@ -14,6 +14,8 @@ const leaseRoutes = require('./routes/lease');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Behind proxies/load balancers (Heroku/Render/Cloudflare), trust the first proxy
+app.set('trust proxy', 1);
 // Security middleware - Updated to allow Stripe, EmailJS, and Google Fonts
 app.use(helmet({
   contentSecurityPolicy: {
@@ -33,27 +35,40 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Rate limiting - Updated for Heroku compatibility
+// Rate limiting - tuned to reduce false positives behind proxies/CDNs
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Increased limit for better user experience
-  trustProxy: true,
+  max: 1000, // allow more requests per IP/window
   standardHeaders: true,
   legacyHeaders: false,
-  // Custom key generator for Heroku
+  // Use best-effort client IP (Cloudflare/NGINX/Heroku) -> first item of X-Forwarded-For
   keyGenerator: (req) => {
-    // Use X-Forwarded-For header if available (Heroku), otherwise use IP
-    return req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+    const xff = req.headers['x-forwarded-for'];
+    const cf = req.headers['cf-connecting-ip'];
+    const xr = req.headers['x-real-ip'];
+    const ipFromXff = Array.isArray(xff)
+      ? xff[0]
+      : (typeof xff === 'string' ? xff.split(',')[0].trim() : null);
+    return cf || xr || ipFromXff || req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
   },
-  // Skip rate limiting for health checks and static files
+  // Skip rate limiting for safe/static routes and preflight
   skip: (req) => {
-    return req.path === '/api/health' || 
+    return req.method === 'OPTIONS' ||
+           req.path === '/' ||
+           req.path === '/api/health' ||
            req.path.startsWith('/static/') ||
+           req.path.startsWith('/images/') ||
+           req.path.startsWith('/videos/') ||
            req.path.endsWith('.css') ||
            req.path.endsWith('.js') ||
            req.path.endsWith('.ico') ||
-           req.path.endsWith('.json');
-  }
+           req.path.endsWith('.json') ||
+           req.path.endsWith('.png') ||
+           req.path.endsWith('.jpg') ||
+           req.path.endsWith('.jpeg') ||
+           req.path.endsWith('.svg');
+  },
+  skipSuccessfulRequests: true // don't count 2xx/3xx towards the limit
 });
 app.use(limiter);
 
@@ -102,6 +117,9 @@ if (process.env.NODE_ENV === 'production') {
       }
     }
   }));
+  // Also serve public assets (images/videos) without hitting the rate limiter
+  app.use('/images', express.static(path.join(__dirname, '../client/public/images')));
+  app.use('/videos', express.static(path.join(__dirname, '../client/public/videos')));
 }
 
 // Error handling middleware

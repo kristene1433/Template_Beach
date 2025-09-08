@@ -79,16 +79,21 @@ const Gallery = () => {
                   loading="lazy"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
                   onError={(e) => {
-                    // Try several common file extensions/case before falling back to Unsplash
-                    const base = img.src.replace(/\.(jpg|jpeg|png|JPG|JPEG|PNG)$/,'');
-                    const attempts = [
-                      `${base}.jpg`, `${base}.jpeg`, `${base}.png`,
-                      `${base}.JPG`, `${base}.JPEG`, `${base}.PNG`
+                    // Try multiple filename variants and extensions before falling back
+                    const nameBase = img.src.replace(/^\/images\//, '').replace(/\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)$/,'');
+                    const baseVariants = [
+                      nameBase,
+                      nameBase.charAt(0).toUpperCase() + nameBase.slice(1),
+                      nameBase.toUpperCase(),
+                      `${nameBase}1`, `${nameBase}_1`, `${nameBase}-1`, `${nameBase} (1)`
                     ];
+                    const exts = ['jpg','jpeg','png','webp','JPG','JPEG','PNG','WEBP'];
+                    const candidates = baseVariants.flatMap(n => exts.map(ext => `/images/${n}.${ext}`));
+
                     const idx = parseInt(e.currentTarget.dataset.tryIndex || '0', 10);
-                    if (idx < attempts.length) {
+                    if (idx < candidates.length) {
                       e.currentTarget.dataset.tryIndex = String(idx + 1);
-                      e.currentTarget.src = attempts[idx];
+                      e.currentTarget.src = candidates[idx];
                       return;
                     }
                     if (!e.currentTarget.dataset.fallbackUsed) {
