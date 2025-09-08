@@ -6,7 +6,7 @@ const images = [
   {
     key: 'patio',
     title: 'Patio • Gulf of Mexico',
-    src: `/images/patio.jpg?${ver}`,
+    src: `/public/images/patio.jpg?${ver}`,
     fallback: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop'
   },
   {
@@ -72,13 +72,13 @@ const Gallery = () => {
       <div className="bg-gray-50 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {images.map((img, idx) => (
+            {images.map((img) => (
               <figure key={img.key} className="bg-white/90 backdrop-blur-md border border-white/30 rounded-xl shadow-medium overflow-hidden">
                 <img
                   src={img.src}
                   alt={img.title}
-                  loading={idx < 3 ? 'eager' : 'auto'}
-                  fetchpriority={idx < 3 ? 'high' : 'auto'}
+                  loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                   width="1200"
                   height="800"
