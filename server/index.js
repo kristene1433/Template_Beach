@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -118,8 +119,26 @@ if (process.env.NODE_ENV === 'production') {
     }
   }));
   // Also serve public assets (images/videos) without hitting the rate limiter
-  app.use('/images', express.static(path.join(__dirname, '../client/public/images')));
-  app.use('/videos', express.static(path.join(__dirname, '../client/public/videos')));
+  // Ensure correct Content-Type headers for images
+  app.use('/images', express.static(path.join(__dirname, '../client/public/images'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.webp')) {
+        res.setHeader('Content-Type', 'image/webp');
+      }
+      // Cache images for 1 year; cache busting via query string when needed
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }));
+  app.use('/videos', express.static(path.join(__dirname, '../client/public/videos'), {
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+  }));
 }
 
 // Error handling middleware
