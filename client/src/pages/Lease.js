@@ -223,30 +223,41 @@ const Lease = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-primary px-6 py-4">
-            <h1 className="text-2xl font-bold text-white flex items-center">
-              <FileText className="mr-3 h-6 w-6" />
+    <div className="min-h-screen bg-white">
+      {/* Hero header to match site */}
+      <section className="relative pt-16">
+        <div className="absolute inset-0 z-0">
+          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-bold text-white flex items-center">
+              <FileText className="mr-3 h-7 w-7" />
               Lease Agreement
             </h1>
-                                      {leaseData && (
-               <div className="mt-2 text-primary-light">
-                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    leaseData.signedLeaseFile 
-                      ? 'bg-green-100 text-green-800' 
-                      : leaseData.leaseStartDate && leaseData.leaseEndDate
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {leaseData.signedLeaseFile ? 'Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Available to Sign' : 'Not Started'}
-                  </span>
-               </div>
-             )}
+            {leaseData && (
+              <div className="mt-3">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-white/40 bg-white/20 text-white backdrop-blur-md ${
+                  leaseData.signedLeaseFile
+                    ? 'bg-green-600/30'
+                    : leaseData.leaseStartDate && leaseData.leaseEndDate
+                    ? 'bg-yellow-600/30'
+                    : 'bg-white/20'
+                }`}>
+                  {leaseData.signedLeaseFile ? 'Signed' : leaseData.leaseStartDate && leaseData.leaseEndDate ? 'Available to Sign' : 'Not Started'}
+                </span>
+              </div>
+            )}
           </div>
+        </div>
+      </section>
 
+      <div className="bg-gray-50 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg shadow-medium overflow-hidden">
           <div className="p-6">
             {/* Application Status Check - Only show if no lease data */}
             {!leaseData && !loading && (
@@ -495,6 +506,7 @@ const Lease = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Lease Preview Modal */}

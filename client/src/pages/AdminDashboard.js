@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 import {
   Users, FileText, Search, Eye, Download, Calendar, 
   Phone, Mail, MapPin, UserCheck, Clock, CheckCircle,
-  XCircle, AlertCircle, LogOut, Shield, DollarSign, Trash2
+  XCircle, AlertCircle, LogOut, DollarSign, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -453,61 +453,55 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-gray-50 min-h-screen">
-        {/* Admin Navigation Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              {/* Logo and Title */}
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center text-2xl font-bold text-gray-900">
-                    <div className="mr-2">
-                      <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none">
-                        {/* Palm tree trunk (brown) */}
-                        <rect x="14" y="20" width="4" height="12" fill="#8B4513" rx="2"/>
-                        {/* Curved palm tree leaves (green) */}
-                        <path d="M16 4 Q8 12 12 18 Q16 14 20 18 Q24 12 16 4" fill="#228B22"/>
-                        <path d="M16 6 Q6 14 10 20 Q16 16 22 20 Q26 14 16 6" fill="#32CD32"/>
-                        <path d="M16 8 Q4 16 8 22 Q16 18 24 22 Q28 16 16 8" fill="#228B22"/>
-                        <path d="M16 2 Q10 8 12 14 Q16 10 20 14 Q22 8 16 2" fill="#32CD32"/>
-                        <path d="M16 3 Q12 6 14 12 Q16 8 18 12 Q20 6 16 3" fill="#228B22"/>
-                      </svg>
-                    </div>
-                    <span className="text-blue-600">Palm</span> Run LLC
-                  </div>
-                </div>
-                <div className="ml-6">
-                  <div className="flex items-center">
-                    <Shield className="h-6 w-6 text-red-600 mr-2" />
-                    <div>
-                      <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                      <p className="text-sm text-gray-600">Property Management</p>
-                    </div>
-                  </div>
-                </div>
+      {/* Hero header to match site */}
+      <section className="relative pt-16">
+        <div className="absolute inset-0 z-0">
+          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="mr-3">
+                <svg className="h-8 w-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Palm Run logo">
+                  <path d="M34 28 C33 40 32 50 32 60 L28 60 C28 50 29 40 30 28 Z" fill="#8B5A2B"/>
+                  <path d="M29 34 H33 M28.8 38 H32.6 M28.6 42 H32.4 M28.4 46 H32.2 M28.2 50 H32" stroke="#A87444" strokeWidth="1.6" strokeLinecap="round"/>
+                  <circle cx="31" cy="28" r="2.2" fill="#6B4423"/>
+                  <circle cx="35" cy="27" r="2" fill="#6B4423"/>
+                  <path d="M32 20 C22 12, 13 15, 8 20 C16 20, 24 22, 32 24 Z" fill="#1E9E57"/>
+                  <path d="M32 20 C26 10, 20 10, 14 12 C20 14, 26 18, 32 22 Z" fill="#26B36A"/>
+                  <path d="M32 20 C42 12, 51 15, 56 20 C48 20, 40 22, 32 24 Z" fill="#1E9E57"/>
+                  <path d="M32 20 C38 10, 44 10, 50 12 C44 14, 38 18, 32 22 Z" fill="#26B36A"/>
+                  <path d="M32 20 C30 12, 32 8, 36 6 C34 10, 34 16, 32 20 Z" fill="#1E9E57"/>
+                </svg>
               </div>
-              
-              {/* User Info and Logout */}
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">Welcome, {user?.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-600 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Logout
-                </button>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
+                <p className="text-gray-200">Property Management</p>
               </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-200">Welcome, {user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Logout
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Main Content */}
+      </section>
+
+      {/* Main Content */}
+      <div className="bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -527,7 +521,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -547,7 +541,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -567,7 +561,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -589,7 +583,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white shadow rounded-lg mb-6">
+        <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium rounded-lg mb-6">
           <div className="p-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
@@ -626,7 +620,7 @@ const AdminDashboard = () => {
 
 
         {/* Applications List */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
             {filteredApplications.length === 0 ? (
               <li className="px-6 py-12 text-center text-gray-500">

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Navigation from '../components/Navigation';
-import { Mail, Lock, Eye, EyeOff, Building2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -103,11 +103,6 @@ const Login = () => {
         {/* Foreground content */}
         <div className="relative z-10 w-full sm:px-6 lg:px-8">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="flex justify-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-medium">
-                <Building2 className="w-7 h-7 text-white" />
-              </div>
-            </div>
             <h2 className="mt-6 text-center text-3xl font-bold text-white">
               Welcome Back
             </h2>

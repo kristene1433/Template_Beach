@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -55,166 +55,117 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Admin Login Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="flex items-center text-2xl font-bold text-gray-900">
-                  <div className="mr-2">
-                    <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none">
-                      {/* Palm tree trunk (brown) */}
-                      <rect x="14" y="20" width="4" height="12" fill="#8B4513" rx="2"/>
-                      {/* Curved palm tree leaves (green) */}
-                      <path d="M16 4 Q8 12 12 18 Q16 14 20 18 Q24 12 16 4" fill="#228B22"/>
-                      <path d="M16 6 Q6 14 10 20 Q16 16 22 20 Q26 14 16 6" fill="#32CD32"/>
-                      <path d="M16 8 Q4 16 8 22 Q16 18 24 22 Q28 16 16 8" fill="#228B22"/>
-                      <path d="M16 2 Q10 8 12 14 Q16 10 20 14 Q22 8 16 2" fill="#32CD32"/>
-                      <path d="M16 3 Q12 6 14 12 Q16 8 18 12 Q20 6 16 3" fill="#228B22"/>
-                    </svg>
-                  </div>
-                  <span className="text-blue-600">Palm</span> Run LLC
-                </div>
-              </div>
-              <div className="ml-6">
-                <div className="flex items-center">
-                  <Shield className="h-6 w-6 text-red-600 mr-2" />
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900">Admin Portal</h1>
-                    <p className="text-sm text-gray-600">Property Management</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Back to Home Link */}
-            <div className="flex items-center">
-              <Link
-                to="/"
-                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
+      {/* Beach video background to match Login */}
+      <section className="relative min-h-screen overflow-hidden pt-16 flex items-center">
+        {/* Background video */}
+        <div className="absolute inset-0 z-0">
+          <video className="w-full h-full object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
         </div>
-      </div>
-      
-      <div className="bg-gray-50 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-            <Shield className="h-8 w-8 text-white" />
+
+        {/* Foreground content */}
+        <div className="relative z-10 w-full sm:px-6 lg:px-8">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <h2 className="mt-6 text-center text-3xl font-bold text-white">Admin Portal</h2>
+            <p className="mt-2 text-center text-sm text-gray-200">Sign in to access the admin dashboard</p>
           </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Admin Portal
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to access the admin dashboard
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Admin Email
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="card bg-white/90 backdrop-blur-md border-white/30 shadow-medium">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Admin Email</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="input-field pl-10"
+                      placeholder="admin@palmrunllc.com"
+                    />
+                  </div>
                 </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                  placeholder="admin@palmrunllc.com"
-                />
-              </div>
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="input-field pl-10 pr-10"
+                      placeholder="Enter your password"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                  placeholder="Enter your password"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+
+                <div>
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn-primary w-full flex justify-center items-center"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
+                    {isLoading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Signing in...
+                      </div>
                     ) : (
-                      <Eye className="h-5 w-5" />
+                      'Sign in to Admin Portal'
                     )}
                   </button>
                 </div>
-              </div>
-            </div>
+              </form>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Signing in...
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
                   </div>
-                ) : (
-                  'Sign in to Admin Portal'
-                )}
-              </button>
-            </div>
-          </form>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white/90 backdrop-blur-md text-gray-600">Looking for tenant portal?</span>
+                  </div>
+                </div>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="mt-6">
+                  <Link to="/login" className="btn-outline w-full flex justify-center items-center">
+                    Go to Tenant Login
+                  </Link>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Looking for tenant portal?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/login"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Go to Tenant Login
-              </Link>
             </div>
           </div>
         </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

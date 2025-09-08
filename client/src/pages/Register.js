@@ -60,27 +60,43 @@ const Register = () => {
     <div className="min-h-screen bg-white">
       <Navigation />
       
-      <div className="pt-16 bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
-              <UserPlus className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Create Your Account
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Join Palm Run LLC to manage your rental application
-            </p>
-          </div>
+      {/* Beach video background to match Home/Login */}
+      <section className="relative min-h-screen overflow-hidden pt-16 flex items-center">
+        {/* Background video */}
+        <div className="absolute inset-0 z-0">
+          <video
+            className="w-full h-full object-cover"
+            poster="/images/image1.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              {/* First Name Field */}
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
-                </label>
+        {/* Foreground content */}
+        <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full mx-auto space-y-8">
+            <div className="text-center">
+              <h2 className="mt-2 text-3xl font-bold text-white">
+                Create Your Account
+              </h2>
+              <p className="mt-2 text-sm text-gray-200">
+                Join Palm Run LLC to manage your rental application
+              </p>
+            </div>
+
+            <div className="card bg-white/90 backdrop-blur-md border-white/30 shadow-medium">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  {/* First Name Field */}
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                      First Name
+                    </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <UserPlus className="h-5 w-5 text-gray-400" />
@@ -191,33 +207,35 @@ const Register = () => {
                   </button>
                 </div>
               </div>
-            </div>
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary w-full flex justify-center items-center"
-              >
-                {isLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  'Create Account'
-                )}
-              </button>
-            </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn-primary w-full flex justify-center items-center"
+                >
+                  {isLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    'Create Account'
+                  )}
+                </button>
+              </div>
 
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account{' '}
-                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                  Sign in here
-                </Link>
-              </p>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account{' '}
+                  <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
+            </form>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

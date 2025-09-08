@@ -83,31 +83,41 @@ const ContactForm = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="text-center mb-6">
-        <Mail className="mx-auto h-12 w-12 text-primary-600 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900">Contact Us</h2>
-        <p className="text-gray-600 mt-2">
-          Have a question? Need assistance? Send us a message and we'll get back to you promptly.
-        </p>
-        
-        {/* EmailJS Status Indicator */}
-        {!emailjsReady && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800 text-sm">
-              ⚠️ EmailJS is not configured. Please set up your environment variables.
-            </p>
-          </div>
-        )}
-        
-        {emailjsReady && (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 text-sm">
-              ✅ EmailJS is ready to send messages.
-            </p>
-          </div>
-        )}
+    <section className="relative min-h-screen overflow-hidden pt-16 flex items-start md:items-center">
+      {/* Background video */}
+      <div className="absolute inset-0 z-0">
+        <video className="w-full h-full object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <source src="/videos/beach-video.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/40" />
       </div>
+
+      {/* Foreground content */}
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-bold text-white">Contact Us</h2>
+            <p className="text-gray-200 mt-2">
+              Have a question? Need assistance? Send us a message and we'll get back to you promptly.
+            </p>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg p-6 shadow-medium">
+      {/* EmailJS Status Indicator */}
+      {!emailjsReady && (
+        <div className="mb-4 p-3 bg-yellow-50/90 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-800 text-sm">
+            ⚠️ EmailJS is not configured. Please set up your environment variables.
+          </p>
+        </div>
+      )}
+      {emailjsReady && (
+        <div className="mb-4 p-3 bg-green-50/90 border border-green-200 rounded-lg">
+          <p className="text-green-800 text-sm">
+            ✅ EmailJS is ready to send messages.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,7 +134,7 @@ const ContactForm = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+                className="input-field pl-10"
                 placeholder="Your full name"
               />
             </div>
@@ -143,7 +153,7 @@ const ContactForm = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+                className="input-field pl-10"
                 placeholder="your.email@example.com"
               />
             </div>
@@ -163,7 +173,7 @@ const ContactForm = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+                className="input-field pl-10"
                 placeholder="(555) 123-4567"
               />
             </div>
@@ -179,7 +189,7 @@ const ContactForm = () => {
               name="subject"
               value={formData.subject}
               onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+              className="input-field"
               placeholder="What's this about?"
             />
           </div>
@@ -198,7 +208,7 @@ const ContactForm = () => {
               onChange={handleChange}
               required
               rows={5}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+              className="input-field pl-10"
               placeholder="Tell us how we can help you..."
             />
           </div>
@@ -208,7 +218,7 @@ const ContactForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary inline-flex items-center px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -244,7 +254,10 @@ const ContactForm = () => {
           </div>
         </div>
       </div>
-    </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

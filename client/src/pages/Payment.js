@@ -6,7 +6,6 @@ import axios from 'axios';
 import {
   CreditCard,
   AlertCircle,
-  Receipt,
   Download,
   Clock,
   Home,
@@ -157,18 +156,30 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="pt-16 bg-gray-50 min-h-screen py-8">
+      {/* Hero header to match site */}
+      <section className="relative pt-16">
+        <div className="absolute inset-0 z-0">
+          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-bold text-white flex items-center">
+              <CreditCard className="mr-3 h-7 w-7" />
+              Payments
+            </h1>
+            <p className="text-gray-200 mt-2">Make secure payments for deposits, rent, and more.</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="bg-gray-50 min-h-screen py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Payment Form */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-primary px-6 py-4">
-              <h1 className="text-2xl font-bold text-white flex items-center">
-                <CreditCard className="mr-3 h-6 w-6" />
-                Make a Payment
-              </h1>
-            </div>
-
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg shadow-medium overflow-hidden">
             <div className="p-6 space-y-6">
               {/* Payment Type Selection */}
               <div>
@@ -259,7 +270,7 @@ const Payment = () => {
                           placeholder="0.00"
                           min="1"
                           step="0.01"
-                          className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+                          className="input-field pl-8 py-3"
                         />
                       </div>
                     </div>
@@ -277,7 +288,7 @@ const Payment = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add a note about this payment..."
                   rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-600 focus:border-primary-600"
+                  className="input-field"
                 />
               </div>
 
@@ -312,17 +323,11 @@ const Payment = () => {
                 </div>
               </div>
 
-              {/* Debug Info - Remove this after fixing */}
-              <div className="text-xs text-gray-400 mt-2 p-2 bg-gray-100 rounded">
-                Debug: selectedAmount={selectedAmount}, customAmount={customAmount}, getPaymentAmount()={getPaymentAmount()}
-              </div>
-
               {/* Submit Button */}
               <button
                 onClick={handlePayment}
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center border-2 border-red-500 font-bold text-lg relative z-10"
-                style={{minHeight: '60px', display: 'flex', visibility: 'visible', opacity: 1}}
+                className="btn-primary w-full flex items-center justify-center text-lg py-3"
               >
                 {loading ? (
                   <>
@@ -346,14 +351,7 @@ const Payment = () => {
           </div>
 
           {/* Payment History */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-secondary px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                <Receipt className="mr-3 h-5 w-5" />
-                Payment History
-              </h2>
-            </div>
-
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg shadow-medium overflow-hidden">
             <div className="p-6">
               {paymentHistory.length === 0 ? (
                 <div className="text-center py-8">

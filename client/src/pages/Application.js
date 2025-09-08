@@ -231,27 +231,35 @@ const Application = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="pt-16 bg-gray-50 min-h-screen py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Rental Application</h1>
-              <p className="text-gray-600 mt-2">
-                Complete your rental application to get started
-              </p>
+      {/* Hero header to match Home/Login/Dashboard */}
+      <section className="relative pt-16">
+        <div className="absolute inset-0 z-0">
+          <video className="w-full h-44 md:h-60 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white">Rental Application</h1>
+                <p className="text-gray-200 mt-2">Complete your rental application to get started</p>
+              </div>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30"
+              >
+                Back to Dashboard
+              </button>
             </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="btn-secondary"
-            >
-              Back to Dashboard
-            </button>
           </div>
         </div>
+      </section>
 
-        <div className="card">
+      <div className="bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="card bg-white/90 backdrop-blur-md border-white/30">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Personal Information Section */}
             <div className="form-section">
