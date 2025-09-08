@@ -79,9 +79,22 @@ const Gallery = () => {
                   loading="lazy"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
                   onError={(e) => {
-                    if (e.currentTarget.dataset.fallbackUsed) return;
-                    e.currentTarget.src = img.fallback;
-                    e.currentTarget.dataset.fallbackUsed = 'true';
+                    // Try several common file extensions/case before falling back to Unsplash
+                    const base = img.src.replace(/\.(jpg|jpeg|png|JPG|JPEG|PNG)$/,'');
+                    const attempts = [
+                      `${base}.jpg`, `${base}.jpeg`, `${base}.png`,
+                      `${base}.JPG`, `${base}.JPEG`, `${base}.PNG`
+                    ];
+                    const idx = parseInt(e.currentTarget.dataset.tryIndex || '0', 10);
+                    if (idx < attempts.length) {
+                      e.currentTarget.dataset.tryIndex = String(idx + 1);
+                      e.currentTarget.src = attempts[idx];
+                      return;
+                    }
+                    if (!e.currentTarget.dataset.fallbackUsed) {
+                      e.currentTarget.dataset.fallbackUsed = 'true';
+                      e.currentTarget.src = img.fallback;
+                    }
                   }}
                 />
                 <figcaption className="p-4 text-sm text-gray-700 font-medium">{img.title}</figcaption>
@@ -95,4 +108,3 @@ const Gallery = () => {
 };
 
 export default Gallery;
-
