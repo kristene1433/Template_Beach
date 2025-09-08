@@ -1,48 +1,50 @@
 import React from 'react';
 import Navigation from '../components/Navigation';
 
-const ver = 'v=2';
+// Resolve assets relative to the CRA public base (works on any path)
+const PUBLIC_BASE = ((process && process.env && process.env.PUBLIC_URL) || '').replace(/\/$/, '') + '/';
+
 const images = [
   {
     key: 'patio',
     title: 'Patio • Gulf of Mexico',
-    src: `/public/images/patio.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/patio.jpg`,
     fallback: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'kitchen',
     title: 'Kitchen',
-    src: `/images/kitchen.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/kitchen.jpg`,
     fallback: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'living',
     title: 'Living Room',
-    src: `/images/livingroom.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/livingroom.jpg`,
     fallback: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c003?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed1',
     title: 'Bedroom 1',
-    src: `/images/bedroom1.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/bedroom1.jpg`,
     fallback: 'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bed2',
     title: 'Bedroom 2',
-    src: `/images/bedroom2.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/bedroom2.jpg`,
     fallback: 'https://images.unsplash.com/photo-1521782462922-9318be1a1e8b?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath1',
     title: 'Bathroom 1',
-    src: `/images/bathroom1.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/bathroom1.jpg`,
     fallback: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'bath2',
     title: 'Bathroom 2',
-    src: `/images/bathroom2.jpg?${ver}`,
+    src: `${PUBLIC_BASE}images/bathroom2.jpg`,
     fallback: 'https://images.unsplash.com/photo-1584624272454-98a70b1a308c?q=80&w=1600&auto=format&fit=crop'
   }
 ];
@@ -55,8 +57,8 @@ const Gallery = () => {
       {/* Hero */}
       <section className="relative pt-16">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-40 md:h-56 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
-            <source src="/videos/beach-video.mp4" type="video/mp4" />
+          <video className="w-full h-40 md:h-56 object-cover" poster={`${PUBLIC_BASE}images/image1.jpg`} autoPlay muted loop playsInline>
+            <source src={`${PUBLIC_BASE}videos/beach-video.mp4`} type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
         </div>
@@ -84,16 +86,7 @@ const Gallery = () => {
                   height="800"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
                   onError={(e) => {
-                    // Minimal, fast fallback: try same base with jpg/jpeg/png, then Unsplash
-                    const tried = parseInt(e.currentTarget.dataset.tryIndex || '0', 10);
-                    const srcNoQuery = img.src.split('?')[0];
-                    const base = srcNoQuery.replace(/\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)$/,'');
-                    const attempts = [`${base}.jpg`, `${base}.jpeg`, `${base}.png`];
-                    if (tried < attempts.length) {
-                      e.currentTarget.dataset.tryIndex = String(tried + 1);
-                      e.currentTarget.src = `${attempts[tried]}?${ver}`;
-                      return;
-                    }
+                    // Simple fallback to placeholder if not found
                     if (!e.currentTarget.dataset.fallbackUsed) {
                       e.currentTarget.dataset.fallbackUsed = 'true';
                       e.currentTarget.src = img.fallback;
