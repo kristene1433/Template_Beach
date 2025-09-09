@@ -644,4 +644,33 @@ router.delete('/remove-signed/:applicationId', auth, async (req, res) => {
   }
 });
 
+// View most recent signed lease for the current user (no ID required)
+router.get('/view-signed', auth, async (req, res) => {
+  try {
+    // Find the most recent application with a signed lease for this user
+    const application = await Application
+      .findOne({ userId: req.user._id, signedLeaseFile: { $exists: true } })
+      .sort({ updatedAt: -1 });
+
+    if (!application || !application.signedLeaseFile) {
+      return res.status(404).json({ error: 'Signed lease file not found' });
+    }
+
+    if (!application.signedLeaseFile.content) {
+      return res.status(404).json({ error: 'File content not found' });
+    }
+
+    const fileBuffer = Buffer.from(application.signedLeaseFile.content, 'base64');
+    res.set({
+      'Content-Type': application.signedLeaseFile.mimetype || 'application/octet-stream',
+      'Content-Disposition': `inline; filename="${application.signedLeaseFile.originalName || 'lease.pdf'}"`,
+      'Content-Length': fileBuffer.length
+    });
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error('Error viewing signed lease (no id):', error);
+    res.status(500).json({ error: 'Server error viewing signed lease' });
+  }
+});
+
 module.exports = router;

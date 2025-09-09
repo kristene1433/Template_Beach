@@ -31,7 +31,7 @@ const Lease = () => {
         toast.error('Please log in to view the lease');
         return;
       }
-      const res = await axios.get(`/api/lease/view-signed/${applicationId}` , {
+      let res = await axios.get(`/api/lease/view-signed/${applicationId}` , {
         responseType: 'blob',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -41,9 +41,27 @@ const Lease = () => {
       window.open(url, '_blank');
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (error) {
+      // Fallback: try the no-id endpoint in case the ID is stale
+      if (error?.response?.status === 404) {
+        try {
+          const token = localStorage.getItem('token');
+          const res2 = await axios.get('/api/lease/view-signed', {
+            responseType: 'blob',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const blob2 = new Blob([res2.data], { type: res2.headers['content-type'] || 'application/pdf' });
+          const url2 = window.URL.createObjectURL(blob2);
+          window.open(url2, '_blank');
+          setTimeout(() => window.URL.revokeObjectURL(url2), 1000);
+          return;
+        } catch (e2) {
+          console.error('Fallback open lease failed:', e2);
+          toast.error(e2.response?.data?.error || 'Unable to open signed lease');
+          return;
+        }
+      }
       console.error('Error opening signed lease:', error);
-      const message = error.response?.data?.error || 'Unable to open signed lease';
-      toast.error(message);
+      toast.error(error.response?.data?.error || 'Unable to open signed lease');
     }
   };
 
