@@ -93,10 +93,9 @@ const Lease = () => {
         if (response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
         }
-        // Check if there's an uploaded signed lease - only set if it actually exists
-        if (response.data.signedLeaseFile && response.data.signedLeaseFile.filename) {
+        // Check if there's an uploaded signed lease - server only returns it when content exists
+        if (response.data.signedLeaseFile) {
           setUploadedLease({
-            filename: response.data.signedLeaseFile.filename,
             originalName: response.data.signedLeaseFile.originalName,
             url: `/api/lease/view-signed/${response.data.applicationId}`,
             size: response.data.signedLeaseFile.size,
@@ -419,7 +418,7 @@ const Lease = () => {
                  </div>
 
                  {/* Uploaded Lease History */}
-                 {leaseData.signedLeaseFile && (
+                {uploadedLease && (
                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                      <h4 className="text-sm font-medium text-green-900 mb-3 flex items-center">
                        <CheckCircle className="w-4 h-4 mr-2" />
@@ -427,12 +426,12 @@ const Lease = () => {
                      </h4>
                      <div className="flex items-center justify-between">
                        <div className="flex items-center space-x-2">
-                         <span className="text-sm text-green-700">
-                           Signed lease uploaded: {leaseData.signedLeaseFile.originalName || 'Lease Document'}
+                          <span className="text-sm text-green-700">
+                            Signed lease uploaded: {uploadedLease.originalName || 'Lease Document'}
                          </span>
-                         {leaseData.signedLeaseFile.uploadedAt && (
+                         {uploadedLease.uploadedAt && (
                            <span className="text-xs text-green-600">
-                             on {new Date(leaseData.signedLeaseFile.uploadedAt + 'T00:00:00').toLocaleDateString('en-US', { 
+                             on {new Date(uploadedLease.uploadedAt + 'T00:00:00').toLocaleDateString('en-US', { 
                                month: 'long', 
                                day: 'numeric', 
                                year: 'numeric' 
@@ -463,7 +462,7 @@ const Lease = () => {
                  )}
 
                                  {/* Upload New Signed Lease Section */}
-                 {!leaseData.signedLeaseFile && (
+                {!uploadedLease && (
                    <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                      <h4 className="text-sm font-medium text-gray-900 mb-3">Upload Signed Lease</h4>
                      

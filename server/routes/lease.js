@@ -281,6 +281,7 @@ router.get('/status', auth, async (req, res) => {
     );
     
     if (applicationWithLease) {
+      const hasSignedFile = !!(applicationWithLease.signedLeaseFile && applicationWithLease.signedLeaseFile.content);
       res.json({
         hasApplication: true,
         isComplete: true,
@@ -291,7 +292,12 @@ router.get('/status', auth, async (req, res) => {
         rentalAmount: applicationWithLease.rentalAmount,
         depositAmount: applicationWithLease.depositAmount,
         applicationId: applicationWithLease._id,
-        signedLeaseFile: applicationWithLease.signedLeaseFile
+        signedLeaseFile: hasSignedFile ? {
+          originalName: applicationWithLease.signedLeaseFile.originalName,
+          mimetype: applicationWithLease.signedLeaseFile.mimetype,
+          size: applicationWithLease.signedLeaseFile.size,
+          uploadedAt: applicationWithLease.signedLeaseFile.uploadedAt
+        } : undefined
       });
     } else if (mostRecentActiveApplication) {
       // User has active applications but no lease yet
