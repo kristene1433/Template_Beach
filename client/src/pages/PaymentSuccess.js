@@ -47,26 +47,46 @@ const PaymentSuccess = () => {
     load();
   }, [user, sessionId, navigate]);
 
-  const handleDownloadReceipt = () => {
+  const handleDownloadReceipt = async () => {
+    // If Stripe receipt URL exists, open it
     if (paymentDetails?.receiptUrl) {
       window.open(paymentDetails.receiptUrl, '_blank');
       return;
     }
-    // Generate a simple PDF receipt from available data
+
+    // Otherwise, generate a PDF receipt from server data
     try {
+      let details = paymentDetails;
+      if (!details && sessionId) {
+        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`);
+        const p = data.payment;
+        details = {
+          amount: (p.amount / 100).toFixed(2),
+          paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
+          date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
+          transactionId: p.stripePaymentIntentId,
+          cardBrand: p.cardBrand,
+          cardLast4: p.cardLast4
+        };
+      }
+
+      const amountStr = details?.amount
+        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount))
+        : '-';
+
       const doc = new jsPDF();
       doc.setFontSize(18);
       doc.text('Palm Run LLC - Payment Receipt', 105, 20, { align: 'center' });
       doc.setFontSize(11);
       const y0 = 40;
-      doc.text(`Date: ${paymentDetails?.date || new Date().toLocaleDateString()}`, 20, y0);
-      doc.text(`Amount: $${paymentDetails?.amount || '-'}`, 20, y0 + 10);
-      doc.text(`Type: ${paymentDetails?.paymentType || '-'}`, 20, y0 + 20);
-      if (paymentDetails?.cardBrand || paymentDetails?.cardLast4) {
-        doc.text(`Card: ${paymentDetails.cardBrand || ''} •••• ${paymentDetails.cardLast4 || ''}`, 20, y0 + 30);
+      doc.text(`Date: ${details?.date || new Date().toLocaleDateString()}`, 20, y0);
+      doc.text(`Amount: ${amountStr}`, 20, y0 + 10);
+      doc.text(`Type: ${details?.paymentType || '-'}`, 20, y0 + 20);
+      if (details?.cardBrand || details?.cardLast4) {
+        doc.text(`Card: ${details.cardBrand || ''} •••• ${details.cardLast4 || ''}`, 20, y0 + 30);
       }
-      if (paymentDetails?.transactionId) {
-        doc.text(`Transaction: ${paymentDetails.transactionId}`, 20, y0 + 40);
+      if (details?.transactionId) {
+        doc.text(`Transaction: ${details.transactionId}`, 20, y0 + 40);
       }
       doc.save('palm-run-receipt.pdf');
     } catch (e) {
