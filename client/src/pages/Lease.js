@@ -68,8 +68,9 @@ const Lease = () => {
   const loadLeaseStatus = useCallback(async () => {
     try {
       const response = await axios.get('/api/lease/status');
+      // Always store latest payload
+      setLeaseData(response.data);
       if (response.data.hasApplication) {
-        setLeaseData(response.data);
         // If there's a lease agreement, automatically generate and display it
         if (response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
@@ -87,6 +88,10 @@ const Lease = () => {
           // Clear any existing uploaded lease state
           setUploadedLease(null);
         }
+      } else {
+        // No active applications; reset local UI state
+        setUploadedLease(null);
+        setLeaseContent('');
       }
     } catch (error) {
       console.error('Error loading lease status:', error);
@@ -208,7 +213,10 @@ const Lease = () => {
     if (!uploadedLease) return;
     
     try {
-      await axios.delete(`/api/lease/remove-signed/${leaseData.applicationId}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/lease/remove-signed/${leaseData.applicationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setUploadedLease(null);
       toast.success('Signed lease removed successfully');
       await loadLeaseStatus();
