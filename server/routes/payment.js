@@ -255,6 +255,31 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
+// Get payment details by Checkout Session ID
+router.get('/by-session/:sessionId', auth, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
+
+    const payment = await Payment.findOne({
+      userId: req.user._id,
+      'metadata.checkoutSessionId': sessionId
+    });
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found for session' });
+    }
+
+    return res.json({
+      payment,
+      receiptUrl: payment.receiptUrl || null
+    });
+  } catch (error) {
+    console.error('Payment by-session fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching payment details' });
+  }
+});
+
 // Get payment by ID
 router.get('/:paymentId', auth, async (req, res) => {
   try {

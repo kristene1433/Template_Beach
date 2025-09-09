@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle, Download, ArrowLeft, Receipt } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import jsPDF from 'jspdf';
 
 const PaymentSuccess = () => {
   const { user } = useAuth();
@@ -15,40 +16,63 @@ const PaymentSuccess = () => {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (sessionId) {
-      // Fetch payment details
-      fetchPaymentDetails();
-    } else {
-      setLoading(false);
-    }
+    const load = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      if (!sessionId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`);
+        const p = data.payment;
+        setPaymentDetails({
+          amount: (p.amount / 100).toFixed(2),
+          paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
+          date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
+          transactionId: p.stripePaymentIntentId,
+          receiptUrl: data.receiptUrl,
+          cardBrand: p.cardBrand,
+          cardLast4: p.cardLast4
+        });
+      } catch (error) {
+        console.error('Error fetching payment details:', error);
+        toast.error(error.response?.data?.error || 'Error loading payment details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [user, sessionId, navigate]);
 
-  const fetchPaymentDetails = async () => {
-    try {
-      // You could add an endpoint to fetch payment details by session ID
-      // For now, we'll just show a success message
-      setPaymentDetails({
-        amount: '500.00', // This would come from the API
-        paymentType: 'Security Deposit',
-        date: new Date().toLocaleDateString(),
-        transactionId: sessionId
-      });
-    } catch (error) {
-      console.error('Error fetching payment details:', error);
-      toast.error('Error loading payment details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDownloadReceipt = () => {
-    // This would trigger a receipt download
-    toast.success('Receipt download started');
+    if (paymentDetails?.receiptUrl) {
+      window.open(paymentDetails.receiptUrl, '_blank');
+      return;
+    }
+    // Generate a simple PDF receipt from available data
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text('Palm Run LLC - Payment Receipt', 105, 20, { align: 'center' });
+      doc.setFontSize(11);
+      const y0 = 40;
+      doc.text(`Date: ${paymentDetails?.date || new Date().toLocaleDateString()}`, 20, y0);
+      doc.text(`Amount: $${paymentDetails?.amount || '-'}`, 20, y0 + 10);
+      doc.text(`Type: ${paymentDetails?.paymentType || '-'}`, 20, y0 + 20);
+      if (paymentDetails?.cardBrand || paymentDetails?.cardLast4) {
+        doc.text(`Card: ${paymentDetails.cardBrand || ''} •••• ${paymentDetails.cardLast4 || ''}`, 20, y0 + 30);
+      }
+      if (paymentDetails?.transactionId) {
+        doc.text(`Transaction: ${paymentDetails.transactionId}`, 20, y0 + 40);
+      }
+      doc.save('palm-run-receipt.pdf');
+    } catch (e) {
+      console.error('Receipt generate error:', e);
+      toast.error('Unable to generate receipt');
+    }
   };
 
   const handleBackToDashboard = () => {
@@ -103,6 +127,12 @@ const PaymentSuccess = () => {
                     <span className="text-gray-600">Transaction ID:</span>
                     <span className="font-mono text-sm text-gray-600">{paymentDetails.transactionId}</span>
                   </div>
+                  {(paymentDetails.cardBrand || paymentDetails.cardLast4) && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Card:</span>
+                      <span className="font-semibold text-gray-900">{paymentDetails.cardBrand} •••• {paymentDetails.cardLast4}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
