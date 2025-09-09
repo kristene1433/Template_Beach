@@ -78,10 +78,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
-  const register = async (firstName, email, password) => {
+  // Register function (email + password only)
+  const register = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/register', { firstName, email, password });
+      const response = await axios.post('/api/auth/register', { email, password });
       const { token: newToken, user: newUser } = response.data;
       
       // Set token in localStorage first

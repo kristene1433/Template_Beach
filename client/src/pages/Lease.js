@@ -24,6 +24,29 @@ const Lease = () => {
   const [signedLeaseFile, setSignedLeaseFile] = useState(null);
   const [uploadedLease, setUploadedLease] = useState(null);
 
+  const openSignedLease = async (applicationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please log in to view the lease');
+        return;
+      }
+      const res = await axios.get(`/api/lease/view-signed/${applicationId}` , {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error opening signed lease:', error);
+      const message = error.response?.data?.error || 'Unable to open signed lease';
+      toast.error(message);
+    }
+  };
+
   const generateLeaseFromData = useCallback(async (leaseInfo) => {
     try {
       setLoading(true);
@@ -392,33 +415,13 @@ const Lease = () => {
                          )}
                        </div>
                        <div className="flex items-center space-x-2">
-                         <button
-                           onClick={() => {
-                             try {
-                               const token = localStorage.getItem('token');
-                               if (!token) {
-                                 toast.error('Please log in to view the lease');
-                                 return;
-                               }
-                               
-                               // Open in new window with authentication
-                               const newWindow = window.open('', '_blank');
-                               if (newWindow) {
-                                 newWindow.location.href = `/api/lease/view-signed/${leaseData.applicationId}`;
-                               } else {
-                                 // Fallback: open in same window
-                                 window.location.href = `/api/lease/view-signed/${leaseData.applicationId}`;
-                               }
-                             } catch (error) {
-                               console.error('Error opening lease:', error);
-                               toast.error('Error opening lease file');
-                             }
-                           }}
-                           className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-sm flex items-center"
-                         >
-                           <Eye className="w-4 h-4 mr-2" />
-                           View Lease
-                         </button>
+                        <button
+                          onClick={() => openSignedLease(leaseData.applicationId)}
+                          className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-sm flex items-center"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Lease
+                        </button>
                          <button
                            onClick={removeUploadedLease}
                            className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"

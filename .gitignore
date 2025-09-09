@@ -111,3 +111,10 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# --- Palm Run: keep client public assets tracked ---
+# Un-ignore CRA public assets so images/videos are committed and deployed
+!client/public/
+!client/public/**
+!client/public/images/**
+!client/public/videos/**
