@@ -45,16 +45,15 @@ async function handleStripeWebhook(req, res) {
 
         // Get payment intent details for additional info
         const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
-        if (paymentIntent.charges.data[0]?.payment_method_details?.card) {
-          const card = paymentIntent.charges.data[0].payment_method_details.card;
+        const charge = paymentIntent.charges?.data?.[0];
+        if (charge?.payment_method_details?.card) {
+          const card = charge.payment_method_details.card;
           payment.cardLast4 = card.last4;
           payment.cardBrand = card.brand;
         }
 
-        // Get receipt URL from session
-        if (session.receipt_url) {
-          payment.receiptUrl = session.receipt_url;
-        }
+        // Get receipt URL from charge if available
+        payment.receiptUrl = payment.receiptUrl || charge?.receipt_url || null;
 
         await payment.save();
         console.log(`Payment ${payment._id} created and marked as successful`);
@@ -85,6 +84,43 @@ async function handleStripeWebhook(req, res) {
         console.error('Error processing failed payment webhook:', error);
       }
       break;
+
+    case 'payment_intent.succeeded': {
+      const pi = event.data.object;
+      try {
+        let payment = await Payment.findOne({ stripePaymentIntentId: pi.id });
+        if (!payment) {
+          payment = new Payment({
+            userId: pi.metadata?.userId,
+            stripePaymentIntentId: pi.id,
+            stripeCustomerId: pi.customer,
+            amount: pi.amount,
+            currency: pi.currency || 'usd',
+            paymentType: pi.metadata?.paymentType || 'deposit',
+            description: `${pi.metadata?.paymentType || 'deposit'} payment`,
+            status: 'succeeded',
+            paidAt: new Date(),
+            metadata: {
+              propertyAddress: pi.metadata?.propertyAddress,
+              checkoutSessionId: pi.metadata?.checkoutSessionId
+            }
+          });
+        } else {
+          payment.status = 'succeeded';
+          payment.paidAt = new Date();
+        }
+        const charge = pi.charges?.data?.[0];
+        payment.receiptUrl = charge?.receipt_url || payment.receiptUrl;
+        if (charge?.payment_method_details?.card) {
+          payment.cardBrand = charge.payment_method_details.card.brand;
+          payment.cardLast4 = charge.payment_method_details.card.last4;
+        }
+        await payment.save();
+      } catch (err) {
+        console.error('payment_intent.succeeded handling error:', err);
+      }
+      break;
+    }
 
     default:
       console.log(`Unhandled event type ${event.type}`);
