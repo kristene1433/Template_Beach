@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CheckCircle, Download, ArrowLeft, Receipt } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Receipt } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import jsPDF from 'jspdf';
+import { sendPaymentReceiptEmail } from '../utils/emailjs';
 
 const PaymentSuccess = () => {
   const { user, loading: authLoading } = useAuth();
@@ -14,7 +15,7 @@ const PaymentSuccess = () => {
   const [loading, setLoading] = useState(true);
 
   const sessionId = searchParams.get('session_id');
-
+  
   useEffect(() => {
     const load = async () => {
       if (authLoading) return; // wait for auth to resolve
@@ -30,7 +31,7 @@ const PaymentSuccess = () => {
         const token = localStorage.getItem('token');
         const { data } = await axios.get(`/api/payment/by-session/${sessionId}`,{ headers: token ? { Authorization: `Bearer ${token}` } : {} });
         const p = data.payment;
-        setPaymentDetails({
+        const details = {
           amount: (p.amount / 100).toFixed(2),
           paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
           date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
@@ -38,7 +39,29 @@ const PaymentSuccess = () => {
           receiptUrl: data.receiptUrl,
           cardBrand: p.cardBrand,
           cardLast4: p.cardLast4
-        });
+        };
+        setPaymentDetails(details);
+
+        // Send confirmation email once per session
+        try {
+          const sentKey = `pr:receipt-sent:${sessionId}`;
+          if (!sessionStorage.getItem(sentKey) && details.amount) {
+            const amountStr = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount));
+            await sendPaymentReceiptEmail({
+              toEmail: user?.email,
+              amount: amountStr,
+              paymentType: details.paymentType,
+              date: details.date,
+              transactionId: details.transactionId,
+              receiptUrl: details.receiptUrl,
+              cardBrand: details.cardBrand,
+              cardLast4: details.cardLast4
+            });
+            sessionStorage.setItem(sentKey, '1');
+          }
+        } catch (mailErr) {
+          console.warn('Payment receipt email not sent:', mailErr);
+        }
       } catch (error) {
         console.error('Error fetching payment details:', error);
         toast.error(error.response?.data?.error || 'Error loading payment details');
@@ -49,6 +72,7 @@ const PaymentSuccess = () => {
     load();
   }, [authLoading, user, sessionId, navigate]);
 
+  // (Removed UI button) Kept helper for potential future use
   const handleDownloadReceipt = async () => {
     // If Stripe receipt URL exists, open it
     if (paymentDetails?.receiptUrl) {
@@ -172,10 +196,6 @@ const PaymentSuccess = () => {
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Your payment will be reflected in your account within 24 hours
-                </li>
-                <li className="flex items-start">
-                  <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                   If you have any questions, please contact our support team
                 </li>
               </ul>
@@ -183,13 +203,6 @@ const PaymentSuccess = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleDownloadReceipt}
-                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
-              >
-                <Download className="h-5 w-5 mr-2" />
-                Download Receipt
-              </button>
               <button
                 onClick={handleBackToDashboard}
                 className="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center"

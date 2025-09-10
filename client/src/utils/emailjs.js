@@ -5,6 +5,7 @@ export const EMAILJS_CONFIG = {
   SERVICE_ID: process.env.REACT_APP_EMAILJS_SERVICE_ID,
   CONTACT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID,
   LEASE_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_LEASE_TEMPLATE_ID,
+  PAYMENT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID,
   PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY,
 };
 
@@ -14,6 +15,7 @@ export const validateEmailJSConfig = () => {
     SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID,
     CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID,
     LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID,
+    PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID,
     PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
   });
   
@@ -109,6 +111,40 @@ export const sendLeaseNotification = async (leaseData) => {
     return { success: true, data: response };
   } catch (error) {
     console.error('EmailJS error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send payment receipt/confirmation
+export const sendPaymentReceiptEmail = async (data) => {
+  // Only require service, payment template and public key for this call
+  if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+    console.warn('Payment receipt email skipped: EmailJS payment template not configured');
+    return { success: false, error: 'EmailJS not fully configured for payment receipts' };
+  }
+
+  try {
+    const response = await emailjs.send(
+      EMAILJS_CONFIG.SERVICE_ID,
+      EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID,
+      {
+        to_email: data.toEmail,
+        amount: data.amount,            // formatted string like $500.00
+        payment_type: data.paymentType, // e.g., Security Deposit
+        date: data.date,                // formatted date
+        transaction_id: data.transactionId || '-',
+        receipt_url: data.receiptUrl || '',
+        card_brand: data.cardBrand || '',
+        card_last4: data.cardLast4 || '',
+        sent_date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        })
+      },
+      EMAILJS_CONFIG.PUBLIC_KEY
+    );
+    return { success: true, data: response };
+  } catch (error) {
+    console.error('EmailJS payment receipt error:', error);
     return { success: false, error: error.message };
   }
 };
