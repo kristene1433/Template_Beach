@@ -4,9 +4,10 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
+const webhookRouter = express.Router();
 
 // Stripe webhook handler for payment completion - MUST use raw body
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+async function handleStripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -90,7 +91,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   }
 
   res.json({ received: true });
-});
+}
+
+// Mount webhook with raw body parser on dedicated router
+webhookRouter.post('/', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
 // Create Stripe Checkout session
 router.post('/create-checkout-session', auth, async (req, res) => {
@@ -261,19 +265,47 @@ router.get('/by-session/:sessionId', auth, async (req, res) => {
     const { sessionId } = req.params;
     if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
-    const payment = await Payment.findOne({
+    let payment = await Payment.findOne({
       userId: req.user._id,
       'metadata.checkoutSessionId': sessionId
     });
 
+    // If the webhook hasn't written the payment yet, pull details directly from Stripe
     if (!payment) {
-      return res.status(404).json({ error: 'Payment not found for session' });
+      try {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (!session) return res.status(404).json({ error: 'Stripe session not found' });
+
+        const pi = session.payment_intent
+          ? await stripe.paymentIntents.retrieve(session.payment_intent)
+          : null;
+
+        const amount = session.amount_total || (pi ? pi.amount : undefined);
+        const receiptUrl = pi?.charges?.data?.[0]?.receipt_url || null;
+        const card = pi?.charges?.data?.[0]?.payment_method_details?.card;
+
+        return res.json({
+          payment: {
+            amount: amount ?? 0,
+            currency: 'usd',
+            paymentType: session?.metadata?.paymentType || 'deposit',
+            description: `${session?.metadata?.paymentType || 'deposit'} payment`,
+            status: pi?.status === 'succeeded' ? 'succeeded' : 'processing',
+            paidAt: pi?.status === 'succeeded' ? new Date() : null,
+            createdAt: new Date(),
+            stripePaymentIntentId: pi?.id || session?.payment_intent || sessionId,
+            cardBrand: card?.brand,
+            cardLast4: card?.last4
+          },
+          receiptUrl
+        });
+      } catch (e) {
+        console.error('Stripe lookup for by-session failed:', e);
+        return res.status(404).json({ error: 'Payment not found for session' });
+      }
     }
 
-    return res.json({
-      payment,
-      receiptUrl: payment.receiptUrl || null
-    });
+    return res.json({ payment, receiptUrl: payment.receiptUrl || null });
   } catch (error) {
     console.error('Payment by-session fetch error:', error);
     res.status(500).json({ error: 'Server error fetching payment details' });
@@ -444,4 +476,4 @@ router.get('/admin/all', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, webhookRouter };

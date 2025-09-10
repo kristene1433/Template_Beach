@@ -79,7 +79,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing middleware - IMPORTANT: Must come before webhook route
+// Mount Stripe webhook BEFORE JSON body parsing so raw body is available
+app.use('/api/payment/webhook', paymentRoutes.webhookRouter);
+
+// Body parsing middleware for all other routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -96,8 +99,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/lease', leaseRoutes);
 
-// Payment routes - webhook needs raw body, other routes need JSON
-app.use('/api/payment', paymentRoutes);
+// Payment routes (JSON parsed)
+app.use('/api/payment', paymentRoutes.router);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

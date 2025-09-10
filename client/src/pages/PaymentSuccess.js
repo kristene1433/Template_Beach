@@ -26,7 +26,8 @@ const PaymentSuccess = () => {
         return;
       }
       try {
-        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`);
+        const token = localStorage.getItem('token');
+        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`,{ headers: token ? { Authorization: `Bearer ${token}` } : {} });
         const p = data.payment;
         setPaymentDetails({
           amount: (p.amount / 100).toFixed(2),
@@ -56,21 +57,31 @@ const PaymentSuccess = () => {
 
     // Otherwise, generate a PDF receipt from server data
     try {
-      let details = paymentDetails;
-      if (!details && sessionId) {
-        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`);
-        const p = data.payment;
-        details = {
-          amount: (p.amount / 100).toFixed(2),
-          paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
-          date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
-          transactionId: p.stripePaymentIntentId,
-          cardBrand: p.cardBrand,
-          cardLast4: p.cardLast4
-        };
+      // Always refetch latest details in case the webhook just finished
+      let details;
+      if (sessionId) {
+        const token = localStorage.getItem('token');
+        try {
+          const { data } = await axios.get(`/api/payment/by-session/${sessionId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+          const p = data.payment;
+          details = {
+            amount: (p.amount / 100).toFixed(2),
+            paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
+            date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
+            transactionId: p.stripePaymentIntentId,
+            cardBrand: p.cardBrand,
+            cardLast4: p.cardLast4,
+            receiptUrl: data.receiptUrl
+          };
+        } catch (_) {
+          // Fall back to current state if refetch fails
+          details = paymentDetails || undefined;
+        }
+      } else {
+        details = paymentDetails || undefined;
       }
 
-      const amountStr = details?.amount
+      const amountStr = (details && details.amount != null)
         ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount))
         : '-';
 
