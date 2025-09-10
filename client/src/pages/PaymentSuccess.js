@@ -7,7 +7,7 @@ import axios from 'axios';
 import jsPDF from 'jspdf';
 
 const PaymentSuccess = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -17,6 +17,7 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     const load = async () => {
+      if (authLoading) return; // wait for auth to resolve
       if (!user) {
         navigate('/login');
         return;
@@ -46,7 +47,7 @@ const PaymentSuccess = () => {
       }
     };
     load();
-  }, [user, sessionId, navigate]);
+  }, [authLoading, user, sessionId, navigate]);
 
   const handleDownloadReceipt = async () => {
     // If Stripe receipt URL exists, open it
