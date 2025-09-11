@@ -273,9 +273,9 @@ const Lease = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero header to match site */}
-      <section className="relative pt-16">
+      <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-64 md:h-60 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
