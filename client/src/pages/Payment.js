@@ -76,13 +76,23 @@ const Payment = () => {
 
     setLoading(true);
     try {
+      const successUrl = `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${window.location.origin}/payment/cancel`;
+      
+      console.log('🔧 Payment Debug - Creating checkout session with URLs:', {
+        successUrl,
+        cancelUrl,
+        amount,
+        paymentType
+      });
+      
       // Create Stripe Checkout session
       const response = await axios.post('/api/payment/create-checkout-session', {
         amount: amount,
         paymentType,
         description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`,
-        successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/payment/cancel`
+        successUrl,
+        cancelUrl
       });
 
       const { url } = response.data;

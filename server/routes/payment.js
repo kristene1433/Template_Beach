@@ -169,6 +169,17 @@ router.post('/create-checkout-session', auth, async (req, res) => {
     }
 
     // Create Stripe Checkout session
+    const finalSuccessUrl = successUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = cancelUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/cancel`;
+    
+    console.log('🔧 Server Debug - Creating Stripe session with URLs:', {
+      successUrl: finalSuccessUrl,
+      cancelUrl: finalCancelUrl,
+      clientUrl: process.env.CLIENT_URL,
+      providedSuccessUrl: successUrl,
+      providedCancelUrl: cancelUrl
+    });
+    
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       payment_method_types: ['card'],
@@ -190,8 +201,8 @@ router.post('/create-checkout-session', auth, async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: successUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/cancel`,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       metadata: {
         userId: user._id.toString(),
         paymentType,
