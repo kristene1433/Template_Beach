@@ -9,6 +9,15 @@ export const EMAILJS_CONFIG = {
   PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY,
 };
 
+// Debug: Log configuration on load
+console.log('🔧 EmailJS Configuration loaded:', {
+  SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
+  CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
+  LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
+  PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
+  PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
+});
+
 // Validate configuration
 export const validateEmailJSConfig = () => {
   console.log('EmailJS Config Check:', {
@@ -117,18 +126,32 @@ export const sendLeaseNotification = async (leaseData) => {
 
 // Send payment receipt/confirmation
 export const sendPaymentReceiptEmail = async (data) => {
+  console.log('🔍 EmailJS Debug - Attempting to send payment receipt email');
+  console.log('📧 EmailJS Config:', {
+    SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID,
+    PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID,
+    PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
+  });
+  console.log('📨 Email Data:', data);
+  
   // Only require service, payment template and public key for this call
   if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
-    console.warn('Payment receipt email skipped: EmailJS payment template not configured');
+    console.error('❌ Payment receipt email skipped: EmailJS payment template not configured');
+    console.error('Missing:', {
+      SERVICE_ID: !EMAILJS_CONFIG.SERVICE_ID,
+      PAYMENT_TEMPLATE_ID: !EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID,
+      PUBLIC_KEY: !EMAILJS_CONFIG.PUBLIC_KEY
+    });
     return { success: false, error: 'EmailJS not fully configured for payment receipts' };
   }
 
   try {
+    console.log('📤 Sending email via EmailJS...');
     const response = await emailjs.send(
       EMAILJS_CONFIG.SERVICE_ID,
       EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID,
       {
-        to_email: data.toEmail,
+        email: data.toEmail,
         amount: data.amount,            // formatted string like $500.00
         payment_type: data.paymentType, // e.g., Security Deposit
         date: data.date,                // formatted date
@@ -142,9 +165,15 @@ export const sendPaymentReceiptEmail = async (data) => {
       },
       EMAILJS_CONFIG.PUBLIC_KEY
     );
+    console.log('✅ Email sent successfully!', response);
     return { success: true, data: response };
   } catch (error) {
-    console.error('EmailJS payment receipt error:', error);
+    console.error('❌ EmailJS payment receipt error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.status,
+      text: error.text
+    });
     return { success: false, error: error.message };
   }
 };

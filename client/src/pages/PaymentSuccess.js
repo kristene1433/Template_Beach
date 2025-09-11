@@ -16,6 +16,14 @@ const PaymentSuccess = () => {
 
   const sessionId = searchParams.get('session_id');
   
+  // Debug: Log when component loads
+  console.log('🚀 PaymentSuccess component loaded', {
+    sessionId,
+    user: user?.email,
+    authLoading,
+    currentUrl: window.location.href
+  });
+  
   useEffect(() => {
     const load = async () => {
       if (authLoading) return; // wait for auth to resolve
@@ -45,9 +53,33 @@ const PaymentSuccess = () => {
         // Send confirmation email once per session
         try {
           const sentKey = `pr:receipt-sent:${sessionId}`;
+          console.log('🔍 Email Debug - Checking if email should be sent:', {
+            sessionId,
+            sentKey,
+            alreadySent: sessionStorage.getItem(sentKey),
+            hasAmount: !!details.amount,
+            userEmail: user?.email,
+            paymentDetails: details
+          });
+          
+          // Check if EmailJS is properly configured
+          console.log('🔧 EmailJS Config Check:', {
+            SERVICE_ID: process.env.REACT_APP_EMAILJS_SERVICE_ID ? 'Set' : 'Missing',
+            PAYMENT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
+            PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? 'Set' : 'Missing'
+          });
+          
           if (!sessionStorage.getItem(sentKey) && details.amount) {
             const amountStr = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount));
-            await sendPaymentReceiptEmail({
+            console.log('📧 Attempting to send email with data:', {
+              toEmail: user?.email,
+              amount: amountStr,
+              paymentType: details.paymentType,
+              date: details.date,
+              transactionId: details.transactionId
+            });
+            
+            const emailResult = await sendPaymentReceiptEmail({
               toEmail: user?.email,
               amount: amountStr,
               paymentType: details.paymentType,
@@ -57,10 +89,26 @@ const PaymentSuccess = () => {
               cardBrand: details.cardBrand,
               cardLast4: details.cardLast4
             });
+            
+            console.log('📧 Email result:', emailResult);
+            
+            if (emailResult.success) {
+              toast.success('Payment receipt sent to your email!');
+            } else {
+              console.error('❌ Email failed:', emailResult.error);
+              toast.error('Failed to send email receipt. Please contact support.');
+            }
+            
             sessionStorage.setItem(sentKey, '1');
+          } else {
+            console.log('📧 Email skipped:', {
+              reason: sessionStorage.getItem(sentKey) ? 'Already sent' : 'No amount',
+              alreadySent: !!sessionStorage.getItem(sentKey),
+              hasAmount: !!details.amount
+            });
           }
         } catch (mailErr) {
-          console.warn('Payment receipt email not sent:', mailErr);
+          console.error('❌ Payment receipt email error:', mailErr);
         }
       } catch (error) {
         console.error('Error fetching payment details:', error);
