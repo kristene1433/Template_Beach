@@ -81,7 +81,7 @@ const Payment = () => {
         amount: amount,
         paymentType,
         description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`,
-        successUrl: `${window.location.origin}/payment/success`,
+        successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/payment/cancel`
       });
 
