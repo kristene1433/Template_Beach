@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CheckCircle, ArrowLeft, Receipt } from 'lucide-react';
+import { CheckCircle, ArrowLeft, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
-import jsPDF from 'jspdf';
 import { sendPaymentReceiptEmail } from '../utils/emailjs';
 
 const PaymentSuccess = () => {
@@ -18,10 +17,9 @@ const PaymentSuccess = () => {
   
   // Debug: Log when component loads
   console.log('🚀 PaymentSuccess component loaded', {
-    sessionId,
+    sessionId: sessionId ? 'Present' : 'Missing',
     user: user?.email,
-    authLoading,
-    currentUrl: window.location.href
+    authLoading
   });
   
   useEffect(() => {
@@ -53,31 +51,9 @@ const PaymentSuccess = () => {
         // Send confirmation email once per session
         try {
           const sentKey = `pr:receipt-sent:${sessionId}`;
-          console.log('🔍 Email Debug - Checking if email should be sent:', {
-            sessionId,
-            sentKey,
-            alreadySent: sessionStorage.getItem(sentKey),
-            hasAmount: !!details.amount,
-            userEmail: user?.email,
-            paymentDetails: details
-          });
-          
-          // Check if EmailJS is properly configured
-          console.log('🔧 EmailJS Config Check:', {
-            SERVICE_ID: process.env.REACT_APP_EMAILJS_SERVICE_ID ? 'Set' : 'Missing',
-            PAYMENT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
-            PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? 'Set' : 'Missing'
-          });
           
           if (!sessionStorage.getItem(sentKey) && details.amount) {
             const amountStr = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount));
-            console.log('📧 Attempting to send email with data:', {
-              toEmail: user?.email,
-              amount: amountStr,
-              paymentType: details.paymentType,
-              date: details.date,
-              transactionId: details.transactionId
-            });
             
             const emailResult = await sendPaymentReceiptEmail({
               toEmail: user?.email,
@@ -85,12 +61,9 @@ const PaymentSuccess = () => {
               paymentType: details.paymentType,
               date: details.date,
               transactionId: details.transactionId,
-              receiptUrl: details.receiptUrl,
               cardBrand: details.cardBrand,
               cardLast4: details.cardLast4
             });
-            
-            console.log('📧 Email result:', emailResult);
             
             if (emailResult.success) {
               toast.success('Payment receipt sent to your email!');
@@ -101,11 +74,7 @@ const PaymentSuccess = () => {
             
             sessionStorage.setItem(sentKey, '1');
           } else {
-            console.log('📧 Email skipped:', {
-              reason: sessionStorage.getItem(sentKey) ? 'Already sent' : 'No amount',
-              alreadySent: !!sessionStorage.getItem(sentKey),
-              hasAmount: !!details.amount
-            });
+            console.log('📧 Email skipped:', sessionStorage.getItem(sentKey) ? 'Already sent' : 'No amount');
           }
         } catch (mailErr) {
           console.error('❌ Payment receipt email error:', mailErr);
@@ -120,57 +89,6 @@ const PaymentSuccess = () => {
     load();
   }, [authLoading, user, sessionId, navigate]);
 
-  // (Removed UI button) Kept helper for potential future use
-  const handleDownloadReceipt = async () => {
-    // If Stripe receipt URL exists, open it
-    if (paymentDetails?.receiptUrl) {
-      window.open(paymentDetails.receiptUrl, '_blank');
-      return;
-    }
-
-    // Otherwise, generate a PDF receipt from the best available data
-    try {
-      // Prefer the already-loaded state; if missing, try a quick refetch
-      let details = paymentDetails || undefined;
-      if (!details && sessionId) {
-        const token = localStorage.getItem('token');
-        const { data } = await axios.get(`/api/payment/by-session/${sessionId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-        const p = data.payment;
-        details = {
-          amount: (p.amount / 100).toFixed(2),
-          paymentType: p.paymentType === 'deposit' ? 'Security Deposit' : p.paymentType,
-          date: new Date(p.paidAt || p.createdAt).toLocaleDateString(),
-          transactionId: p.stripePaymentIntentId,
-          cardBrand: p.cardBrand,
-          cardLast4: p.cardLast4,
-          receiptUrl: data.receiptUrl
-        };
-      }
-
-      const amountStr = (details && details.amount !== undefined && details.amount !== null)
-        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(details.amount))
-        : '-';
-
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text('Palm Run LLC - Payment Receipt', 105, 20, { align: 'center' });
-      doc.setFontSize(11);
-      const y0 = 40;
-      doc.text(`Date: ${details?.date || new Date().toLocaleDateString()}`, 20, y0);
-      doc.text(`Amount: ${amountStr}`, 20, y0 + 10);
-      doc.text(`Type: ${details?.paymentType || '-'}`, 20, y0 + 20);
-      if (details?.cardBrand || details?.cardLast4) {
-        doc.text(`Card: ${details.cardBrand || ''} •••• ${details.cardLast4 || ''}`, 20, y0 + 30);
-      }
-      if (details?.transactionId) {
-        doc.text(`Transaction: ${details.transactionId}`, 20, y0 + 40);
-      }
-      doc.save('palm-run-receipt.pdf');
-    } catch (e) {
-      console.error('Receipt generate error:', e);
-      toast.error('Unable to generate receipt');
-    }
-  };
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
@@ -204,7 +122,7 @@ const PaymentSuccess = () => {
             {paymentDetails && (
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <Receipt className="h-5 w-5 mr-2 text-gray-600" />
+                  <FileText className="h-5 w-5 mr-2 text-gray-600" />
                   Payment Details
                 </h2>
                 <div className="space-y-3">
