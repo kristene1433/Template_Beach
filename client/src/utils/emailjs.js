@@ -11,11 +11,18 @@ export const EMAILJS_CONFIG = {
 
 // Debug: Log configuration on load
 console.log('🔧 EmailJS Configuration loaded:', {
-  SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
-  CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
-  LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
-  PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
-  PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
+  SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID || 'Missing',
+  CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID || 'Missing',
+  LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID || 'Missing',
+  PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID || 'Missing',
+  PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY || 'Missing'
+});
+
+// Debug: Check what process.env actually contains
+console.log('🔍 Process.env check:', {
+  'REACT_APP_EMAILJS_SERVICE_ID': process.env.REACT_APP_EMAILJS_SERVICE_ID,
+  'REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID': process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID,
+  'REACT_APP_EMAILJS_PUBLIC_KEY': process.env.REACT_APP_EMAILJS_PUBLIC_KEY
 });
 
 // Validate configuration
