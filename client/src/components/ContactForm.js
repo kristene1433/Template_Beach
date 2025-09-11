@@ -103,21 +103,6 @@ const ContactForm = () => {
           </div>
 
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg p-6 shadow-medium">
-      {/* EmailJS Status Indicator */}
-      {!emailjsReady && (
-        <div className="mb-4 p-3 bg-yellow-50/90 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-800 text-sm">
-            ⚠️ EmailJS is not configured. Please set up your environment variables.
-          </p>
-        </div>
-      )}
-      {emailjsReady && (
-        <div className="mb-4 p-3 bg-green-50/90 border border-green-200 rounded-lg">
-          <p className="text-green-800 text-sm">
-            ✅ EmailJS is ready to send messages.
-          </p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
