@@ -392,7 +392,20 @@ const AdminDashboard = () => {
     }
   };
 
-
+  const viewTenantPaymentHistory = (userId, firstName, lastName) => {
+    if (!userId) {
+      toast.error('User ID not available');
+      return;
+    }
+    
+    // Navigate to payment history page with user context
+    navigate(`/admin/payment/history/${userId}`, {
+      state: {
+        tenantName: `${firstName} ${lastName}`,
+        tenantId: userId
+      }
+    });
+  };
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
@@ -674,6 +687,13 @@ const AdminDashboard = () => {
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View
+                        </button>
+                        <button
+                          onClick={() => viewTenantPaymentHistory(application.userId?._id, application.firstName, application.lastName)}
+                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Payment History
                         </button>
                         {application.status === 'approved' && (
                           <button

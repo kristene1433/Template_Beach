@@ -512,4 +512,22 @@ router.get('/admin/all', auth, async (req, res) => {
   }
 });
 
+// Get payment history for a specific tenant (Admin only)
+router.get('/admin/history/:userId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.params;
+    const payments = await Payment.find({ userId })
+      .sort({ createdAt: -1 });
+
+    res.json({ payments });
+  } catch (error) {
+    console.error('Admin tenant payment history fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching tenant payment history' });
+  }
+});
+
 module.exports = { router, webhookRouter };

@@ -391,7 +391,7 @@ const Dashboard = () => {
             </div>
             <div className="mt-4 text-center">
               <Link
-                to="/payment"
+                to="/payment/history"
                 className="text-primary-600 hover:text-primary-700 text-sm font-medium"
               >
                 View All Payments

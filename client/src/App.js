@@ -18,10 +18,12 @@ import ApplicationView from './pages/ApplicationView';
 import Payment from './pages/Payment';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
+import PaymentHistory from './pages/PaymentHistory';
 import Lease from './pages/Lease';
 
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminPaymentHistory from './pages/AdminPaymentHistory';
 import ContactForm from './components/ContactForm';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -123,6 +125,14 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/payment/history" 
+        element={
+          <ProtectedRoute>
+            <PaymentHistory />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/lease" 
         element={
           <ProtectedRoute>
@@ -147,6 +157,14 @@ const AppRoutes = () => {
         element={
           <AdminProtectedRoute>
             <AdminDashboard />
+          </AdminProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/payment/history/:userId" 
+        element={
+          <AdminProtectedRoute>
+            <AdminPaymentHistory />
           </AdminProtectedRoute>
         } 
       />
