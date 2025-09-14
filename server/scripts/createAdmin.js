@@ -27,8 +27,7 @@ const createAdmin = async () => {
 
     await adminUser.save();
     console.log('Admin user created successfully!');
-    console.log('Email: admin@palmrunllc.com');
-    console.log('Password: admin123');
+    console.log('Please check your database for admin credentials.');
     console.log('Please change the password after first login.');
 
   } catch (error) {

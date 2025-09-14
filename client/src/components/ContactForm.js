@@ -53,11 +53,7 @@ const ContactForm = () => {
         throw new Error('EmailJS not configured. Please check your environment variables.');
       }
 
-      console.log('EmailJS Config:', {
-        serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID,
-        templateId: process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID,
-        publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? 'Set' : 'Missing'
-      });
+      // EmailJS configuration check - sensitive data removed from logs
 
       const result = await sendContactEmail(formData);
       

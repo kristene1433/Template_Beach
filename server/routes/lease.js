@@ -488,14 +488,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    console.log('File upload debug:', {
-      hasFile: !!req.file,
-      hasBuffer: !!req.file.buffer,
-      bufferSize: req.file.buffer ? req.file.buffer.length : 'N/A',
-      originalName: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    });
+    // File upload validation completed
 
     const { applicationId } = req.body;
     
@@ -557,7 +550,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
 router.get('/view-signed/:applicationId', auth, async (req, res) => {
   try {
     const { applicationId } = req.params;
-    console.log('View signed lease request:', { applicationId, userId: req.user._id, userRole: req.user.role });
+    // Debug logging removed for security
     
     // Validate applicationId
     if (!applicationId || !require('mongoose').Types.ObjectId.isValid(applicationId)) {
@@ -570,14 +563,14 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
     // If user is admin, they can view any application's signed lease
     if (req.user.role === 'admin') {
       application = await Application.findById(applicationId);
-      console.log('Admin access - found application:', application ? 'Yes' : 'No');
+      // Admin access - application lookup
     } else {
       // Regular users can only view their own signed lease
       application = await Application.findOne({ 
         _id: applicationId, 
         userId: req.user._id 
       });
-      console.log('User access - found application:', application ? 'Yes' : 'No');
+      // User access - application lookup
     }
 
     if (!application) {
@@ -590,12 +583,7 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Signed lease file not found' });
     }
     
-    console.log('Signed lease file found:', {
-      hasContent: !!application.signedLeaseFile.content,
-      originalName: application.signedLeaseFile.originalName,
-      mimetype: application.signedLeaseFile.mimetype,
-      contentLength: application.signedLeaseFile.content ? application.signedLeaseFile.content.length : 0
-    });
+    // File validation completed - sensitive data removed from logs
 
     // Check if file content exists in database
     if (!application.signedLeaseFile.content) {

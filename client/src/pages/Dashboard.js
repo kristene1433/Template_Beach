@@ -30,10 +30,7 @@ const Dashboard = () => {
           axios.get('/api/payment/history')
         ]);
 
-        console.log('Application response:', applicationRes.data);
-        console.log('Application response status:', applicationRes.status);
-        console.log('Application response headers:', applicationRes.headers);
-        console.log('Lease response:', leaseRes.data);
+        // Debug logging removed for security
         
         setApplicationStatus(applicationRes.data);
         setLeaseStatus(leaseRes.data);
@@ -125,10 +122,7 @@ const Dashboard = () => {
         axios.get('/api/payment/history')
       ]);
 
-              console.log('Refresh - Application response:', applicationRes.data);
-        console.log('Refresh - Application response status:', applicationRes.status);
-        console.log('Refresh - Application response headers:', applicationRes.headers);
-        console.log('Refresh - Lease response:', leaseRes.data);
+        // Debug logging removed for security
       
       setApplicationStatus(applicationRes.data);
       setLeaseStatus(leaseRes.data);
