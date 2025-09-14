@@ -288,15 +288,14 @@ const AdminDashboard = () => {
         leaseEndDate: leaseFormData.leaseEndDate,
         rentalAmount: leaseFormData.rentalAmount,
         depositAmount: leaseFormData.depositAmount,
-        tenantEmail: sendToManager ? 'palmrunbeachcondo@gmail.com' : selectedApplicationForLease.userId?.email,
+        tenantEmail: selectedApplicationForLease.userId?.email || selectedApplicationForLease.email,
         leaseContent: leaseContent
       };
 
       const result = await sendLeaseNotification(leaseData);
       
       if (result.success) {
-        const recipient = sendToManager ? 'manager' : 'tenant';
-        toast.success(`Lease notification email sent successfully to ${recipient}!`);
+        toast.success(`Lease notification email sent successfully to tenant!`);
       } else {
         toast.error(`Failed to send email: ${result.error}`);
       }
@@ -1194,19 +1193,11 @@ const AdminDashboard = () => {
                      </button>
                     
                     <button
-                      onClick={sendLeaseEmail}
+                      onClick={() => sendLeaseEmail(false)}
                       className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                     >
                       <Mail className="h-4 w-4" />
                       <span>Send to Tenant</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => sendLeaseEmail(true)}
-                      className="flex items-center justify-center space-x-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                    >
-                      <Mail className="h-4 w-4" />
-                      <span>Send to Manager</span>
                     </button>
                   </div>
                   
