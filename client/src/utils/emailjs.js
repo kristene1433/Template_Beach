@@ -87,6 +87,16 @@ export const sendContactEmail = async (formData) => {
   }
 };
 
+// Helper function to format date from YYYY-MM-DD to MM-DD-YYYY
+const formatDateForEmail = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString + 'T00:00:00');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
+};
+
 // Send lease generation notification
 export const sendLeaseNotification = async (leaseData) => {
   if (!validateEmailJSConfig()) {
@@ -100,8 +110,8 @@ export const sendLeaseNotification = async (leaseData) => {
       {
         to_email: leaseData.tenantEmail || 'palmrunbeachcondo@gmail.com',
         tenant_name: `${leaseData.firstName} ${leaseData.lastName}`,
-        lease_start_date: leaseData.leaseStartDate,
-        lease_end_date: leaseData.leaseEndDate,
+        lease_start_date: formatDateForEmail(leaseData.leaseStartDate),
+        lease_end_date: formatDateForEmail(leaseData.leaseEndDate),
         rental_amount: leaseData.rentalAmount,
         deposit_amount: leaseData.depositAmount,
         property_address: '18650 Gulf Blvd Unit 207, Indian Shores, FL 33785',
