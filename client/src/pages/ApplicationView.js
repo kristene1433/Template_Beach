@@ -172,6 +172,16 @@ const ApplicationView = () => {
                     </div>
                   </div>
 
+                  {application.secondApplicantFirstName && application.secondApplicantLastName && (
+                    <div className="flex items-center space-x-3">
+                      <Users className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Co-Applicant</p>
+                        <p className="text-gray-600">{application.secondApplicantFirstName} {application.secondApplicantLastName}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center space-x-3">
                     <Mail className="w-5 h-5 text-gray-400" />
                     <div>
