@@ -85,7 +85,7 @@ const Home = () => {
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       <Navigation />
 
       {/* Hero Section */}
@@ -126,7 +126,7 @@ const Home = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -158,7 +158,7 @@ const Home = () => {
       </section>
 
       {/* Property Features */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -204,7 +204,7 @@ const Home = () => {
       </section>
 
       {/* Reviews Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -225,7 +225,7 @@ const Home = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {reviews.slice(0, 3).map((review) => (
-              <div key={review.id} className="bg-gray-50 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
+              <div key={review.id} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     {[...Array(review.rating)].map((_, i) => (
