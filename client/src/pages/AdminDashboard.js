@@ -478,35 +478,37 @@ const AdminDashboard = () => {
           <div className="absolute inset-0 bg-black/40" />
         </div>
         <div className="relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="mr-3">
-                <svg className="h-8 w-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Palm Run logo">
-                  <path d="M34 28 C33 40 32 50 32 60 L28 60 C28 50 29 40 30 28 Z" fill="#8B5A2B"/>
-                  <path d="M29 34 H33 M28.8 38 H32.6 M28.6 42 H32.4 M28.4 46 H32.2 M28.2 50 H32" stroke="#A87444" strokeWidth="1.6" strokeLinecap="round"/>
-                  <circle cx="31" cy="28" r="2.2" fill="#6B4423"/>
-                  <circle cx="35" cy="27" r="2" fill="#6B4423"/>
-                  <path d="M32 20 C22 12, 13 15, 8 20 C16 20, 24 22, 32 24 Z" fill="#1E9E57"/>
-                  <path d="M32 20 C26 10, 20 10, 14 12 C20 14, 26 18, 32 22 Z" fill="#26B36A"/>
-                  <path d="M32 20 C42 12, 51 15, 56 20 C48 20, 40 22, 32 24 Z" fill="#1E9E57"/>
-                  <path d="M32 20 C38 10, 44 10, 50 12 C44 14, 38 18, 32 22 Z" fill="#26B36A"/>
-                  <path d="M32 20 C30 12, 32 8, 36 6 C34 10, 34 16, 32 20 Z" fill="#1E9E57"/>
-                </svg>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+              <div className="flex items-center">
+                <div className="mr-3">
+                  <svg className="h-6 w-6 md:h-8 md:w-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Palm Run logo">
+                    <path d="M34 28 C33 40 32 50 32 60 L28 60 C28 50 29 40 30 28 Z" fill="#8B5A2B"/>
+                    <path d="M29 34 H33 M28.8 38 H32.6 M28.6 42 H32.4 M28.4 46 H32.2 M28.2 50 H32" stroke="#A87444" strokeWidth="1.6" strokeLinecap="round"/>
+                    <circle cx="31" cy="28" r="2.2" fill="#6B4423"/>
+                    <circle cx="35" cy="27" r="2" fill="#6B4423"/>
+                    <path d="M32 20 C22 12, 13 15, 8 20 C16 20, 24 22, 32 24 Z" fill="#1E9E57"/>
+                    <path d="M32 20 C26 10, 20 10, 14 12 C20 14, 26 18, 32 22 Z" fill="#26B36A"/>
+                    <path d="M32 20 C42 12, 51 15, 56 20 C48 20, 40 22, 32 24 Z" fill="#1E9E57"/>
+                    <path d="M32 20 C38 10, 44 10, 50 12 C44 14, 38 18, 32 22 Z" fill="#26B36A"/>
+                    <path d="M32 20 C30 12, 32 8, 36 6 C34 10, 34 16, 32 20 Z" fill="#1E9E57"/>
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">Admin Dashboard</h1>
+                  <p className="text-sm md:text-base text-gray-200">Property Management</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
-                <p className="text-gray-200">Property Management</p>
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <span className="text-xs md:text-sm text-gray-200 truncate">Welcome, {user?.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs md:text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md w-full sm:w-auto"
+                >
+                  <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                  Logout
+                </button>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-200">Welcome, {user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Logout
-              </button>
             </div>
           </div>
         </div>

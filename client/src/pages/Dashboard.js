@@ -151,7 +151,7 @@ const Dashboard = () => {
       {/* Hero header to match Home */}
       <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-64 md:h-60 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-60 md:h-56 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
