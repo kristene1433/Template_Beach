@@ -470,9 +470,9 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       {/* Hero header to match site */}
-      <section className="relative pt-16">
+      <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-64 md:h-60 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
@@ -514,7 +514,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="bg-gradient-to-br from-blue-50 to-cyan-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 -mt-2 md:mt-0">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
@@ -688,54 +688,54 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => handleViewApplication(application)}
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
+                          <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">View</span>
                         </button>
                         <button
                           onClick={() => viewTenantPaymentHistory(application.userId?._id, application.firstName, application.lastName)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Payment History
+                          <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">Payment History</span>
                         </button>
                         {application.status === 'approved' && (
                           <button
                             onClick={() => generateLease(application)}
-                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                           >
-                            <Download className="h-4 w-4 mr-1" />
-                            Generate Lease
+                            <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="hidden sm:inline">Generate Lease</span>
                           </button>
                         )}
                         {application.documents && application.documents.length > 0 && (
                           <button
                             onClick={() => reviewDocuments(application)}
-                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                            className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                           >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Review Documents ({application.documents.length})
+                            <FileText className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="hidden sm:inline">Review Documents ({application.documents.length})</span>
                           </button>
                         )}
                         {application.signedLeaseFile && (
                           <button
                             onClick={() => viewSignedLease(application._id)}
-                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Signed Lease
+                            <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="hidden sm:inline">View Signed Lease</span>
                           </button>
                         )}
                         <button
                           onClick={() => deleteApplication(application._id)}
-                          className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-offset-2 focus:ring-red-500"
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-offset-2 focus:ring-red-500"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                         
                       </div>
