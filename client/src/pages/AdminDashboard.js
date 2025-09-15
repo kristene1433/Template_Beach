@@ -412,6 +412,8 @@ const AdminDashboard = () => {
     const matchesSearch = 
       app.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (app.secondApplicantFirstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (app.secondApplicantLastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.phone.includes(searchTerm) ||
       (app.userId?.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -459,7 +461,7 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
@@ -511,7 +513,7 @@ const AdminDashboard = () => {
       </section>
 
       {/* Main Content */}
-      <div className="bg-gray-50">
+      <div className="bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -656,6 +658,11 @@ const AdminDashboard = () => {
                         <div>
                           <p className="text-sm font-medium text-gray-900">
                             {application.firstName} {application.lastName}
+                            {application.secondApplicantFirstName && application.secondApplicantLastName && (
+                              <span className="text-gray-500 ml-1">
+                                & {application.secondApplicantFirstName} {application.secondApplicantLastName}
+                              </span>
+                            )}
                           </p>
                           <p className="text-sm text-gray-500">
                             {application.userId?.email || 'No email'}
@@ -782,6 +789,14 @@ const AdminDashboard = () => {
                         <strong>Name:</strong> {selectedApplication.firstName} {selectedApplication.lastName}
                       </span>
                     </div>
+                    {selectedApplication.secondApplicantFirstName && selectedApplication.secondApplicantLastName && (
+                      <div className="flex items-center">
+                        <UserCheck className="h-5 w-5 text-gray-400 mr-2" />
+                        <span className="text-sm">
+                          <strong>Co-Applicant:</strong> {selectedApplication.secondApplicantFirstName} {selectedApplication.secondApplicantLastName}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center">
                       <Mail className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-sm">
