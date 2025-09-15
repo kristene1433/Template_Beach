@@ -159,11 +159,11 @@ router.post('/create-checkout-session', auth, async (req, res) => {
     } else {
       customer = await stripe.customers.create({
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
+        name: user.getFullName(),
         phone: user.phone,
         metadata: {
           userId: user._id.toString(),
-          propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+          propertyAddress: user.getFullAddress()
         }
       });
     }
@@ -178,7 +178,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
             currency: 'usd',
             product_data: {
               name: paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment',
-              description: description || `${paymentType} payment for ${user.firstName} ${user.lastName}`,
+              description: description || `${paymentType} payment for ${user.getFullName()}`,
               metadata: {
                 paymentType,
                 userId: user._id.toString()
@@ -196,14 +196,14 @@ router.post('/create-checkout-session', auth, async (req, res) => {
         userId: user._id.toString(),
         paymentType,
         amount: amount.toString(),
-        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        propertyAddress: user.getFullAddress()
       },
       billing_address_collection: 'required',
       payment_intent_data: {
         metadata: {
           userId: user._id.toString(),
           paymentType,
-          propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+          propertyAddress: user.getFullAddress()
         }
       }
     });
@@ -435,11 +435,11 @@ router.post('/create-payment-intent', auth, async (req, res) => {
     } else {
       customer = await stripe.customers.create({
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
+        name: user.getFullName(),
         phone: user.phone,
         metadata: {
           userId: user._id.toString(),
-          propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+          propertyAddress: user.getFullAddress()
         }
       });
     }
@@ -449,11 +449,11 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       amount: Math.round(amount * 100), // Convert to cents
       currency: 'usd',
       customer: customer.id,
-      description: description || `${paymentType} payment for ${user.firstName} ${user.lastName}`,
+      description: description || `${paymentType} payment for ${user.getFullName()}`,
       metadata: {
         userId: user._id.toString(),
         paymentType,
-        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        propertyAddress: user.getFullAddress()
       },
       automatic_payment_methods: {
         enabled: true,
@@ -471,7 +471,7 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       description: description || `${paymentType} payment`,
       status: 'pending',
       metadata: {
-        propertyAddress: user.address ? `${user.address.street}, ${user.address.city}, ${user.address.state} ${user.address.zipCode}` : ''
+        propertyAddress: user.getFullAddress()
       }
     });
 

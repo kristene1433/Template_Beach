@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -41,7 +43,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await register(formData.email, formData.password);
+      await register(formData.firstName, formData.lastName, formData.email, formData.password);
       toast.success('Registration successful! Please log in.');
       navigate('/login');
     } catch (error) {
@@ -91,6 +93,41 @@ const Register = () => {
             <div className="card bg-white/90 backdrop-blur-md border-white/30 shadow-medium">
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                        First Name
+                      </label>
+                      <input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        required
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className="input-field"
+                        placeholder="First name"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name
+                      </label>
+                      <input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        required
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        className="input-field"
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
 
               {/* Email Field */}
               <div>
