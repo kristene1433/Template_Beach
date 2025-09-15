@@ -23,8 +23,8 @@ const Navbar = () => {
   ] : [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/application', label: 'Application', icon: FileText },
-    { path: '/payment', label: 'Payment', icon: CreditCard },
     { path: '/lease', label: 'Lease', icon: Building2 },
+    { path: '/payment', label: 'Payment', icon: CreditCard },
     { path: '/contact', label: 'Contact', icon: Mail },
   ]) : [];
 
