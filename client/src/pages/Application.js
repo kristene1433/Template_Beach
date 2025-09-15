@@ -19,6 +19,8 @@ const Application = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    secondApplicantFirstName: '',
+    secondApplicantLastName: '',
     address: {
       street: '',
       city: '',
@@ -142,6 +144,14 @@ const Application = () => {
       if (endDate <= startDate) {
         newErrors.requestedEndDate = 'End date must be after start date';
       }
+    }
+
+    // Validate second applicant (if provided)
+    if (formData.secondApplicantFirstName.trim() && !formData.secondApplicantLastName.trim()) {
+      newErrors.secondApplicantLastName = 'Last name is required for second applicant';
+    }
+    if (!formData.secondApplicantFirstName.trim() && formData.secondApplicantLastName.trim()) {
+      newErrors.secondApplicantFirstName = 'First name is required for second applicant';
     }
 
     // Validate additional guests
@@ -307,6 +317,57 @@ const Application = () => {
                   {getFieldError('lastName') && (
                     <p className="form-error">{getFieldError('lastName')}</p>
                   )}
+                </div>
+              </div>
+
+              {/* Second Applicant Section */}
+              <div className="mt-8">
+                <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-blue-600" />
+                  Second Applicant (Optional)
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  If you're applying with a spouse or co-applicant, please provide their information below.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-group">
+                    <label htmlFor="secondApplicantFirstName" className="form-label">
+                      First Name
+                    </label>
+                    <input
+                      id="secondApplicantFirstName"
+                      name="secondApplicantFirstName"
+                      type="text"
+                      autoComplete="given-name"
+                      value={formData.secondApplicantFirstName}
+                      onChange={handleChange}
+                      className={`input-field ${getFieldError('secondApplicantFirstName') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                      placeholder="Enter second applicant's first name"
+                    />
+                    {getFieldError('secondApplicantFirstName') && (
+                      <p className="form-error">{getFieldError('secondApplicantFirstName')}</p>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="secondApplicantLastName" className="form-label">
+                      Last Name
+                    </label>
+                    <input
+                      id="secondApplicantLastName"
+                      name="secondApplicantLastName"
+                      type="text"
+                      autoComplete="family-name"
+                      value={formData.secondApplicantLastName}
+                      onChange={handleChange}
+                      className={`input-field ${getFieldError('secondApplicantLastName') ? 'border-red-300 focus:ring-red-500' : ''}`}
+                      placeholder="Enter second applicant's last name"
+                    />
+                    {getFieldError('secondApplicantLastName') && (
+                      <p className="form-error">{getFieldError('secondApplicantLastName')}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

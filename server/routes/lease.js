@@ -416,11 +416,17 @@ function generateLeaseAgreement(application, leaseStartDate, leaseEndDate, renta
 
 
 
+  // Build tenant name(s) for lease
+  let tenantNames = `${application.firstName} ${application.lastName}`;
+  if (application.secondApplicantFirstName && application.secondApplicantLastName) {
+    tenantNames += ` and ${application.secondApplicantFirstName} ${application.secondApplicantLastName}`;
+  }
+
   return `PALM RUN LLC. MONTHLY RENTAL AGREEMENT
 
 This Agreement made and entered on ${currentDate}, between Palm Run, LLC (hereinafter referred
 to as the "Manager"), mailing address 18650 Gulf Blvd, #207, Indian Shores, FL 33785,
-and ${application.firstName} ${application.lastName} (hereinafter referred to as the "Renter"), mailing address ${application.address.street}, ${application.address.city}, ${application.address.state} ${application.address.zipCode}, concerning the premises known as "18650 Gulf Blvd, #207, Indian Shores, FL 33785". The
+and ${tenantNames} (hereinafter referred to as the "Renter"), mailing address ${application.address.street}, ${application.address.city}, ${application.address.state} ${application.address.zipCode}, concerning the premises known as "18650 Gulf Blvd, #207, Indian Shores, FL 33785". The
 Owner of the property is Palm Run, LLC.
 
 1. **Rent**: Renter agrees to pay the sum of $${rentalAmount}

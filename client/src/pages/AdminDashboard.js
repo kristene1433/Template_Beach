@@ -284,6 +284,8 @@ const AdminDashboard = () => {
       const leaseData = {
         firstName: selectedApplicationForLease.firstName,
         lastName: selectedApplicationForLease.lastName,
+        secondApplicantFirstName: selectedApplicationForLease.secondApplicantFirstName,
+        secondApplicantLastName: selectedApplicationForLease.secondApplicantLastName,
         leaseStartDate: leaseFormData.leaseStartDate,
         leaseEndDate: leaseFormData.leaseEndDate,
         rentalAmount: leaseFormData.rentalAmount,

@@ -17,6 +17,14 @@ const applicationSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  secondApplicantFirstName: {
+    type: String,
+    trim: true
+  },
+  secondApplicantLastName: {
+    type: String,
+    trim: true
+  },
   phone: {
     type: String,
     required: true,
@@ -141,6 +149,12 @@ applicationSchema.index({ userId: 1, status: 1 });
 // Virtual for full name
 applicationSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
+});
+
+// Virtual for second applicant full name
+applicationSchema.virtual('secondApplicantFullName').get(function() {
+  if (!this.secondApplicantFirstName || !this.secondApplicantLastName) return '';
+  return `${this.secondApplicantFirstName} ${this.secondApplicantLastName}`;
 });
 
 // Virtual for full address

@@ -307,26 +307,6 @@ const Lease = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg shadow-medium overflow-hidden">
           <div className="p-6">
-            {/* Application Status Check - Only show if no lease data */}
-            {!leaseData && !loading && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium">Application Required</p>
-                    <p className="mt-1">
-                      You need to complete your rental application before you can access your lease agreement.
-                    </p>
-                    <button
-                      onClick={() => navigate('/application')}
-                      className="mt-2 bg-yellow-600 text-white px-4 py-2 rounded-md text-sm hover:bg-yellow-700 transition-colors"
-                    >
-                      Complete Application
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* All Applications Completed - Return to Default State */}
             {leaseData && leaseData.message === 'No active applications found' && (
