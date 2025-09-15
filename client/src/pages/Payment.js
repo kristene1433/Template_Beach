@@ -139,7 +139,7 @@ const Payment = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900">Please log in to access payments</h2>
@@ -157,9 +157,9 @@ const Payment = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       {/* Hero header to match site */}
-      <section className="relative pt-16">
+      <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-48 md:h-64 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-64 md:h-60 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
@@ -175,7 +175,7 @@ const Payment = () => {
         </div>
       </section>
 
-      <div className="bg-gray-50 min-h-screen py-8">
+      <div className="min-h-screen py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Payment Form */}
@@ -293,7 +293,7 @@ const Payment = () => {
               </div>
 
               {/* Payment Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3">Payment Summary</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">

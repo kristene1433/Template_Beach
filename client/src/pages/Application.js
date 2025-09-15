@@ -232,7 +232,7 @@ const Application = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       {/* Hero header to match Home/Login/Dashboard */}
-      <section className="relative pt-16">
+      <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <video className="w-full h-64 md:h-60 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />

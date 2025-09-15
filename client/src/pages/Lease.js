@@ -255,7 +255,7 @@ const Lease = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900">Please log in to access your lease</h2>
@@ -303,7 +303,7 @@ const Lease = () => {
         </div>
       </section>
 
-      <div className="bg-gray-50 py-8">
+      <div className="py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg shadow-medium overflow-hidden">
           <div className="p-6">
@@ -463,7 +463,7 @@ const Lease = () => {
 
                                  {/* Upload New Signed Lease Section */}
                 {!uploadedLease && (
-                   <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                   <div className="mt-6 p-4 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg">
                      <h4 className="text-sm font-medium text-gray-900 mb-3">Upload Signed Lease</h4>
                      
                      <div className="space-y-3">
@@ -525,7 +525,7 @@ const Lease = () => {
                   </h3>
                 </div>
                 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                <div className="bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                   <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
                     {leaseContent}
                   </pre>
@@ -557,7 +557,7 @@ const Lease = () => {
                 </button>
               </div>
 
-              <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-white/60 backdrop-blur-sm">
                 <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 leading-relaxed">
                   {leaseContent}
                 </pre>
