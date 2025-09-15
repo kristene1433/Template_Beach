@@ -49,7 +49,7 @@ const images = [
 
 const Gallery = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       <Navigation />
 
       {/* Hero */}

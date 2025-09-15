@@ -271,7 +271,7 @@ const Lease = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       {/* Hero header to match site */}
       <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">

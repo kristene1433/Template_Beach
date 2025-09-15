@@ -3,13 +3,13 @@ import Navigation from '../components/Navigation';
 
 const Terms = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       <Navigation />
 
       {/* Beach hero */}
-      <section className="relative pt-16">
+      <section className="relative pt-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-40 md:h-56 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video className="w-full h-64 md:h-60 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40" />
@@ -22,7 +22,7 @@ const Terms = () => {
         </div>
       </section>
 
-      <div className="bg-gray-50 py-8">
+      <div className="py-4 md:py-8 -mt-2 md:mt-0">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-xl shadow-medium p-6 space-y-6">
             <p className="text-sm text-gray-600">Effective date: September 2025</p>

@@ -58,10 +58,15 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-400">
+                <a 
+                  href="https://www.google.com/maps/dir/?api=1&destination=18650+Gulf+Blvd+Unit+207+Indian+Shores+FL+33785"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors duration-200 hover:underline"
+                >
                   18650 Gulf Blvd Unit 207<br />
                   Indian Shores, FL 33785
-                </span>
+                </a>
               </div>
             </div>
           </div>

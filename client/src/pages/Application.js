@@ -230,7 +230,7 @@ const Application = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       {/* Hero header to match Home/Login/Dashboard */}
       <section className="relative pt-16">
         <div className="absolute inset-0 z-0">
