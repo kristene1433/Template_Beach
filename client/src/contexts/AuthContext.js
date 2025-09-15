@@ -163,6 +163,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Forgot password
+  const forgotPassword = async (email) => {
+    try {
+      const response = await axios.post('/api/auth/forgot-password', { email });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to send reset email. Please try again.';
+      return { success: false, error: message };
+    }
+  };
+
+  // Reset password
+  const resetPassword = async (token, newPassword) => {
+    try {
+      const response = await axios.post('/api/auth/reset-password', { token, newPassword });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.error || 'Failed to reset password. Please try again.';
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -173,6 +195,8 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     changePassword,
     refreshUser,
+    forgotPassword,
+    resetPassword,
     isAuthenticated: !!user,
   };
 

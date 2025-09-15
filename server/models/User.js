@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
   }
 }, {
   timestamps: true
@@ -97,6 +103,21 @@ userSchema.methods.getFullName = function() {
 userSchema.methods.getFullAddress = function() {
   if (!this.address.street) return '';
   return `${this.address.street}, ${this.address.city}, ${this.address.state} ${this.address.zipCode}`;
+};
+
+// Method to generate password reset token
+userSchema.methods.generatePasswordResetToken = function() {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  this.resetPasswordToken = token;
+  this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  return token;
+};
+
+// Method to clear password reset token
+userSchema.methods.clearPasswordResetToken = function() {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpires = undefined;
 };
 
 module.exports = mongoose.model('User', userSchema);
