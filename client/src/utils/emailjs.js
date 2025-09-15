@@ -6,6 +6,7 @@ export const EMAILJS_CONFIG = {
   CONTACT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID,
   LEASE_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_LEASE_TEMPLATE_ID,
   PAYMENT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID,
+  PASSWORD_RESET_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PASSWORD_RESET_TEMPLATE_ID,
   PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY,
 };
 
@@ -166,6 +167,43 @@ export const sendPaymentReceiptEmail = async (data) => {
     return { success: true, data: response };
   } catch (error) {
     console.error('❌ Payment receipt email failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send password reset email
+export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
+  console.log('📧 Sending password reset email...');
+  
+  if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
+    console.error('❌ Password reset email skipped: EmailJS not configured');
+    return { success: false, error: 'EmailJS not fully configured for password reset emails' };
+  }
+
+  try {
+    const response = await emailjs.send(
+      EMAILJS_CONFIG.SERVICE_ID,
+      EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID,
+      {
+        to_email: email,
+        reset_url: resetUrl,
+        reset_token: resetToken,
+        company_name: 'Palm Run LLC',
+        property_address: '18650 Gulf Blvd Unit 207, Indian Shores, FL 33785',
+        sent_date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      },
+      EMAILJS_CONFIG.PUBLIC_KEY
+    );
+    console.log('✅ Password reset email sent successfully!');
+    return { success: true, data: response };
+  } catch (error) {
+    console.error('❌ Password reset email failed:', error.message);
     return { success: false, error: error.message };
   }
 };

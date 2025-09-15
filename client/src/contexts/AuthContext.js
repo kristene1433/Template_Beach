@@ -167,7 +167,12 @@ export const AuthProvider = ({ children }) => {
   const forgotPassword = async (email) => {
     try {
       const response = await axios.post('/api/auth/forgot-password', { email });
-      return { success: true, message: response.data.message };
+      return { 
+        success: true, 
+        message: response.data.message,
+        resetUrl: response.data.resetUrl,
+        resetToken: response.data.resetToken
+      };
     } catch (error) {
       const message = error.response?.data?.error || 'Failed to send reset email. Please try again.';
       return { success: false, error: message };

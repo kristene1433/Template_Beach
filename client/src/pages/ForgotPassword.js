@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sendPasswordResetEmail } from '../utils/emailjs';
 import Navigation from '../components/Navigation';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -34,8 +35,30 @@ const ForgotPassword = () => {
       const result = await forgotPassword(email);
       
       if (result.success) {
-        setEmailSent(true);
-        toast.success('Password reset instructions sent to your email!');
+        // If we got a reset URL, send the email
+        if (result.resetUrl && result.resetToken) {
+          try {
+            const emailResult = await sendPasswordResetEmail(email, result.resetToken, result.resetUrl);
+            if (emailResult.success) {
+              setEmailSent(true);
+              toast.success('Password reset instructions sent to your email!');
+            } else {
+              // Email failed but token was generated, still show success for security
+              setEmailSent(true);
+              toast.success('Password reset instructions sent to your email!');
+              console.warn('Email sending failed but token was generated:', emailResult.error);
+            }
+          } catch (emailError) {
+            // Email failed but token was generated, still show success for security
+            setEmailSent(true);
+            toast.success('Password reset instructions sent to your email!');
+            console.warn('Email sending failed but token was generated:', emailError);
+          }
+        } else {
+          // No reset URL returned (user doesn't exist)
+          setEmailSent(true);
+          toast.success('If an account with that email exists, a password reset link has been sent.');
+        }
       } else {
         setError(result.error);
       }

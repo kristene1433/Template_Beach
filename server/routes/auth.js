@@ -245,21 +245,14 @@ router.post('/forgot-password', async (req, res) => {
     const resetToken = user.generatePasswordResetToken();
     await user.save();
 
-    // In a real application, you would send an email here
-    // For now, we'll return the token in development
-    if (process.env.NODE_ENV === 'development') {
-      return res.json({
-        message: 'Password reset token generated',
-        resetToken: resetToken,
-        resetUrl: `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
-      });
-    }
+    // Generate reset URL
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
-    // TODO: Send email with reset link
-    // await sendPasswordResetEmail(user.email, resetToken);
-
+    // Return the reset URL to the client so it can send the email
     res.json({ 
-      message: 'If an account with that email exists, a password reset link has been sent.' 
+      message: 'If an account with that email exists, a password reset link has been sent.',
+      resetUrl: resetUrl,
+      resetToken: resetToken
     });
   } catch (error) {
     console.error('Forgot password error:', error);
