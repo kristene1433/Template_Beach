@@ -12,6 +12,7 @@ import {
   Mail
 } from 'lucide-react';
 import axios from 'axios';
+import CompletionStatus from '../components/CompletionStatus';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -175,6 +176,17 @@ const Dashboard = () => {
 
       <div className="min-h-screen py-4 md:py-8 bg-gradient-to-br from-blue-50 to-cyan-50 -mt-2 md:mt-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Completion Status */}
+        {applicationStatus && (
+          <div className="mb-8">
+            <CompletionStatus 
+              application={applicationStatus.applications?.[0]} 
+              leaseStatus={leaseStatus}
+              recentPayments={recentPayments}
+            />
+          </div>
+        )}
 
         {/* Status Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
