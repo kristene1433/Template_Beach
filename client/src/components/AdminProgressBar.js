@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { CheckCircle, Circle, Clock, AlertCircle, Edit3, Save, X } from 'lucide-react';
+import { CheckCircle, Circle, Clock, AlertCircle, Edit3, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AdminProgressBar = ({ application, onProgressUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSteps, setEditedSteps] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Define the booking process steps with admin controls
   const getInitialSteps = () => [
@@ -137,151 +138,189 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
   const currentSteps = isEditing ? editedSteps : steps;
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30 p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">Booking Progress</h3>
-        <div className="flex items-center space-x-2">
-          <div className="text-xs text-gray-600">
-            {completedSteps} of {totalSteps} completed
+    <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30">
+      {/* Dropdown Header */}
+      <div 
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center space-x-3">
+          <h3 className="text-sm font-semibold text-gray-900">Booking Progress</h3>
+          <div className="flex items-center space-x-2">
+            <div className="text-xs text-gray-600">
+              {completedSteps} of {totalSteps} completed
+            </div>
+            <div className="w-16 bg-gray-200 rounded-full h-1.5">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              ></div>
+            </div>
+            <span className="text-xs text-gray-500">
+              {Math.round(progressPercentage)}%
+            </span>
           </div>
-          {!isEditing ? (
-            <button
-              onClick={handleEdit}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Edit progress"
-            >
-              <Edit3 className="h-4 w-4" />
-            </button>
-          ) : (
-            <div className="flex space-x-1">
-              <button
-                onClick={handleSave}
-                className="p-1 text-green-600 hover:text-green-700 transition-colors"
-                title="Save changes"
-              >
-                <Save className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleCancel}
-                className="p-1 text-red-600 hover:text-red-700 transition-colors"
-                title="Cancel editing"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mb-4">
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        <div className="text-xs text-gray-500 mt-1">
-          {Math.round(progressPercentage)}% complete
-        </div>
-      </div>
-
-      {/* Steps List */}
-      <div className="space-y-2">
-        {currentSteps.map((step, index) => {
-          const IconComponent = step.icon;
-          const isCompleted = step.completed;
-          const isCurrent = !isCompleted && (index === 0 || currentSteps[index - 1]?.completed);
-          
-          return (
-            <div 
-              key={step.id}
-              className={`flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ${
-                isCompleted 
-                  ? 'bg-green-50 border border-green-200' 
-                  : isCurrent 
-                    ? 'bg-blue-50 border border-blue-200' 
-                    : 'bg-gray-50 border border-gray-200'
-              }`}
-            >
-              <div className="flex-shrink-0">
-                {isEditing && step.adminControllable ? (
-                  <button
-                    onClick={() => handleStepToggle(step.id)}
-                    className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      isCompleted
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'border-gray-300 hover:border-green-400'
-                    }`}
-                  >
-                    {isCompleted && <CheckCircle className="h-3 w-3" />}
-                  </button>
-                ) : (
-                  <IconComponent 
-                    className={`h-5 w-5 ${
-                      isCompleted 
-                        ? 'text-green-600' 
-                        : isCurrent 
-                          ? 'text-blue-600' 
-                          : 'text-gray-400'
-                    }`} 
-                  />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className={`text-xs font-medium ${
-                      isCompleted 
-                        ? 'text-green-900' 
-                        : isCurrent 
-                          ? 'text-blue-900' 
-                          : 'text-gray-500'
-                    }`}>
-                      {step.title}
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {step.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {isCompleted && (
-                      <span className="text-xs text-green-600 font-medium">
-                        ✓
-                      </span>
-                    )}
-                    {isCurrent && !isCompleted && (
-                      <span className="text-xs text-blue-600 font-medium">
-                        Next
-                      </span>
-                    )}
-                    {isEditing && step.adminControllable && (
-                      <span className="text-xs text-gray-400">
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Status Summary */}
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-600">Current Status:</span>
-          <span className={`font-medium ${
+        <div className="flex items-center space-x-2">
+          <div className={`text-xs font-medium ${
             application?.status === 'completed' ? 'text-green-600' :
             application?.status === 'approved' ? 'text-blue-600' :
             application?.status === 'pending' ? 'text-yellow-600' :
             'text-red-600'
           }`}>
             {application?.status?.charAt(0).toUpperCase() + application?.status?.slice(1) || 'Unknown'}
-          </span>
+          </div>
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          )}
         </div>
       </div>
+
+      {/* Dropdown Content */}
+      {isExpanded && (
+        <div className="border-t border-gray-200 p-4 space-y-4">
+          {/* Detailed Progress Bar */}
+          <div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              ></div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {Math.round(progressPercentage)}% complete
+            </div>
+          </div>
+
+          {/* Steps List */}
+          <div className="space-y-2">
+            {currentSteps.map((step, index) => {
+              const IconComponent = step.icon;
+              const isCompleted = step.completed;
+              const isCurrent = !isCompleted && (index === 0 || currentSteps[index - 1]?.completed);
+              
+              return (
+                <div 
+                  key={step.id}
+                  className={`flex items-center space-x-3 p-2 rounded-md transition-all duration-200 ${
+                    isCompleted 
+                      ? 'bg-green-50 border border-green-200' 
+                      : isCurrent 
+                        ? 'bg-blue-50 border border-blue-200' 
+                        : 'bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  <div className="flex-shrink-0">
+                    {isEditing && step.adminControllable ? (
+                      <button
+                        onClick={() => handleStepToggle(step.id)}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          isCompleted
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-gray-300 hover:border-green-400'
+                        }`}
+                      >
+                        {isCompleted && <CheckCircle className="h-3 w-3" />}
+                      </button>
+                    ) : (
+                      <IconComponent 
+                        className={`h-5 w-5 ${
+                          isCompleted 
+                            ? 'text-green-600' 
+                            : isCurrent 
+                              ? 'text-blue-600' 
+                              : 'text-gray-400'
+                        }`} 
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className={`text-xs font-medium ${
+                          isCompleted 
+                            ? 'text-green-900' 
+                            : isCurrent 
+                              ? 'text-blue-900' 
+                              : 'text-gray-500'
+                        }`}>
+                          {step.title}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {step.description}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {isCompleted && (
+                          <span className="text-xs text-green-600 font-medium">
+                            ✓
+                          </span>
+                        )}
+                        {isCurrent && !isCompleted && (
+                          <span className="text-xs text-blue-600 font-medium">
+                            Next
+                          </span>
+                        )}
+                        {isEditing && step.adminControllable && (
+                          <span className="text-xs text-gray-400">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+            <div className="text-xs text-gray-500">
+              Click steps to edit progress
+            </div>
+            <div className="flex items-center space-x-2">
+              {!isEditing ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit();
+                  }}
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Edit3 className="h-3 w-3 mr-1" />
+                  Edit Progress
+                </button>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave();
+                    }}
+                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <Save className="h-3 w-3 mr-1" />
+                    Save
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancel();
+                    }}
+                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
