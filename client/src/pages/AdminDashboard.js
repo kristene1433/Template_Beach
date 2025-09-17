@@ -771,6 +771,22 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     
+                    {/* Address Bar */}
+                    <div className="mt-3 p-2 bg-gray-50 rounded border border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-700">Property Address:</span>
+                          <span className="text-sm text-gray-600 ml-2">
+                            {application.address ? 
+                              `${application.address.street}, ${application.address.city}, ${application.address.state} ${application.address.zipCode}` :
+                              'Address not provided'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
                     {/* Progress Bar */}
                     <div className="mt-4">
                       <AdminProgressBar 
