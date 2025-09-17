@@ -5,13 +5,6 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
   // Define the booking process steps
   const steps = [
     {
-      id: 'account',
-      title: 'Account Created',
-      description: 'User account established',
-      completed: true, // Always true if they're logged in
-      icon: CheckCircle
-    },
-    {
       id: 'application',
       title: 'Application Submitted',
       description: 'Rental application completed',
@@ -46,6 +39,14 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       description: 'Deposit and first payment completed',
       completed: recentPayments.some(payment => payment.status === 'succeeded'),
       icon: recentPayments.some(payment => payment.status === 'succeeded') ? CheckCircle : Circle
+    },
+    {
+      id: 'admin_verification',
+      title: 'Admin Verification',
+      description: 'All payments verified and booking confirmed by admin',
+      completed: application?.status === 'completed',
+      icon: application?.status === 'completed' ? CheckCircle : 
+            recentPayments.some(payment => payment.status === 'succeeded') ? Clock : Circle
     }
   ];
 
@@ -142,7 +143,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       </div>
 
       {/* Next Action CTA */}
-      {completedSteps < totalSteps && (
+      {completedSteps < totalSteps && application?.status !== 'completed' && (
         <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
@@ -155,7 +156,9 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
               <p className="text-xs text-blue-700 mt-1">
                 {completedSteps === 0 
                   ? "Complete your rental application to begin the booking process."
-                  : "Continue with the next step to complete your booking."
+                  : steps.find(step => !step.completed)?.id === 'admin_verification'
+                    ? "All steps completed! Waiting for admin verification to confirm your booking."
+                    : "Continue with the next step to complete your booking."
                 }
               </p>
             </div>
@@ -170,8 +173,8 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
         </div>
       )}
 
-      {/* Completion Celebration */}
-      {completedSteps === totalSteps && (
+      {/* Completion Celebration - Only when admin verification is complete */}
+      {application?.status === 'completed' && (
         <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
@@ -182,7 +185,28 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
                 🎉 Booking Complete!
               </h4>
               <p className="text-xs text-green-700 mt-1">
-                Congratulations! Your rental booking is fully confirmed.
+                Congratulations! Your rental booking is fully confirmed and verified by our team.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Admin Verification Message */}
+      {recentPayments.some(payment => payment.status === 'succeeded') && 
+       application?.status !== 'completed' && 
+       leaseStatus?.leaseSigned && (
+        <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <Clock className="h-6 w-6 text-yellow-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-yellow-900">
+                ⏳ Pending Admin Verification
+              </h4>
+              <p className="text-xs text-yellow-700 mt-1">
+                Your payment has been received! Our team is verifying all details and will confirm your booking shortly.
               </p>
             </div>
           </div>
