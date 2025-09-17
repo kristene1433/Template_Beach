@@ -29,6 +29,7 @@ async function handleStripeWebhook(req, res) {
         // Create payment record from session metadata
         const payment = new Payment({
           userId: session.metadata.userId,
+          applicationId: session.metadata.applicationId,
           stripePaymentIntentId: session.payment_intent,
           stripeCustomerId: session.customer,
           amount: Math.round(parseFloat(session.metadata.amount) * 100), // Convert to cents
@@ -92,6 +93,7 @@ async function handleStripeWebhook(req, res) {
         if (!payment) {
           payment = new Payment({
             userId: pi.metadata?.userId,
+            applicationId: pi.metadata?.applicationId,
             stripePaymentIntentId: pi.id,
             stripeCustomerId: pi.customer,
             amount: pi.amount,
@@ -135,7 +137,7 @@ webhookRouter.post('/', express.raw({ type: 'application/json' }), handleStripeW
 // Create Stripe Checkout session
 router.post('/create-checkout-session', auth, async (req, res) => {
   try {
-    const { amount, paymentType = 'deposit', description, successUrl, cancelUrl } = req.body;
+    const { amount, paymentType = 'deposit', description, successUrl, cancelUrl, applicationId } = req.body;
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
@@ -194,6 +196,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       cancel_url: cancelUrl || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/cancel`,
       metadata: {
         userId: user._id.toString(),
+        applicationId: applicationId,
         paymentType,
         amount: amount.toString(),
         propertyAddress: user.getFullAddress()
@@ -202,6 +205,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       payment_intent_data: {
         metadata: {
           userId: user._id.toString(),
+          applicationId: applicationId,
           paymentType,
           propertyAddress: user.getFullAddress()
         }
@@ -285,7 +289,14 @@ router.post('/confirm', auth, async (req, res) => {
 // Get payment history
 router.get('/history', auth, async (req, res) => {
   try {
-    const payments = await Payment.find({ userId: req.user._id })
+    const { applicationId } = req.query;
+    
+    let query = { userId: req.user._id };
+    if (applicationId) {
+      query.applicationId = applicationId;
+    }
+    
+    const payments = await Payment.find(query)
       .sort({ createdAt: -1 });
 
     res.json({ payments });
@@ -463,6 +474,7 @@ router.post('/create-payment-intent', auth, async (req, res) => {
     // Create payment record in database
     const payment = new Payment({
       userId: user._id,
+      applicationId: req.body.applicationId,
       stripePaymentIntentId: paymentIntent.id,
       stripeCustomerId: customer.id,
       amount: Math.round(amount * 100), // Store in cents

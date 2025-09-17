@@ -7,6 +7,12 @@ const paymentSchema = new mongoose.Schema({
     required: true
   },
   
+  applicationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application',
+    required: true
+  },
+  
   // Stripe payment information
   stripePaymentIntentId: {
     type: String,
@@ -100,6 +106,7 @@ const paymentSchema = new mongoose.Schema({
 
 // Indexes for efficient queries
 paymentSchema.index({ userId: 1, status: 1 });
+paymentSchema.index({ applicationId: 1, status: 1 });
 paymentSchema.index({ stripePaymentIntentId: 1 });
 paymentSchema.index({ createdAt: -1 });
 paymentSchema.index({ paymentType: 1, status: 1 });

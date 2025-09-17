@@ -1,8 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import axios from 'axios';
 
 const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [applicationPayments, setApplicationPayments] = useState([]);
+
+  // Fetch payments for this specific application
+  useEffect(() => {
+    const fetchApplicationPayments = async () => {
+      if (application?._id) {
+        try {
+          const response = await axios.get(`/api/payment/history?applicationId=${application._id}`);
+          setApplicationPayments(response.data.payments || []);
+        } catch (error) {
+          console.error('Error fetching application payments:', error);
+          setApplicationPayments([]);
+        }
+      }
+    };
+
+    fetchApplicationPayments();
+  }, [application?._id]);
   
   // Define the booking process steps based on actual application data
   const steps = [
@@ -39,8 +58,8 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       id: 'payment',
       title: 'Payment Made',
       description: 'Deposit and first payment completed',
-      completed: application?.paymentReceived || recentPayments.some(payment => payment.status === 'succeeded'),
-      icon: (application?.paymentReceived || recentPayments.some(payment => payment.status === 'succeeded')) ? CheckCircle : Circle
+      completed: application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded'),
+      icon: (application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? CheckCircle : Circle
     },
     {
       id: 'admin_verification',
@@ -48,7 +67,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       description: 'All payments verified and booking confirmed by admin',
       completed: application?.status === 'completed',
       icon: application?.status === 'completed' ? CheckCircle : 
-            (application?.paymentReceived || recentPayments.some(payment => payment.status === 'succeeded')) ? Clock : Circle
+            (application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? Clock : Circle
     }
   ];
 
@@ -221,7 +240,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
           )}
 
           {/* Pending Admin Verification Message */}
-          {recentPayments.some(payment => payment.status === 'succeeded') && 
+          {applicationPayments.some(payment => payment.status === 'succeeded') && 
            application?.status !== 'completed' && 
            leaseStatus?.leaseSigned && (
             <div className="p-2 bg-gradient-to-r from-yellow-50 to-amber-50 rounded border border-yellow-200">

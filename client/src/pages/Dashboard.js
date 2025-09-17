@@ -342,11 +342,35 @@ const Dashboard = () => {
         
 
 
-        {/* Recent Payments */}
+        {/* Payment Summary */}
         {recentPayments.length > 0 && (
           <div className="card mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Payments</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Summary</h2>
+            
+            {/* Running Total */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-900">Total Paid</h3>
+                  <p className="text-sm text-blue-700">All successful payments</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatCurrency(recentPayments
+                      .filter(payment => payment.status === 'succeeded')
+                      .reduce((total, payment) => total + payment.amount, 0)
+                    )}
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    {recentPayments.filter(payment => payment.status === 'succeeded').length} payment(s)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Payments */}
             <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-900">Recent Payments</h3>
               {recentPayments.map((payment) => (
                 <div key={payment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
