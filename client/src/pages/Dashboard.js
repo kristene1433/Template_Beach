@@ -9,7 +9,8 @@ import {
   DollarSign,
   MapPin,
   Phone,
-  Mail
+  Mail,
+  RefreshCw
 } from 'lucide-react';
 import axios from 'axios';
 import CompletionStatus from '../components/CompletionStatus';
@@ -20,34 +21,46 @@ const Dashboard = () => {
   const [leaseStatus, setLeaseStatus] = useState(null);
   const [recentPayments, setRecentPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      console.log('Fetching dashboard data...');
+      const [applicationRes, leaseRes, paymentsRes] = await Promise.all([
+        axios.get('/api/application/status'),
+        axios.get('/api/lease/status'),
+        axios.get('/api/payment/history')
+      ]);
+
+      // Debug logging removed for security
+      
+      setApplicationStatus(applicationRes.data);
+      setLeaseStatus(leaseRes.data);
+      setRecentPayments(paymentsRes.data.payments?.slice(0, 3) || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        console.log('Fetching dashboard data...');
-        const [applicationRes, leaseRes, paymentsRes] = await Promise.all([
-          axios.get('/api/application/status'),
-          axios.get('/api/lease/status'),
-          axios.get('/api/payment/history')
-        ]);
-
-        // Debug logging removed for security
-        
-        setApplicationStatus(applicationRes.data);
-        setLeaseStatus(leaseRes.data);
-        setRecentPayments(paymentsRes.data.payments?.slice(0, 3) || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        if (error.response) {
-          console.error('Error response:', error.response.data);
-          console.error('Error status:', error.response.status);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
+    
+    // Set up periodic refresh every 30 seconds to catch admin updates
+    const interval = setInterval(fetchDashboardData, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusColor = (status) => {
@@ -113,31 +126,6 @@ const Dashboard = () => {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const refreshDashboard = async () => {
-    setLoading(true);
-    try {
-      console.log('Manually refreshing dashboard...');
-      const [applicationRes, leaseRes, paymentsRes] = await Promise.all([
-        axios.get('/api/application/status'),
-        axios.get('/api/lease/status'),
-        axios.get('/api/payment/history')
-      ]);
-
-        // Debug logging removed for security
-      
-      setApplicationStatus(applicationRes.data);
-      setLeaseStatus(leaseRes.data);
-      setRecentPayments(paymentsRes.data.payments?.slice(0, 3) || []);
-    } catch (error) {
-      console.error('Error refreshing dashboard data:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        console.error('Error status:', error.response.status);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -168,7 +156,15 @@ const Dashboard = () => {
                   Here's an overview of your rental application and account status
                 </p>
               </div>
-              {/* Refresh button removed per request */}
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center space-x-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh data"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline text-sm">Refresh</span>
+              </button>
             </div>
           </div>
         </div>
