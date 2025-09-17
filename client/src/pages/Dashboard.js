@@ -249,14 +249,64 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Completion Status */}
-        {applicationStatus && (
+        {/* Applications with Progress Bars */}
+        {applicationStatus?.hasApplications && (
           <div className="mb-8">
-            <CompletionStatus 
-              application={applicationStatus.applications?.[0]} 
-              leaseStatus={leaseStatus}
-              recentPayments={recentPayments}
-            />
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Your Applications</h2>
+            <div className="space-y-6">
+              {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
+                applicationStatus.applications.map((application) => (
+                  <div key={application._id || application.id} className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30 p-4">
+                    {/* Application Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Application for {application.requestedStartDate && application.requestedEndDate 
+                            ? `${new Date(application.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                            : 'Rental Period'
+                          }
+                        </h3>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status === 'completed' ? 'completed' : application.status)}`}>
+                            {getStatusText(application.status === 'completed' ? 'completed' : application.status)}
+                          </span>
+                          {application.submittedAt && (
+                            <span className="text-sm text-gray-500">
+                              Submitted {formatDate(application.submittedAt)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Link
+                        to={`/application/${application._id || application.id}`}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 border border-primary-200 rounded-md hover:bg-primary-50 transition-colors"
+                      >
+                        View Details
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </Link>
+                    </div>
+                    
+                    {/* Progress Bar for this Application */}
+                    <CompletionStatus 
+                      application={application} 
+                      leaseStatus={leaseStatus}
+                      recentPayments={recentPayments}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No applications found</p>
+                  <Link
+                    to="/application"
+                    className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                  >
+                    Create New Application
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -291,80 +341,6 @@ const Dashboard = () => {
 
         
 
-        {/* Applications List */}
-        {applicationStatus?.hasApplications && (
-          <div className="card mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Your Applications</h2>
-              <Link
-                to="/application"
-                className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
-              >
-                New Application
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </div>
-            
-                         <div className="space-y-4">
-               {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
-                 applicationStatus.applications.map((app) => (
-                   <div key={app.id} className="border border-gray-200 rounded-lg p-4">
-                                           <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status === 'completed' ? 'completed' : app.status)}`}>
-                            {getStatusText(app.status === 'completed' ? 'completed' : app.status)}
-                          </span>
-                        </div>
-                        <Link
-                          to={`/application/${app.id}`}
-                          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                        >
-                          View Details
-                          <ArrowRight className="w-4 h-4 ml-1 inline" />
-                        </Link>
-                      </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div>
-                         <p className="text-sm font-medium text-gray-900">Requested Dates</p>
-                         <p className="text-sm text-gray-600">
-                          {app.requestedStartDate && app.requestedEndDate 
-                            ? `${new Date(app.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(app.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                            : 'Not specified'
-                          }
-                        </p>
-                       </div>
-                       {app.submittedAt && (
-                         <div>
-                           <p className="text-sm font-medium text-gray-900">Submitted</p>
-                           <p className="text-sm text-gray-600">{formatDate(app.submittedAt)}</p>
-                         </div>
-                       )}
-                     </div>
-                     {/* Status Description */}
-                     <div className="mt-3 pt-3 border-t border-gray-200">
-                       <p className="text-sm text-gray-600">
-                         {app.status === 'pending' && 'Your application has been submitted and is currently under review by our team.'}
-                         {app.status === 'approved' && 'Congratulations! Your application has been approved. We will contact you to proceed with the lease agreement.'}
-                                                   {app.status === 'rejected' && 'Your application was declined at this time. Please contact us for more information.'}
-                       </p>
-                     </div>
-                     {app.notes && (
-                       <div className="mt-3 pt-3 border-t border-gray-200">
-                         <p className="text-sm font-medium text-gray-900">Admin Notes</p>
-                         <p className="text-sm text-gray-600">{app.notes}</p>
-                       </div>
-                     )}
-                   </div>
-                 ))
-               ) : (
-                 <div className="text-center py-8 text-gray-500">
-                   <p>No applications found in the array.</p>
-                   <p className="text-sm">This might indicate a data issue.</p>
-                 </div>
-               )}
-             </div>
-          </div>
-        )}
 
         {/* Recent Payments */}
         {recentPayments.length > 0 && (
