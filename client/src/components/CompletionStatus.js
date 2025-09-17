@@ -143,13 +143,14 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
               <h4 className="text-sm font-medium text-blue-900">
                 {completedSteps === 0 
                   ? "Let's get started!" 
-                  : `Next: ${steps.find(step => !step.completed)?.title}`
+                  : "Next: " + (steps.find(step => !step.completed)?.title || "")
                 }
               </h4>
               <p className="text-xs text-blue-700 mt-1">
                 {completedSteps === 0 
                   ? "Complete your rental application to begin the booking process."
                   : "Continue with the next step to complete your booking."
+                }
               </p>
             </div>
             <div className="flex-shrink-0">
@@ -172,7 +173,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
             </div>
             <div>
               <h4 className="text-sm font-medium text-green-900">
-                🎉 Booking Complete!
+                Booking Complete!
               </h4>
               <p className="text-xs text-green-700 mt-1">
                 Congratulations! Your rental booking is fully confirmed and verified by our team.
@@ -193,7 +194,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
             </div>
             <div>
               <h4 className="text-sm font-medium text-yellow-900">
-                ⏳ Pending Admin Verification
+                Pending Admin Verification
               </h4>
               <p className="text-xs text-yellow-700 mt-1">
                 Your payment has been received! Our team is verifying all details and will confirm your booking shortly.
