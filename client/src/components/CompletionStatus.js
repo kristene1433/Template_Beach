@@ -136,7 +136,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       {/* Next Action CTA - Only show for incomplete user steps */}
       {completedSteps < totalSteps && 
        application?.status !== 'completed' && 
-       !steps.find(step => !step.completed)?.id === 'admin_verification' && (
+       steps.find(step => !step.completed)?.id !== 'admin_verification' && (
         <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
