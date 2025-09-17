@@ -367,6 +367,45 @@ router.put('/admin/:applicationId/status', auth, async (req, res) => {
   }
 });
 
+// Admin: Update application progress
+router.put('/admin/:applicationId/progress', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    const updates = req.body;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Update application fields based on progress updates
+    Object.keys(updates).forEach(key => {
+      if (application.schema.paths[key]) {
+        application[key] = updates[key];
+      }
+    });
+
+    // Add audit trail
+    application.lastUpdated = new Date();
+    application.updatedBy = req.user._id;
+
+    await application.save();
+
+    res.json({
+      message: 'Application progress updated successfully',
+      application
+    });
+  } catch (error) {
+    console.error('Application progress update error:', error);
+    res.status(500).json({ error: 'Server error updating application progress' });
+  }
+});
+
 // Admin: Delete application
 router.delete('/admin/:applicationId', auth, async (req, res) => {
   try {

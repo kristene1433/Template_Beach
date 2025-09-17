@@ -138,6 +138,23 @@ const applicationSchema = new mongoose.Schema({
     size: Number,
     uploadedAt: Date,
     content: String  // Base64-encoded file content for database storage
+  },
+  
+  // Progress Tracking Fields
+  leaseGenerated: {
+    type: Boolean,
+    default: false
+  },
+  paymentReceived: {
+    type: Boolean,
+    default: false
+  },
+  
+  // Audit Trail
+  lastUpdated: Date,
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true

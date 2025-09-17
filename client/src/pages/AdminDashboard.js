@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendLeaseNotification } from '../utils/emailjs';
+import AdminProgressBar from '../components/AdminProgressBar';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import {
@@ -95,6 +96,33 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Error updating status');
+    }
+  };
+
+  const updateApplicationProgress = async (applicationId, updates) => {
+    try {
+      const response = await fetch(`/api/application/admin/${applicationId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (response.ok) {
+        toast.success('Progress updated successfully');
+        loadApplications();
+        if (selectedApplication && selectedApplication._id === applicationId) {
+          setSelectedApplication(prev => ({ ...prev, ...updates }));
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update progress');
+      }
+    } catch (error) {
+      console.error('Error updating progress:', error);
+      toast.error('Error updating progress');
     }
   };
 
@@ -648,7 +676,8 @@ const AdminDashboard = () => {
               filteredApplications.map((application) => (
                 <li key={application._id}>
                   <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                    <div className="flex items-center justify-between">
+                    {/* Application Header */}
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
                         <div className="flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
@@ -739,8 +768,15 @@ const AdminDashboard = () => {
                           <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                           <span className="hidden sm:inline">Delete</span>
                         </button>
-                        
                       </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="mt-4">
+                      <AdminProgressBar 
+                        application={application} 
+                        onProgressUpdate={updateApplicationProgress}
+                      />
                     </div>
                   </div>
                 </li>
