@@ -88,8 +88,8 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
     },
     {
       id: 'signed',
-      title: 'Lease Signed',
-      description: 'Lease agreement signed and returned',
+      title: 'Lease Uploaded',
+      description: 'Signed lease agreement uploaded',
       instruction: 'Review the lease agreement carefully, sign it digitally, and upload the signed document. You can also print, sign, and upload a scanned copy.',
       completed: currentApplication?.leaseSigned || false,
       icon: currentApplication?.leaseSigned ? CheckCircle : Circle

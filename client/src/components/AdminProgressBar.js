@@ -36,8 +36,8 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
     },
     {
       id: 'signed',
-      title: 'Lease Signed',
-      description: 'Lease agreement signed and returned',
+      title: 'Lease Uploaded',
+      description: 'Signed lease agreement uploaded',
       completed: application?.leaseSigned || false,
       icon: application?.leaseSigned ? CheckCircle : Circle,
       adminControllable: true
