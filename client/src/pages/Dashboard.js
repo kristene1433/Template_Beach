@@ -57,8 +57,8 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     
-    // Set up periodic refresh every 30 seconds to catch admin updates
-    const interval = setInterval(fetchDashboardData, 30000);
+    // Set up periodic refresh every 10 seconds for real-time updates
+    const interval = setInterval(fetchDashboardData, 10000);
     
     return () => clearInterval(interval);
   }, []);
@@ -291,6 +291,15 @@ const Dashboard = () => {
                       application={application} 
                       leaseStatus={leaseStatus}
                       recentPayments={recentPayments}
+                      onApplicationUpdate={(updatedApplication) => {
+                        // Update the application in the applications list
+                        setApplicationStatus(prev => ({
+                          ...prev,
+                          applications: prev.applications.map(app => 
+                            app._id === updatedApplication._id ? updatedApplication : app
+                          )
+                        }));
+                      }}
                     />
                   </div>
                 ))

@@ -1,27 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Circle, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 
-const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => {
+const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApplicationUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [applicationPayments, setApplicationPayments] = useState([]);
+  const [currentApplication, setCurrentApplication] = useState(application);
+
+  // Update current application when prop changes
+  useEffect(() => {
+    setCurrentApplication(application);
+  }, [application]);
+
+  // Fetch latest application data
+  const fetchLatestApplication = useCallback(async () => {
+    if (application?._id) {
+      try {
+        const response = await axios.get(`/api/application/${application._id}`);
+        const updatedApplication = response.data.application;
+        setCurrentApplication(updatedApplication);
+        // Notify parent component of the update
+        if (onApplicationUpdate) {
+          onApplicationUpdate(updatedApplication);
+        }
+      } catch (error) {
+        console.error('Error fetching latest application:', error);
+      }
+    }
+  }, [application?._id, onApplicationUpdate]);
 
   // Fetch payments for this specific application
-  useEffect(() => {
-    const fetchApplicationPayments = async () => {
-      if (application?._id) {
-        try {
-          const response = await axios.get(`/api/payment/history?applicationId=${application._id}`);
-          setApplicationPayments(response.data.payments || []);
-        } catch (error) {
-          console.error('Error fetching application payments:', error);
-          setApplicationPayments([]);
-        }
+  const fetchApplicationPayments = useCallback(async () => {
+    if (application?._id) {
+      try {
+        const response = await axios.get(`/api/payment/history?applicationId=${application._id}`);
+        setApplicationPayments(response.data.payments || []);
+      } catch (error) {
+        console.error('Error fetching application payments:', error);
+        setApplicationPayments([]);
       }
+    }
+  }, [application?._id]);
+
+  // Fetch both application data and payments
+  useEffect(() => {
+    const fetchData = async () => {
+      await Promise.all([
+        fetchLatestApplication(),
+        fetchApplicationPayments()
+      ]);
     };
 
-    fetchApplicationPayments();
-  }, [application?._id]);
+    fetchData();
+    
+    // Set up periodic refresh every 15 seconds to catch updates
+    const interval = setInterval(fetchData, 15000);
+    
+    return () => clearInterval(interval);
+  }, [application?._id, fetchLatestApplication, fetchApplicationPayments]);
   
   // Define the booking process steps based on actual application data
   const steps = [
@@ -29,45 +65,51 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
       id: 'application',
       title: 'Application Submitted',
       description: 'Rental application completed',
-      completed: application?.status === 'pending' || application?.status === 'approved' || application?.status === 'completed',
-      icon: application?.status === 'pending' || application?.status === 'approved' || application?.status === 'completed' ? CheckCircle : Circle
+      instruction: 'Fill out and submit your rental application with all required information including personal details, rental dates, and guest information.',
+      completed: currentApplication?.status === 'pending' || currentApplication?.status === 'approved' || currentApplication?.status === 'completed',
+      icon: currentApplication?.status === 'pending' || currentApplication?.status === 'approved' || currentApplication?.status === 'completed' ? CheckCircle : Circle
     },
     {
       id: 'approval',
       title: 'Application Approved',
       description: 'Application reviewed and approved',
-      completed: application?.status === 'approved' || application?.status === 'completed',
-      icon: application?.status === 'approved' || application?.status === 'completed' ? CheckCircle : 
-            application?.status === 'rejected' ? AlertCircle : Clock
+      instruction: 'Our team will review your application and approve it if all requirements are met. This typically takes 1-2 business days.',
+      completed: currentApplication?.status === 'approved' || currentApplication?.status === 'completed',
+      icon: currentApplication?.status === 'approved' || currentApplication?.status === 'completed' ? CheckCircle : 
+            currentApplication?.status === 'rejected' ? AlertCircle : Clock
     },
     {
       id: 'lease',
       title: 'Lease Generated',
       description: 'Lease agreement prepared',
-      completed: application?.leaseGenerated || false,
-      icon: application?.leaseGenerated ? CheckCircle : Circle
+      instruction: 'Once approved, we will generate your lease agreement with all terms, dates, and payment details. You will receive this via email.',
+      completed: currentApplication?.leaseGenerated || false,
+      icon: currentApplication?.leaseGenerated ? CheckCircle : Circle
     },
     {
       id: 'signed',
       title: 'Lease Signed',
       description: 'Lease agreement signed and returned',
-      completed: application?.leaseSigned || false,
-      icon: application?.leaseSigned ? CheckCircle : Circle
+      instruction: 'Review the lease agreement carefully, sign it digitally, and upload the signed document. You can also print, sign, and upload a scanned copy.',
+      completed: currentApplication?.leaseSigned || false,
+      icon: currentApplication?.leaseSigned ? CheckCircle : Circle
     },
     {
       id: 'payment',
       title: 'Payment Made',
       description: 'Deposit and first payment completed',
-      completed: application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded'),
-      icon: (application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? CheckCircle : Circle
+      instruction: 'Make your security deposit and first month\'s rent payment using our secure payment system. You will receive a receipt via email.',
+      completed: currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded'),
+      icon: (currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? CheckCircle : Circle
     },
     {
       id: 'admin_verification',
       title: 'Admin Verification',
       description: 'All payments verified and booking confirmed by admin',
-      completed: application?.status === 'completed',
-      icon: application?.status === 'completed' ? CheckCircle : 
-            (application?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? Clock : Circle
+      instruction: 'Our team will verify all payments and documents, then send you a final confirmation with check-in instructions and property details.',
+      completed: currentApplication?.status === 'completed',
+      icon: currentApplication?.status === 'completed' ? CheckCircle : 
+            (currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? Clock : Circle
     }
   ];
 
@@ -183,6 +225,22 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
                         </span>
                       )}
                     </div>
+                    {/* Step Description */}
+                    <p className={`text-xs mt-0.5 ${
+                      isCompleted 
+                        ? 'text-green-700' 
+                        : isCurrent 
+                          ? 'text-blue-700' 
+                          : 'text-gray-500'
+                    }`}>
+                      {step.description}
+                    </p>
+                    {/* Step Instruction - Only show for current step */}
+                    {isCurrent && step.instruction && (
+                      <p className="text-xs mt-1 text-blue-600 font-medium">
+                        {step.instruction}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
@@ -241,7 +299,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [] }) => 
 
           {/* Pending Admin Verification Message */}
           {applicationPayments.some(payment => payment.status === 'succeeded') && 
-           application?.status !== 'completed' && 
+           currentApplication?.status !== 'completed' && 
            leaseStatus?.leaseSigned && (
             <div className="p-2 bg-gradient-to-r from-yellow-50 to-amber-50 rounded border border-yellow-200">
               <div className="flex items-center space-x-2">

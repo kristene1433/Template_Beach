@@ -48,6 +48,7 @@ router.post('/generate/:applicationId', auth, async (req, res) => {
     application.leaseEndDate = leaseEndDate;
     application.rentalAmount = rentalAmount;
     application.depositAmount = depositAmount;
+    application.leaseGenerated = true; // Mark lease as generated
     await application.save();
 
     // Generate lease agreement content
@@ -97,6 +98,7 @@ router.post('/admin/generate', auth, async (req, res) => {
     application.leaseEndDate = leaseEndDate;
     application.rentalAmount = rentalAmount;
     application.depositAmount = depositAmount;
+    application.leaseGenerated = true; // Mark lease as generated
     await application.save();
 
     // Generate lease agreement content
