@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { jsPDF } = require('jspdf');
+const jsPDF = require('jspdf').jsPDF;
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
@@ -161,35 +161,45 @@ router.get('/download', auth, async (req, res) => {
     const leaseAgreement = generateLeaseAgreement(application, leaseStartDate, leaseEndDate, rentalAmount);
 
     // Create PDF
-    const doc = new jsPDF();
-    
-    // Set title
-    doc.setFontSize(20);
-    doc.text('Lease Agreement', 105, 20, { align: 'center' });
-    
-    // Add lease content with proper page handling
-    doc.setFontSize(10);
-    const splitText = doc.splitTextToSize(leaseAgreement, 170);
-    
-    let yPosition = 40;
-    
-    for (let i = 0; i < splitText.length; i++) {
-      // Check if we need a new page
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
+    console.log('Creating PDF for application:', application._id);
+    try {
+      const doc = new jsPDF();
       
-      doc.text(splitText[i], 20, yPosition);
-      yPosition += 7;
+      // Set title
+      doc.setFontSize(20);
+      doc.text('Lease Agreement', 105, 20, { align: 'center' });
+      
+      // Add lease content with proper page handling
+      doc.setFontSize(10);
+      const splitText = doc.splitTextToSize(leaseAgreement, 170);
+      
+      let yPosition = 40;
+      
+      for (let i = 0; i < splitText.length; i++) {
+        // Check if we need a new page
+        if (yPosition > 270) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.text(splitText[i], 20, yPosition);
+        yPosition += 7;
+      }
+
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.pdf"`);
+
+      console.log('Sending PDF response');
+      // Send PDF buffer
+      res.send(doc.output('arraybuffer'));
+    } catch (pdfError) {
+      console.error('PDF generation error:', pdfError);
+      // Fallback to text if PDF generation fails
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.txt"`);
+      res.send(leaseAgreement);
     }
-
-    // Set headers for PDF download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.pdf"`);
-
-    // Send PDF buffer
-    res.send(doc.output('arraybuffer'));
   } catch (error) {
     console.error('Lease download error:', error);
     res.status(500).json({ error: 'Server error downloading lease agreement' });

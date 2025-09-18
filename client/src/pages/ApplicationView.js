@@ -196,11 +196,19 @@ const ApplicationView = () => {
       const depositAmount = application.depositAmount || 500;
 
       // Fetch lease data with proper authentication
+      console.log('Downloading lease for application:', id);
+      const token = localStorage.getItem('token');
+      console.log('Token exists:', !!token);
+      console.log('Token length:', token ? token.length : 0);
+      
       const response = await fetch(`/api/lease/download?applicationId=${id}&leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response content-type:', response.headers.get('content-type'));
 
       if (!response.ok) {
         const error = await response.json();
@@ -209,6 +217,8 @@ const ApplicationView = () => {
 
       // Get the PDF content
       const pdfBlob = await response.blob();
+      console.log('PDF blob type:', pdfBlob.type);
+      console.log('PDF blob size:', pdfBlob.size);
       
       // Create and trigger download
       const url = window.URL.createObjectURL(pdfBlob);
