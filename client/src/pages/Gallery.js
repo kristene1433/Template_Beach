@@ -44,6 +44,18 @@ const images = [
     title: 'Bathroom 2',
     src: `/images/bathroom2.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1584624272454-98a70b1a308c?q=80&w=1600&auto=format&fit=crop'
+  },
+  {
+    key: 'condoFront',
+    title: 'Condo Front View',
+    src: `/images/condoFront.jpeg?${VER}`,
+    fallback: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1600&auto=format&fit=crop'
+  },
+  {
+    key: 'condoBack',
+    title: 'Condo Back View',
+    src: `/images/condoBack.jpeg?${VER}`,
+    fallback: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1600&auto=format&fit=crop'
   }
 ];
 
