@@ -196,7 +196,7 @@ const ApplicationView = () => {
       const depositAmount = application.depositAmount || 500;
 
       // Fetch lease data with proper authentication
-      const response = await fetch(`/api/lease/download?leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`, {
+      const response = await fetch(`/api/lease/download?applicationId=${id}&leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -207,15 +207,14 @@ const ApplicationView = () => {
         throw new Error(error.error || 'Failed to download lease');
       }
 
-      // Get the lease content
-      const leaseContent = await response.text();
+      // Get the PDF content
+      const pdfBlob = await response.blob();
       
       // Create and trigger download
-      const blob = new Blob([leaseContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `lease-agreement-${application.firstName}-${application.lastName}.txt`;
+      link.download = `lease-agreement-${application.firstName}-${application.lastName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -447,24 +446,24 @@ const ApplicationView = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center space-x-3">
-                    <User className="w-5 h-5 text-gray-400" />
-                    <div className="flex-1">
+                  <div className="flex items-start space-x-3">
+                    <User className="w-5 h-5 text-gray-400 mt-1" />
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">Name</p>
                       {isEditing ? (
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 mt-1">
                           <input
                             type="text"
                             value={editData.firstName || ''}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="First Name"
                           />
                           <input
                             type="text"
                             value={editData.lastName || ''}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Last Name"
                           />
                         </div>
@@ -474,24 +473,24 @@ const ApplicationView = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3">
-                    <Users className="w-5 h-5 text-gray-400" />
-                    <div className="flex-1">
+                  <div className="flex items-start space-x-3">
+                    <Users className="w-5 h-5 text-gray-400 mt-1" />
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">Co-Applicant</p>
                       {isEditing ? (
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 mt-1">
                           <input
                             type="text"
                             value={editData.secondApplicantFirstName || ''}
                             onChange={(e) => handleInputChange('secondApplicantFirstName', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="First Name"
                           />
                           <input
                             type="text"
                             value={editData.secondApplicantLastName || ''}
                             onChange={(e) => handleInputChange('secondApplicantLastName', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Last Name"
                           />
                         </div>
