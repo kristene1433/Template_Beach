@@ -87,6 +87,11 @@ const ApplicationView = () => {
   useEffect(() => {
     if (!user) return;
     fetchApplicationData();
+    
+    // Set up periodic refresh every 10 seconds to catch payment updates
+    const interval = setInterval(fetchApplicationData, 10000);
+    
+    return () => clearInterval(interval);
   }, [user, fetchApplicationData]);
 
   // Check if user is authenticated
@@ -190,15 +195,36 @@ const ApplicationView = () => {
       const rentalAmount = application.rentalAmount || 2500;
       const depositAmount = application.depositAmount || 500;
 
-      // Create download URL with query parameters
-      const downloadUrl = `/api/lease/download?leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`;
+      // Fetch lease data with proper authentication
+      const response = await fetch(`/api/lease/download?leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to download lease');
+      }
+
+      // Get the lease content
+      const leaseContent = await response.text();
       
-      // Open download in new tab
-      window.open(downloadUrl, '_blank');
-      toast.success('Downloading lease agreement...');
+      // Create and trigger download
+      const blob = new Blob([leaseContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lease-agreement-${application.firstName}-${application.lastName}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Lease agreement downloaded successfully!');
     } catch (error) {
       console.error('Error downloading lease:', error);
-      toast.error('Error downloading lease agreement');
+      toast.error(error.message || 'Error downloading lease agreement');
     }
   };
 

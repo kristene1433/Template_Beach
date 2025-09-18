@@ -17,20 +17,14 @@ import CompletionStatus from '../components/CompletionStatus';
 const Dashboard = () => {
   const { user } = useAuth();
   const [applicationStatus, setApplicationStatus] = useState(null);
-  const [recentPayments, setRecentPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
       console.log('Fetching dashboard data...');
-      const [applicationRes, paymentsRes] = await Promise.all([
-        axios.get('/api/application/status'),
-        axios.get('/api/payment/history')
-      ]);
-
+      const applicationRes = await axios.get('/api/application/status');
       setApplicationStatus(applicationRes.data);
-      setRecentPayments(paymentsRes.data.payments?.slice(0, 5) || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       if (error.response) {
@@ -97,12 +91,6 @@ const Dashboard = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount / 100); // Convert from cents
-  };
 
   const formatDate = (value) => {
     if (!value) return 'Not set';
@@ -176,15 +164,6 @@ const Dashboard = () => {
                 <Plus className="w-5 h-5 mr-2" />
                 <span className="font-medium">New Application</span>
               </Link>
-              {recentPayments.length > 0 && (
-                <Link
-                  to="/payment/history"
-                  className="flex items-center justify-center px-6 py-4 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg shadow-md transition-colors"
-                >
-                  <FileText className="w-5 h-5 mr-2" />
-                  <span className="font-medium">Payment History</span>
-                </Link>
-              )}
             </div>
           </div>
 
@@ -238,7 +217,7 @@ const Dashboard = () => {
                         <CompletionStatus 
                           application={application} 
                           leaseStatus={null}
-                          recentPayments={recentPayments}
+                          recentPayments={[]} // Payments are now handled within individual applications
                           onApplicationUpdate={(updatedApplication) => {
                             setApplicationStatus(prev => ({
                               ...prev,
@@ -287,64 +266,6 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Payment Summary - Only show if there are payments */}
-          {recentPayments.length > 0 && (
-            <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-white/30 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Summary</h2>
-              
-              {/* Running Total */}
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-900">Total Paid</h3>
-                    <p className="text-sm text-blue-700">All successful payments</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-900">
-                      {formatCurrency(recentPayments
-                        .filter(payment => payment.status === 'succeeded')
-                        .reduce((total, payment) => total + payment.amount, 0)
-                      )}
-                    </p>
-                    <p className="text-sm text-blue-600">
-                      {recentPayments.filter(payment => payment.status === 'succeeded').length} payment(s)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Payments */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-medium text-gray-900">Recent Payments</h3>
-                {recentPayments.slice(0, 3).map((payment) => (
-                  <div key={payment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${payment.status === 'succeeded' ? 'bg-green-500' : payment.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{payment.description}</p>
-                        <p className="text-xs text-gray-500">{formatDate(payment.createdAt)}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
-                      <p className={`text-xs px-2 py-1 rounded-full ${getStatusColor(payment.status)}`}>
-                        {payment.status}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 text-center">
-                <Link
-                  to="/payment/history"
-                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                >
-                  View All Payments
-                  <ArrowRight className="w-4 h-4 ml-1 inline" />
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

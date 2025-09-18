@@ -2,6 +2,7 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Payment = require('../models/Payment');
 const User = require('../models/User');
+const Application = require('../models/Application');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 const webhookRouter = express.Router();
@@ -57,6 +58,18 @@ async function handleStripeWebhook(req, res) {
         payment.receiptUrl = payment.receiptUrl || charge?.receipt_url || null;
 
         await payment.save();
+        
+        // Update application to mark payment as received
+        if (session.metadata.applicationId) {
+          await Application.findByIdAndUpdate(
+            session.metadata.applicationId,
+            { 
+              paymentReceived: true,
+              lastUpdated: new Date()
+            }
+          );
+        }
+        
         console.log(`Payment ${payment._id} created and marked as successful`);
       } catch (error) {
         console.error('Error processing webhook:', error);
@@ -118,6 +131,17 @@ async function handleStripeWebhook(req, res) {
           payment.cardLast4 = charge.payment_method_details.card.last4;
         }
         await payment.save();
+        
+        // Update application to mark payment as received
+        if (pi.metadata?.applicationId) {
+          await Application.findByIdAndUpdate(
+            pi.metadata.applicationId,
+            { 
+              paymentReceived: true,
+              lastUpdated: new Date()
+            }
+          );
+        }
       } catch (err) {
         console.error('payment_intent.succeeded handling error:', err);
       }
