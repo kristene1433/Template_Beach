@@ -10,7 +10,7 @@ const paymentSchema = new mongoose.Schema({
   applicationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Application',
-    required: true
+    required: false // Made optional to handle existing payments without applicationId
   },
   
   // Stripe payment information

@@ -198,6 +198,28 @@ const ApplicationView = () => {
     }
   };
 
+  const handleDebugPayments = async () => {
+    try {
+      const response = await fetch('/api/payment/debug/all-payments', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('All payments in database:', data);
+        toast.success(`Found ${data.totalPayments} payments in database. Check console for details.`);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to fetch debug payments');
+      }
+    } catch (error) {
+      console.error('Error fetching debug payments:', error);
+      toast.error('Error fetching debug payments');
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -842,6 +864,13 @@ const ApplicationView = () => {
                         title="Test payment status update"
                       >
                         Test Update
+                      </button>
+                      <button
+                        onClick={handleDebugPayments}
+                        className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                        title="Debug all payments in database"
+                      >
+                        Debug Payments
                       </button>
                     </div>
                   </div>

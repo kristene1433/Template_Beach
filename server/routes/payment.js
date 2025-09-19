@@ -12,10 +12,15 @@ async function handleStripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('Webhook received:', req.headers['stripe-signature'] ? 'with signature' : 'without signature');
+  console.log('Webhook endpoint secret exists:', !!endpointSecret);
+
   let event;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    console.log('Webhook event type:', event.type);
+    console.log('Webhook event ID:', event.id);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -25,6 +30,10 @@ async function handleStripeWebhook(req, res) {
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object;
+      
+      console.log('Processing checkout.session.completed webhook');
+      console.log('Session metadata:', session.metadata);
+      console.log('Session payment intent:', session.payment_intent);
       
       try {
         // Create payment record from session metadata
@@ -44,6 +53,13 @@ async function handleStripeWebhook(req, res) {
             checkoutSessionId: session.id
           }
         });
+        
+        console.log('Created payment object:', {
+          userId: payment.userId,
+          applicationId: payment.applicationId,
+          amount: payment.amount,
+          status: payment.status
+        });
 
         // Get payment intent details for additional info
         const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
@@ -58,16 +74,19 @@ async function handleStripeWebhook(req, res) {
         payment.receiptUrl = payment.receiptUrl || charge?.receipt_url || null;
 
         await payment.save();
+        console.log(`Payment ${payment._id} saved to database successfully`);
         
         // Update application to mark payment as received
         if (session.metadata.applicationId) {
-          await Application.findByIdAndUpdate(
+          const updateResult = await Application.findByIdAndUpdate(
             session.metadata.applicationId,
             { 
               paymentReceived: true,
               lastUpdated: new Date()
             }
           );
+          console.log(`Updated application ${session.metadata.applicationId} with paymentReceived: true`);
+          console.log('Application update result:', updateResult ? 'success' : 'failed');
         }
         
         console.log(`Payment ${payment._id} created and marked as successful`);
@@ -312,14 +331,44 @@ router.post('/confirm', auth, async (req, res) => {
   }
 });
 
+// Debug endpoint to check all payments in database
+router.get('/debug/all-payments', auth, async (req, res) => {
+  try {
+    const allPayments = await Payment.find({}).sort({ createdAt: -1 });
+    console.log(`Found ${allPayments.length} total payments in database`);
+    
+    res.json({ 
+      totalPayments: allPayments.length,
+      payments: allPayments.map(p => ({
+        _id: p._id,
+        userId: p.userId,
+        applicationId: p.applicationId,
+        amount: p.amount,
+        status: p.status,
+        createdAt: p.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('Debug payments fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching all payments' });
+  }
+});
+
 // Get payment history
 router.get('/history', auth, async (req, res) => {
   try {
     const { applicationId } = req.query;
     
     let query = { userId: req.user._id };
+    
     if (applicationId) {
-      query.applicationId = applicationId;
+      // For application-specific payments, include both:
+      // 1. Payments with the specific applicationId
+      // 2. Old payments without applicationId (for backward compatibility)
+      query.$or = [
+        { applicationId: applicationId },
+        { applicationId: { $exists: false } }
+      ];
     }
     
     console.log('Fetching payment history with query:', query);
