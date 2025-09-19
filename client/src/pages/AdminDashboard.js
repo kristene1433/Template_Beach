@@ -872,6 +872,29 @@ const AdminDashboard = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Additional Guests */}
+                  {selectedApplication.additionalGuests && selectedApplication.additionalGuests.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="text-sm font-medium text-gray-900 border-b pb-1 mb-3">
+                        Additional Guests ({selectedApplication.additionalGuests.length})
+                      </h5>
+                      <div className="grid grid-cols-1 gap-3">
+                        {selectedApplication.additionalGuests.map((guest, index) => (
+                          <div key={index} className="border border-gray-200 rounded p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">
+                                {guest.firstName} {guest.lastName}
+                              </span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${guest.isAdult ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                {guest.isAdult ? 'Adult' : 'Child'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Application Status */}
@@ -1063,28 +1086,6 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Additional Guests */}
-              {selectedApplication.additionalGuests && selectedApplication.additionalGuests.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4">
-                    Additional Guests ({selectedApplication.additionalGuests.length})
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedApplication.additionalGuests.map((guest, index) => (
-                      <div key={index} className="border border-gray-200 rounded p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">
-                            {guest.firstName} {guest.lastName}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs ${guest.isAdult ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                            {guest.isAdult ? 'Adult' : 'Child'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">

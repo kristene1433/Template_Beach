@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Clock, AlertCircle, Edit3, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -62,6 +62,11 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
   ];
 
   const [steps, setSteps] = useState(getInitialSteps());
+
+  // Update steps when application prop changes
+  useEffect(() => {
+    setSteps(getInitialSteps());
+  }, [application?.status, application?.leaseGenerated, application?.leaseSigned, application?.paymentReceived]);
 
   const completedSteps = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;

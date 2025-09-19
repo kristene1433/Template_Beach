@@ -17,7 +17,6 @@ import {
   CreditCard,
   History,
   Building2,
-  Clock,
   AlertCircle,
   Edit3,
   Save,
@@ -35,7 +34,6 @@ const ApplicationView = () => {
   const [loading, setLoading] = useState(true);
   const [leaseStatus, setLeaseStatus] = useState(null);
   const [payments, setPayments] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
   const [signedLeaseFile, setSignedLeaseFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -83,18 +81,12 @@ const ApplicationView = () => {
       navigate('/dashboard');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [id, navigate]);
 
   useEffect(() => {
     if (!user) return;
     fetchApplicationData();
-    
-    // Set up periodic refresh every 10 seconds to catch payment updates
-    const interval = setInterval(fetchApplicationData, 10000);
-    
-    return () => clearInterval(interval);
   }, [user, fetchApplicationData]);
 
   // Check if user is authenticated
@@ -116,12 +108,6 @@ const ApplicationView = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Application not found</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="mt-4 btn-primary"
-          >
-            Back to Dashboard
-          </button>
         </div>
       </div>
     );
@@ -173,52 +159,6 @@ const ApplicationView = () => {
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const handleManualPaymentUpdate = async () => {
-    try {
-      const response = await fetch(`/api/application/${id}/payment-status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setApplication(result.application);
-        toast.success('Payment status updated manually!');
-        // Refresh data to show updated status
-        await fetchApplicationData();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to update payment status');
-      }
-    } catch (error) {
-      console.error('Error updating payment status:', error);
-      toast.error('Error updating payment status');
-    }
-  };
-
-  const handleDebugPayments = async () => {
-    try {
-      const response = await fetch('/api/payment/debug/all-payments', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('All payments in database:', data);
-        toast.success(`Found ${data.totalPayments} payments in database. Check console for details.`);
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to fetch debug payments');
-      }
-    } catch (error) {
-      console.error('Error fetching debug payments:', error);
-      toast.error('Error fetching debug payments');
-    }
-  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -227,10 +167,6 @@ const ApplicationView = () => {
     }).format(amount / 100); // Convert from cents
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchApplicationData();
-  };
 
   const handleLeaseDownload = async () => {
     if (!application?.leaseGenerated) {
@@ -459,15 +395,6 @@ const ApplicationView = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                title="Refresh data"
-              >
-                <Clock className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span className="ml-2 text-sm">Refresh</span>
-              </button>
               <button
                 onClick={() => navigate('/dashboard')}
                 className="btn-secondary flex items-center"
@@ -733,7 +660,7 @@ const ApplicationView = () => {
                       {application?.leaseGenerated ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
-                        <Clock className="w-5 h-5 text-yellow-500" />
+                        <AlertCircle className="w-5 h-5 text-yellow-500" />
                       )}
                     </div>
                   </div>
@@ -850,29 +777,13 @@ const ApplicationView = () => {
                         }
                       </p>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={handleMakePayment}
-                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        Make Payment
-                      </button>
-                      <button
-                        onClick={handleManualPaymentUpdate}
-                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        title="Test payment status update"
-                      >
-                        Test Update
-                      </button>
-                      <button
-                        onClick={handleDebugPayments}
-                        className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                        title="Debug all payments in database"
-                      >
-                        Debug Payments
-                      </button>
-                    </div>
+                    <button
+                      onClick={handleMakePayment}
+                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Make Payment
+                    </button>
                   </div>
 
                   {payments.length > 0 ? (
@@ -999,12 +910,6 @@ const ApplicationView = () => {
             {/* Action Buttons */}
             <div className="card mt-6">
               <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="w-full btn-secondary"
-                >
-                  Back to Dashboard
-                </button>
                 <button
                   onClick={() => navigate('/application')}
                   className="w-full btn-primary flex items-center justify-center"
