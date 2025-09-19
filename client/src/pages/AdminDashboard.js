@@ -172,17 +172,17 @@ const AdminDashboard = () => {
         const data = await response.json();
         setSelectedApplication(data.application);
         // Fetch payments for this application
-        fetchApplicationPayments(data.application._id);
+        fetchApplicationPayments(data.application._id, data.application);
       } else {
         // Fallback to the application data from the list if the detailed fetch fails
         setSelectedApplication(application);
-        fetchApplicationPayments(application._id);
+        fetchApplicationPayments(application._id, application);
       }
     } catch (error) {
       console.error('Error fetching application details:', error);
       // Fallback to the application data from the list
       setSelectedApplication(application);
-      fetchApplicationPayments(application._id);
+      fetchApplicationPayments(application._id, application);
     }
   };
 
@@ -480,10 +480,17 @@ const AdminDashboard = () => {
   };
 
   // Fetch payments for a specific application
-  const fetchApplicationPayments = async (applicationId) => {
+  const fetchApplicationPayments = async (applicationId, application = null) => {
+    const targetApplication = application || selectedApplication;
+    
+    if (!targetApplication || !targetApplication.userId) {
+      console.error('Cannot fetch payments: application or userId is null');
+      return;
+    }
+    
     try {
       setLoadingPayments(true);
-      const response = await fetch(`/api/payment/admin/history/${selectedApplication.userId._id}?applicationId=${applicationId}`, {
+      const response = await fetch(`/api/payment/admin/history/${targetApplication.userId._id}?applicationId=${applicationId}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       
