@@ -362,13 +362,8 @@ router.get('/history', auth, async (req, res) => {
     let query = { userId: req.user._id };
     
     if (applicationId) {
-      // For application-specific payments, include both:
-      // 1. Payments with the specific applicationId
-      // 2. Old payments without applicationId (for backward compatibility)
-      query.$or = [
-        { applicationId: applicationId },
-        { applicationId: { $exists: false } }
-      ];
+      // For application-specific payments, only include payments with the specific applicationId
+      query.applicationId = applicationId;
     }
     
     console.log('Fetching payment history with query:', query);
@@ -610,7 +605,17 @@ router.get('/admin/history/:userId', auth, async (req, res) => {
     }
 
     const { userId } = req.params;
-    const payments = await Payment.find({ userId })
+    const { applicationId } = req.query;
+    
+    let query = { userId };
+    
+    if (applicationId) {
+      // Filter by specific application if provided
+      query.applicationId = applicationId;
+    }
+    
+    const payments = await Payment.find(query)
+      .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate')
       .sort({ createdAt: -1 });
 
     res.json({ payments });
@@ -648,6 +653,43 @@ router.get('/available-deposits', auth, async (req, res) => {
     res.json({ deposits: availableDeposits });
   } catch (error) {
     console.error('Available deposits fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching available deposits' });
+  }
+});
+
+// Admin: Get available deposits for transfer (any user)
+router.get('/admin/available-deposits', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Get all successful deposit payments for this user
+    const deposits = await Payment.find({
+      userId: userId,
+      paymentType: 'deposit',
+      status: 'succeeded',
+      isDepositTransfer: false // Exclude already transferred deposits
+    })
+    .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate')
+    .sort({ createdAt: -1 });
+
+    // Filter out deposits that have already been transferred
+    const availableDeposits = deposits.filter(deposit => {
+      // Check if this deposit has been transferred
+      return !deposit.transferredToApplicationId;
+    });
+
+    res.json({ deposits: availableDeposits });
+  } catch (error) {
+    console.error('Admin available deposits fetch error:', error);
     res.status(500).json({ error: 'Server error fetching available deposits' });
   }
 });
@@ -746,6 +788,117 @@ router.post('/transfer-deposit', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Deposit transfer error:', error);
+    res.status(500).json({ error: 'Server error processing deposit transfer' });
+  }
+});
+
+// Admin: Transfer deposit from one application to another
+router.post('/admin/transfer-deposit', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { 
+      fromApplicationId, 
+      toApplicationId, 
+      depositAmount, 
+      transferNotes 
+    } = req.body;
+
+    if (!fromApplicationId || !toApplicationId || !depositAmount) {
+      return res.status(400).json({ 
+        error: 'fromApplicationId, toApplicationId, and depositAmount are required' 
+      });
+    }
+
+    // Get both applications (admin can access any application)
+    const [fromApp, toApp] = await Promise.all([
+      Application.findById(fromApplicationId).populate('userId', 'email'),
+      Application.findById(toApplicationId).populate('userId', 'email')
+    ]);
+
+    if (!fromApp) {
+      return res.status(404).json({ error: 'Source application not found' });
+    }
+
+    if (!toApp) {
+      return res.status(404).json({ error: 'Destination application not found' });
+    }
+
+    // Verify both applications belong to the same user
+    if (fromApp.userId._id.toString() !== toApp.userId._id.toString()) {
+      return res.status(400).json({ 
+        error: 'Both applications must belong to the same user' 
+      });
+    }
+
+    // Find the original deposit payment
+    const originalDeposit = await Payment.findOne({
+      userId: fromApp.userId._id,
+      applicationId: fromApplicationId,
+      paymentType: 'deposit',
+      status: 'succeeded',
+      isDepositTransfer: false
+    });
+
+    if (!originalDeposit) {
+      return res.status(404).json({ error: 'No deposit found in source application' });
+    }
+
+    // Check if deposit amount is valid
+    if (depositAmount > originalDeposit.amount) {
+      return res.status(400).json({ 
+        error: 'Transfer amount cannot exceed original deposit amount' 
+      });
+    }
+
+    // Create transfer record
+    const transferPayment = new Payment({
+      userId: fromApp.userId._id,
+      applicationId: toApplicationId,
+      stripePaymentIntentId: `admin_transfer_${Date.now()}`, // Unique ID for admin transfer
+      stripeCustomerId: originalDeposit.stripeCustomerId,
+      amount: depositAmount,
+      currency: 'usd',
+      paymentType: 'deposit_transfer',
+      description: `Admin transfer: Deposit from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      status: 'succeeded',
+      paidAt: new Date(),
+      isDepositTransfer: true,
+      transferredFromApplicationId: fromApplicationId,
+      transferredToApplicationId: toApplicationId,
+      originalDepositAmount: originalDeposit.amount,
+      transferNotes: transferNotes || '',
+      metadata: {
+        propertyAddress: toApp.address,
+        leaseStartDate: toApp.requestedStartDate,
+        leaseEndDate: toApp.requestedEndDate,
+        notes: `Admin transferred from application ${fromApplicationId}`,
+        adminTransferred: true
+      }
+    });
+
+    await transferPayment.save();
+
+    // Update the destination application to mark payment as received
+    toApp.paymentReceived = true;
+    toApp.lastUpdated = new Date();
+    await toApp.save();
+
+    // Mark the original deposit as transferred
+    originalDeposit.transferredToApplicationId = toApplicationId;
+    await originalDeposit.save();
+
+    console.log(`Admin deposit transfer completed: ${depositAmount} from ${fromApplicationId} to ${toApplicationId} for user ${fromApp.userId.email}`);
+
+    res.json({ 
+      message: 'Deposit transfer completed successfully',
+      transfer: transferPayment
+    });
+  } catch (error) {
+    console.error('Admin deposit transfer error:', error);
     res.status(500).json({ error: 'Server error processing deposit transfer' });
   }
 });

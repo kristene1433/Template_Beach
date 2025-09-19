@@ -8,7 +8,8 @@ import jsPDF from 'jspdf';
 import {
   Users, FileText, Search, Eye, Download, Calendar, 
   Phone, Mail, MapPin, UserCheck, Clock, CheckCircle,
-  XCircle, AlertCircle, LogOut, DollarSign, Trash2
+  XCircle, AlertCircle, LogOut, DollarSign, Trash2,
+  ArrowRightLeft, CreditCard
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,6 +33,17 @@ const AdminDashboard = () => {
   const [leaseGenerated, setLeaseGenerated] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [selectedApplicationForDocuments, setSelectedApplicationForDocuments] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [availableDeposits, setAvailableDeposits] = useState([]);
+  const [transferData, setTransferData] = useState({
+    fromApplicationId: '',
+    toApplicationId: '',
+    depositAmount: '',
+    transferNotes: ''
+  });
+  const [transferring, setTransferring] = useState(false);
+  const [applicationPayments, setApplicationPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -159,14 +171,18 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         setSelectedApplication(data.application);
+        // Fetch payments for this application
+        fetchApplicationPayments(data.application._id);
       } else {
         // Fallback to the application data from the list if the detailed fetch fails
         setSelectedApplication(application);
+        fetchApplicationPayments(application._id);
       }
     } catch (error) {
       console.error('Error fetching application details:', error);
       // Fallback to the application data from the list
       setSelectedApplication(application);
+      fetchApplicationPayments(application._id);
     }
   };
 
@@ -389,6 +405,102 @@ const AdminDashboard = () => {
     });
     setLeaseContent('');
     setLeaseGenerated(false);
+  };
+
+  // Admin deposit transfer functions
+  const handleTransferDeposit = (application) => {
+    setSelectedApplicationForLease(application);
+    setTransferData(prev => ({ ...prev, toApplicationId: application._id }));
+    setShowTransferModal(true);
+    fetchAvailableDeposits(application.userId._id);
+  };
+
+  const fetchAvailableDeposits = async (userId) => {
+    try {
+      const response = await fetch(`/api/payment/admin/available-deposits?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableDeposits(data.deposits);
+      }
+    } catch (error) {
+      console.error('Error fetching available deposits:', error);
+      toast.error('Failed to load available deposits');
+    }
+  };
+
+  const handleTransferSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!transferData.fromApplicationId || !transferData.toApplicationId || !transferData.depositAmount) {
+      toast.error('Please select a deposit, destination application, and enter transfer amount');
+      return;
+    }
+
+    try {
+      setTransferring(true);
+      
+      const response = await fetch('/api/payment/admin/transfer-deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          fromApplicationId: transferData.fromApplicationId,
+          toApplicationId: transferData.toApplicationId,
+          depositAmount: parseInt(transferData.depositAmount) * 100, // Convert to cents
+          transferNotes: transferData.transferNotes
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Deposit transferred successfully!');
+        setShowTransferModal(false);
+        setTransferData({ fromApplicationId: '', toApplicationId: '', depositAmount: '', transferNotes: '' });
+        loadApplications(); // Refresh applications
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to transfer deposit');
+      }
+    } catch (error) {
+      console.error('Error transferring deposit:', error);
+      toast.error('Error transferring deposit');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  const resetTransferModal = () => {
+    setShowTransferModal(false);
+    setTransferData({ fromApplicationId: '', toApplicationId: '', depositAmount: '', transferNotes: '' });
+    setAvailableDeposits([]);
+  };
+
+  // Fetch payments for a specific application
+  const fetchApplicationPayments = async (applicationId) => {
+    try {
+      setLoadingPayments(true);
+      const response = await fetch(`/api/payment/admin/history/${selectedApplication.userId._id}?applicationId=${applicationId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Filter payments for this specific application
+        const filteredPayments = data.payments.filter(payment => 
+          payment.applicationId && payment.applicationId.toString() === applicationId
+        );
+        setApplicationPayments(filteredPayments);
+      }
+    } catch (error) {
+      console.error('Error fetching application payments:', error);
+      toast.error('Failed to load payment history');
+    } finally {
+      setLoadingPayments(false);
+    }
   };
 
   const deleteApplication = async (applicationId) => {
@@ -735,15 +847,6 @@ const AdminDashboard = () => {
                           <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                           <span className="hidden sm:inline">Payment History</span>
                         </button>
-                        {application.status === 'approved' && (
-                          <button
-                            onClick={() => generateLease(application)}
-                            className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-transparent shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          >
-                            <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                            <span className="hidden sm:inline">Generate Lease</span>
-                          </button>
-                        )}
                         {application.documents && application.documents.length > 0 && (
                           <button
                             onClick={() => reviewDocuments(application)}
@@ -876,24 +979,17 @@ const AdminDashboard = () => {
 
                   {/* Additional Guests */}
                   {selectedApplication.additionalGuests && selectedApplication.additionalGuests.length > 0 && (
-                    <div className="mt-4">
-                      <h5 className="text-sm font-medium text-gray-900 border-b pb-1 mb-3">
-                        Additional Guests ({selectedApplication.additionalGuests.length})
-                      </h5>
-                      <div className="grid grid-cols-1 gap-3">
-                        {selectedApplication.additionalGuests.map((guest, index) => (
-                          <div key={index} className="border border-gray-200 rounded p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm">
-                                {guest.firstName} {guest.lastName}
-                              </span>
-                              <span className={`px-2 py-1 rounded-full text-xs ${guest.isAdult ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                                {guest.isAdult ? 'Adult' : 'Child'}
-                              </span>
-                            </div>
-                          </div>
+                    <div className="flex items-center">
+                      <Users className="h-5 w-5 text-gray-400 mr-2" />
+                      <span className="text-sm">
+                        <strong>Additional Guests ({selectedApplication.additionalGuests.length}):</strong> {selectedApplication.additionalGuests.map((guest, index) => (
+                          <span key={index}>
+                            {guest.firstName} {guest.lastName}
+                            {guest.isAdult ? ' (Adult)' : ' (Child)'}
+                            {index < selectedApplication.additionalGuests.length - 1 ? ', ' : ''}
+                          </span>
                         ))}
-                      </div>
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1087,6 +1183,102 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Payment Information */}
+              <div className="mt-6">
+                <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4 flex items-center">
+                  <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                  Payment Information
+                </h4>
+                
+                {loadingPayments ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Loading payment history...</p>
+                  </div>
+                ) : applicationPayments.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* Payment Summary */}
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <h5 className="text-sm font-medium text-blue-900">Total Owed</h5>
+                          <p className="text-lg font-bold text-blue-900">
+                            ${(selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)}
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            ${selectedApplication.depositAmount || 500} deposit + ${selectedApplication.rentalAmount || 2500} rent
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <h5 className="text-sm font-medium text-green-700">Total Paid</h5>
+                          <p className="text-lg font-bold text-green-700">
+                            ${(applicationPayments
+                              .filter(payment => payment.status === 'succeeded')
+                              .reduce((total, payment) => total + payment.amount, 0) / 100).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-green-600">
+                            {applicationPayments.filter(payment => payment.status === 'succeeded').length} successful payments
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <h5 className="text-sm font-medium text-gray-700">Balance</h5>
+                          <p className={`text-lg font-bold ${((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
+                            .filter(payment => payment.status === 'succeeded')
+                            .reduce((total, payment) => total + payment.amount, 0) / 100) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            ${(((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
+                              .filter(payment => payment.status === 'succeeded')
+                              .reduce((total, payment) => total + payment.amount, 0) / 100)).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
+                              .filter(payment => payment.status === 'succeeded')
+                              .reduce((total, payment) => total + payment.amount, 0) / 100) > 0 ? 'Amount owed' : 'Overpaid'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Payments */}
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium text-gray-900">Recent Payments</h5>
+                      {applicationPayments.slice(0, 3).map((payment) => (
+                        <div key={payment._id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-2 h-2 rounded-full ${payment.status === 'succeeded' ? 'bg-green-500' : payment.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {payment.description}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(payment.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-gray-900">
+                              ${(payment.amount / 100).toFixed(2)}
+                            </p>
+                            <p className={`text-xs px-2 py-1 rounded-full ${
+                              payment.status === 'succeeded' ? 'bg-green-100 text-green-800' :
+                              payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {payment.status}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600">
+                      No payments have been made for this application yet.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
@@ -1108,6 +1300,13 @@ const AdminDashboard = () => {
                     Generate Lease Agreement
                   </button>
                 )}
+                <button
+                  onClick={() => handleTransferDeposit(selectedApplication)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                >
+                  <ArrowRightLeft className="h-4 w-4 mr-2" />
+                  Transfer Deposit
+                </button>
                 <button
                   onClick={() => deleteApplication(selectedApplication._id)}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -1355,6 +1554,109 @@ const AdminDashboard = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Deposit Transfer Modal */}
+      {showTransferModal && selectedApplicationForLease && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Transfer Deposit
+                </h3>
+                <button
+                  onClick={resetTransferModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  Transfer deposit to: <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
+                </p>
+                <p className="text-xs text-gray-500">
+                  Application: {selectedApplicationForLease.requestedStartDate 
+                    ? `${new Date(selectedApplicationForLease.requestedStartDate).getFullYear()}`
+                    : 'Current Application'
+                  }
+                </p>
+              </div>
+
+              <form onSubmit={handleTransferSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Deposit to Transfer *
+                  </label>
+                  <select
+                    value={transferData.fromApplicationId}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, fromApplicationId: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    required
+                  >
+                    <option value="">Choose a deposit...</option>
+                    {availableDeposits.map((deposit) => (
+                      <option key={deposit._id} value={deposit.applicationId._id}>
+                        {deposit.applicationId.requestedStartDate 
+                          ? `${new Date(deposit.applicationId.requestedStartDate).getFullYear()} - $${(deposit.amount / 100).toFixed(2)}`
+                          : `Previous Application - $${(deposit.amount / 100).toFixed(2)}`
+                        }
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Amount ($) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={transferData.depositAmount}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, depositAmount: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Enter amount to transfer"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Notes (Optional)
+                  </label>
+                  <textarea
+                    value={transferData.transferNotes}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, transferNotes: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    rows="3"
+                    placeholder="Add any notes about this transfer..."
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={resetTransferModal}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={transferring}
+                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                  >
+                    {transferring ? 'Transferring...' : 'Transfer Deposit'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
