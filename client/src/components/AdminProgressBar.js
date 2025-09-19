@@ -6,6 +6,7 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSteps, setEditedSteps] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [manuallyCompletedSteps, setManuallyCompletedSteps] = useState(new Set());
 
   // Define the booking process steps with admin controls
   const getInitialSteps = () => [
@@ -61,12 +62,28 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
     }
   ];
 
-  const [steps, setSteps] = useState(getInitialSteps());
+  // Get steps with preserved manual completions
+  const getStepsWithPreservedCompletions = () => {
+    const baseSteps = getInitialSteps();
+    return baseSteps.map(step => {
+      // If this step was manually completed by admin, keep it completed
+      if (manuallyCompletedSteps.has(step.id)) {
+        return {
+          ...step,
+          completed: true,
+          icon: CheckCircle
+        };
+      }
+      return step;
+    });
+  };
 
-  // Update steps when application prop changes
+  const [steps, setSteps] = useState(() => getStepsWithPreservedCompletions());
+
+  // Update steps when application prop changes, but preserve manually completed steps
   useEffect(() => {
-    setSteps(getInitialSteps());
-  }, [application?.status, application?.leaseGenerated, application?.leaseSigned, application?.paymentReceived]);
+    setSteps(getStepsWithPreservedCompletions());
+  }, [application?.status, application?.leaseGenerated, application?.leaseSigned, application?.paymentReceived, manuallyCompletedSteps]);
 
   const completedSteps = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;
@@ -127,6 +144,19 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
       if (onProgressUpdate) {
         await onProgressUpdate(application._id, updates);
       }
+
+      // Track manually completed steps
+      const newManuallyCompleted = new Set(manuallyCompletedSteps);
+      editedSteps.forEach(step => {
+        if (step.adminControllable) {
+          if (step.completed) {
+            newManuallyCompleted.add(step.id);
+          } else {
+            newManuallyCompleted.delete(step.id);
+          }
+        }
+      });
+      setManuallyCompletedSteps(newManuallyCompleted);
 
       // Update local state
       setSteps(editedSteps);
