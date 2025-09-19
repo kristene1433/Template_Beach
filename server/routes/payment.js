@@ -12,8 +12,11 @@ async function handleStripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('=== WEBHOOK RECEIVED ===');
   console.log('Webhook received:', req.headers['stripe-signature'] ? 'with signature' : 'without signature');
   console.log('Webhook endpoint secret exists:', !!endpointSecret);
+  console.log('Request body length:', req.body?.length || 'no body');
+  console.log('Content-Type:', req.headers['content-type']);
 
   let event;
 
@@ -183,6 +186,10 @@ webhookRouter.post('/', express.raw({ type: 'application/json' }), handleStripeW
 router.post('/create-checkout-session', auth, async (req, res) => {
   try {
     const { amount, paymentType = 'deposit', description, successUrl, cancelUrl, applicationId } = req.body;
+    
+    console.log('=== CREATE CHECKOUT SESSION ===');
+    console.log('Request body:', { amount, paymentType, description, applicationId });
+    console.log('User ID:', req.user._id);
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });

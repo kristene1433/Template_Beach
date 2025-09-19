@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -15,27 +15,34 @@ import {
 const Payment = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [selectedAmount, setSelectedAmount] = useState('500');
   const [customAmount, setCustomAmount] = useState('');
   const [paymentType, setPaymentType] = useState('deposit');
   const [description, setDescription] = useState('');
+  
+  // Get applicationId from URL parameters
+  const applicationId = searchParams.get('applicationId');
 
   useEffect(() => {
     if (user) {
       loadPaymentHistory();
     }
-  }, [user]);
+  }, [user, applicationId, loadPaymentHistory]);
 
-  const loadPaymentHistory = async () => {
+  const loadPaymentHistory = useCallback(async () => {
     try {
-      const response = await axios.get('/api/payments/history');
+      const url = applicationId 
+        ? `/api/payment/history?applicationId=${applicationId}`
+        : '/api/payment/history';
+      const response = await axios.get(url);
       setPaymentHistory(response.data.payments || []);
     } catch (error) {
       console.error('Error loading payment history:', error);
     }
-  };
+  }, [applicationId]);
 
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);
@@ -80,6 +87,7 @@ const Payment = () => {
       const response = await axios.post('/api/payment/create-checkout-session', {
         amount: amount,
         paymentType,
+        applicationId: applicationId,
         description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`,
         successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/payment/cancel`
