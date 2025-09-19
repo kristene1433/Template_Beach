@@ -20,7 +20,8 @@ import {
   AlertCircle,
   Edit3,
   Save,
-  X
+  X,
+  ArrowRightLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CompletionStatus from '../components/CompletionStatus';
@@ -39,6 +40,14 @@ const ApplicationView = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [availableDeposits, setAvailableDeposits] = useState([]);
+  const [transferData, setTransferData] = useState({
+    fromApplicationId: '',
+    depositAmount: '',
+    transferNotes: ''
+  });
+  const [transferring, setTransferring] = useState(false);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -379,6 +388,76 @@ const ApplicationView = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Deposit transfer functions
+  const handleTransferDeposit = () => {
+    setShowTransferModal(true);
+    fetchAvailableDeposits();
+  };
+
+  const fetchAvailableDeposits = async () => {
+    try {
+      const response = await fetch(`/api/payment/available-deposits?applicationId=${id}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableDeposits(data.deposits);
+      }
+    } catch (error) {
+      console.error('Error fetching available deposits:', error);
+      toast.error('Failed to load available deposits');
+    }
+  };
+
+  const handleTransferSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!transferData.fromApplicationId || !transferData.depositAmount) {
+      toast.error('Please select a deposit and enter transfer amount');
+      return;
+    }
+
+    try {
+      setTransferring(true);
+      
+      const response = await fetch('/api/payment/transfer-deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          fromApplicationId: transferData.fromApplicationId,
+          toApplicationId: id,
+          depositAmount: parseInt(transferData.depositAmount) * 100, // Convert to cents
+          transferNotes: transferData.transferNotes
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Deposit transferred successfully!');
+        setShowTransferModal(false);
+        setTransferData({ fromApplicationId: '', depositAmount: '', transferNotes: '' });
+        fetchApplicationData(); // Refresh application data
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to transfer deposit');
+      }
+    } catch (error) {
+      console.error('Error transferring deposit:', error);
+      toast.error('Error transferring deposit');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  const resetTransferModal = () => {
+    setShowTransferModal(false);
+    setTransferData({ fromApplicationId: '', depositAmount: '', transferNotes: '' });
+    setAvailableDeposits([]);
   };
 
   return (
@@ -777,13 +856,22 @@ const ApplicationView = () => {
                         }
                       </p>
                     </div>
-                    <button
-                      onClick={handleMakePayment}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Make Payment
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={handleTransferDeposit}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <ArrowRightLeft className="w-4 h-4 mr-2" />
+                        Transfer Deposit
+                      </button>
+                      <button
+                        onClick={handleMakePayment}
+                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Make Payment
+                      </button>
+                    </div>
                   </div>
 
                   {payments.length > 0 ? (
@@ -815,14 +903,36 @@ const ApplicationView = () => {
                             <div className="flex items-center space-x-3">
                               <div className={`w-2 h-2 rounded-full ${payment.status === 'succeeded' ? 'bg-green-500' : payment.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                               <div>
-                                <p className="text-sm font-medium text-gray-900">{payment.description}</p>
-                                <p className="text-xs text-gray-500">{formatDate(payment.createdAt)}</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {payment.isDepositTransfer ? (
+                                    <span className="flex items-center">
+                                      <ArrowRightLeft className="w-3 h-3 mr-1 text-blue-600" />
+                                      {payment.description}
+                                    </span>
+                                  ) : (
+                                    payment.description
+                                  )}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {formatDate(payment.createdAt)}
+                                  {payment.isDepositTransfer && payment.transferNotes && (
+                                    <span className="block text-blue-600 mt-1">
+                                      Note: {payment.transferNotes}
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {payment.isDepositTransfer ? (
+                                  <span className="text-blue-600">{formatCurrency(payment.amount)}</span>
+                                ) : (
+                                  formatCurrency(payment.amount)
+                                )}
+                              </p>
                               <p className={`text-xs px-2 py-1 rounded-full ${getStatusColor(payment.status)}`}>
-                                {payment.status}
+                                {payment.isDepositTransfer ? 'Transferred' : payment.status}
                               </p>
                             </div>
                           </div>
@@ -923,6 +1033,97 @@ const ApplicationView = () => {
         </div>
         </div>
       </div>
+
+      {/* Deposit Transfer Modal */}
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Transfer Deposit
+                </h3>
+                <button
+                  onClick={resetTransferModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleTransferSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Deposit to Transfer *
+                  </label>
+                  <select
+                    value={transferData.fromApplicationId}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, fromApplicationId: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Choose a deposit...</option>
+                    {availableDeposits.map((deposit) => (
+                      <option key={deposit._id} value={deposit.applicationId._id}>
+                        {deposit.applicationId.requestedStartDate 
+                          ? `${new Date(deposit.applicationId.requestedStartDate).getFullYear()} - $${(deposit.amount / 100).toFixed(2)}`
+                          : `Previous Application - $${(deposit.amount / 100).toFixed(2)}`
+                        }
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Amount ($) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={transferData.depositAmount}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, depositAmount: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter amount to transfer"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Notes (Optional)
+                  </label>
+                  <textarea
+                    value={transferData.transferNotes}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, transferNotes: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows="3"
+                    placeholder="Add any notes about this transfer..."
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={resetTransferModal}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={transferring}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {transferring ? 'Transferring...' : 'Transfer Deposit'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

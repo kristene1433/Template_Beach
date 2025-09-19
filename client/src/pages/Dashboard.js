@@ -154,23 +154,24 @@ const Dashboard = () => {
       <div className="min-h-screen py-4 md:py-8 bg-gradient-to-br from-blue-50 to-cyan-50 -mt-2 md:mt-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Quick Actions */}
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/application"
-                className="flex items-center justify-center px-6 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-md transition-colors"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                <span className="font-medium">New Application</span>
-              </Link>
-            </div>
-          </div>
-
           {/* Applications Section */}
           {applicationStatus?.hasApplications ? (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Applications</h2>
+            <>
+              {/* Quick Actions - Only show when user has applications */}
+              <div className="mb-8">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    to="/application"
+                    className="flex items-center justify-center px-6 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-md transition-colors"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    <span className="font-medium">New Application</span>
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Applications</h2>
               <div className="space-y-6">
                 {applicationStatus.applications && applicationStatus.applications.length > 0 ? (
                   applicationStatus.applications.map((application) => (
@@ -234,18 +235,12 @@ const Dashboard = () => {
                   <div className="text-center py-12">
                     <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
-                    <p className="text-gray-500 mb-6">Start by creating your first rental application</p>
-                    <Link
-                      to="/application"
-                      className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                    >
-                      <Plus className="w-5 h-5 mr-2" />
-                      Create New Application
-                    </Link>
+                    <p className="text-gray-500 mb-6">Use the "New Application" button above to create your first rental application</p>
                   </div>
                 )}
               </div>
             </div>
+            </>
           ) : (
             /* No Applications State */
             <div className="text-center py-16">

@@ -208,14 +208,15 @@ const AdminDashboard = () => {
             leaseStartDate: leaseFormData.leaseStartDate,
             leaseEndDate: leaseFormData.leaseEndDate,
             rentalAmount: parseInt(leaseFormData.rentalAmount),
-            depositAmount: parseInt(leaseFormData.depositAmount)
+            depositAmount: parseInt(leaseFormData.depositAmount),
+            leaseGenerated: true // Mark lease as generated
           };
           setSelectedApplication(updatedApp);
           
           setApplications(prevApps => 
             prevApps.map(app => 
               app._id === selectedApplicationForLease._id 
-                ? updatedApp 
+                ? { ...updatedApp, leaseGenerated: true }
                 : app
             )
           );

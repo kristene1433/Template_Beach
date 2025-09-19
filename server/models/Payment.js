@@ -39,7 +39,7 @@ const paymentSchema = new mongoose.Schema({
   
   paymentType: {
     type: String,
-    enum: ['deposit', 'rent', 'late_fee', 'other'],
+    enum: ['deposit', 'rent', 'late_fee', 'deposit_transfer', 'other'],
     required: true
   },
   
@@ -99,7 +99,26 @@ const paymentSchema = new mongoose.Schema({
   
   refundAmount: Number,
   refundReason: String,
-  refundedAt: Date
+  refundedAt: Date,
+  
+  // Deposit transfer information
+  isDepositTransfer: {
+    type: Boolean,
+    default: false
+  },
+  
+  transferredFromApplicationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application'
+  },
+  
+  transferredToApplicationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application'
+  },
+  
+  originalDepositAmount: Number, // Amount of the original deposit being transferred
+  transferNotes: String
 }, {
   timestamps: true
 });
@@ -110,6 +129,9 @@ paymentSchema.index({ applicationId: 1, status: 1 });
 paymentSchema.index({ stripePaymentIntentId: 1 });
 paymentSchema.index({ createdAt: -1 });
 paymentSchema.index({ paymentType: 1, status: 1 });
+paymentSchema.index({ isDepositTransfer: 1 });
+paymentSchema.index({ transferredFromApplicationId: 1 });
+paymentSchema.index({ transferredToApplicationId: 1 });
 
 // Virtual for formatted amount
 paymentSchema.virtual('formattedAmount').get(function() {

@@ -620,4 +620,168 @@ router.get('/admin/history/:userId', auth, async (req, res) => {
   }
 });
 
+// Get available deposits for transfer (user's own applications only)
+router.get('/available-deposits', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.query;
+    
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID is required' });
+    }
+
+    // Get all successful deposit payments for this user
+    const deposits = await Payment.find({
+      userId: req.user._id,
+      paymentType: 'deposit',
+      status: 'succeeded',
+      isDepositTransfer: false // Exclude already transferred deposits
+    })
+    .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate')
+    .sort({ createdAt: -1 });
+
+    // Filter out deposits that have already been transferred
+    const availableDeposits = deposits.filter(deposit => {
+      // Check if this deposit has been transferred
+      return !deposit.transferredToApplicationId;
+    });
+
+    res.json({ deposits: availableDeposits });
+  } catch (error) {
+    console.error('Available deposits fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching available deposits' });
+  }
+});
+
+// Transfer deposit from one application to another
+router.post('/transfer-deposit', auth, async (req, res) => {
+  try {
+    const { 
+      fromApplicationId, 
+      toApplicationId, 
+      depositAmount, 
+      transferNotes 
+    } = req.body;
+
+    if (!fromApplicationId || !toApplicationId || !depositAmount) {
+      return res.status(400).json({ 
+        error: 'fromApplicationId, toApplicationId, and depositAmount are required' 
+      });
+    }
+
+    // Verify both applications belong to the user
+    const [fromApp, toApp] = await Promise.all([
+      Application.findOne({ _id: fromApplicationId, userId: req.user._id }),
+      Application.findOne({ _id: toApplicationId, userId: req.user._id })
+    ]);
+
+    if (!fromApp) {
+      return res.status(404).json({ error: 'Source application not found' });
+    }
+
+    if (!toApp) {
+      return res.status(404).json({ error: 'Destination application not found' });
+    }
+
+    // Find the original deposit payment
+    const originalDeposit = await Payment.findOne({
+      userId: req.user._id,
+      applicationId: fromApplicationId,
+      paymentType: 'deposit',
+      status: 'succeeded',
+      isDepositTransfer: false
+    });
+
+    if (!originalDeposit) {
+      return res.status(404).json({ error: 'No deposit found in source application' });
+    }
+
+    // Check if deposit amount is valid
+    if (depositAmount > originalDeposit.amount) {
+      return res.status(400).json({ 
+        error: 'Transfer amount cannot exceed original deposit amount' 
+      });
+    }
+
+    // Create transfer record
+    const transferPayment = new Payment({
+      userId: req.user._id,
+      applicationId: toApplicationId,
+      stripePaymentIntentId: `transfer_${Date.now()}`, // Unique ID for transfer
+      stripeCustomerId: originalDeposit.stripeCustomerId,
+      amount: depositAmount,
+      currency: 'usd',
+      paymentType: 'deposit_transfer',
+      description: `Deposit transfer from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      status: 'succeeded',
+      paidAt: new Date(),
+      isDepositTransfer: true,
+      transferredFromApplicationId: fromApplicationId,
+      transferredToApplicationId: toApplicationId,
+      originalDepositAmount: originalDeposit.amount,
+      transferNotes: transferNotes || '',
+      metadata: {
+        propertyAddress: toApp.address,
+        leaseStartDate: toApp.requestedStartDate,
+        leaseEndDate: toApp.requestedEndDate,
+        notes: `Transferred from application ${fromApplicationId}`
+      }
+    });
+
+    await transferPayment.save();
+
+    // Update the destination application to mark payment as received
+    toApp.paymentReceived = true;
+    toApp.lastUpdated = new Date();
+    await toApp.save();
+
+    // Mark the original deposit as transferred
+    originalDeposit.transferredToApplicationId = toApplicationId;
+    await originalDeposit.save();
+
+    console.log(`Deposit transfer completed: ${depositAmount} from ${fromApplicationId} to ${toApplicationId}`);
+
+    res.json({ 
+      message: 'Deposit transfer completed successfully',
+      transfer: transferPayment
+    });
+  } catch (error) {
+    console.error('Deposit transfer error:', error);
+    res.status(500).json({ error: 'Server error processing deposit transfer' });
+  }
+});
+
+// Get transfer history for an application
+router.get('/transfer-history/:applicationId', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Verify application belongs to user
+    const application = await Application.findOne({ 
+      _id: applicationId, 
+      userId: req.user._id 
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Get all transfers related to this application
+    const transfers = await Payment.find({
+      $or: [
+        { transferredToApplicationId: applicationId },
+        { transferredFromApplicationId: applicationId }
+      ],
+      isDepositTransfer: true
+    })
+    .populate('transferredFromApplicationId', 'requestedStartDate requestedEndDate')
+    .populate('transferredToApplicationId', 'requestedStartDate requestedEndDate')
+    .sort({ createdAt: -1 });
+
+    res.json({ transfers });
+  } catch (error) {
+    console.error('Transfer history fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching transfer history' });
+  }
+});
+
 module.exports = { router, webhookRouter };
