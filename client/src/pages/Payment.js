@@ -26,12 +26,6 @@ const Payment = () => {
   // Get applicationId from URL parameters
   const applicationId = searchParams.get('applicationId');
 
-  useEffect(() => {
-    if (user) {
-      loadPaymentHistory();
-    }
-  }, [user, applicationId, loadPaymentHistory]);
-
   const loadPaymentHistory = useCallback(async () => {
     try {
       const url = applicationId 
@@ -43,6 +37,12 @@ const Payment = () => {
       console.error('Error loading payment history:', error);
     }
   }, [applicationId]);
+
+  useEffect(() => {
+    if (user) {
+      loadPaymentHistory();
+    }
+  }, [user, applicationId, loadPaymentHistory]);
 
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);

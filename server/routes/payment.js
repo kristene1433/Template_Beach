@@ -182,6 +182,63 @@ async function handleStripeWebhook(req, res) {
 // Mount webhook with raw body parser on dedicated router
 webhookRouter.post('/', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
+// Test webhook endpoint
+webhookRouter.get('/test', (req, res) => {
+  console.log('Webhook test endpoint hit');
+  res.json({ message: 'Webhook endpoint is working', timestamp: new Date().toISOString() });
+});
+
+// Test payment creation endpoint
+router.post('/test-payment', auth, async (req, res) => {
+  try {
+    const { amount, applicationId } = req.body;
+    
+    console.log('=== TEST PAYMENT CREATION ===');
+    console.log('Amount:', amount);
+    console.log('Application ID:', applicationId);
+    console.log('User ID:', req.user._id);
+    
+    // Create a test payment record
+    const payment = new Payment({
+      userId: req.user._id,
+      applicationId: applicationId,
+      stripePaymentIntentId: 'test_' + Date.now(),
+      stripeCustomerId: 'test_customer',
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: 'usd',
+      paymentType: 'deposit',
+      description: 'Test payment',
+      status: 'succeeded',
+      paidAt: new Date(),
+      metadata: {
+        propertyAddress: 'Test Address',
+        checkoutSessionId: 'test_session'
+      }
+    });
+    
+    await payment.save();
+    console.log('Test payment saved:', payment._id);
+    
+    // Update application to mark payment as received
+    if (applicationId) {
+      await Application.findByIdAndUpdate(applicationId, {
+        paymentReceived: true,
+        lastUpdated: new Date()
+      });
+      console.log('Updated application with paymentReceived: true');
+    }
+    
+    res.json({ 
+      message: 'Test payment created successfully', 
+      payment: payment,
+      applicationUpdated: !!applicationId
+    });
+  } catch (error) {
+    console.error('Test payment creation error:', error);
+    res.status(500).json({ error: 'Test payment creation failed', details: error.message });
+  }
+});
+
 // Create Stripe Checkout session
 router.post('/create-checkout-session', auth, async (req, res) => {
   try {
