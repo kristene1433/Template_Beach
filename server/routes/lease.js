@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const jsPDF = require('jspdf').jsPDF;
+const { jsPDF } = require('jspdf');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
@@ -162,37 +162,63 @@ router.get('/download', auth, async (req, res) => {
 
     // Create PDF
     console.log('Creating PDF for application:', application._id);
+    console.log('Lease agreement length:', leaseAgreement.length);
     try {
       const doc = new jsPDF();
+      console.log('jsPDF instance created successfully');
       
       // Set title
-      doc.setFontSize(20);
-      doc.text('Lease Agreement', 105, 20, { align: 'center' });
+      doc.setFontSize(16);
+      doc.text('Lease Agreement', 20, 20);
+      console.log('Title added to PDF');
       
       // Add lease content with proper page handling
       doc.setFontSize(10);
-      const splitText = doc.splitTextToSize(leaseAgreement, 170);
+      const lines = leaseAgreement.split('\n');
+      console.log('Text split into', lines.length, 'lines');
       
       let yPosition = 40;
+      const pageHeight = 280;
+      const lineHeight = 6;
       
-      for (let i = 0; i < splitText.length; i++) {
+      for (let i = 0; i < lines.length; i++) {
         // Check if we need a new page
-        if (yPosition > 270) {
+        if (yPosition > pageHeight) {
           doc.addPage();
           yPosition = 20;
         }
         
-        doc.text(splitText[i], 20, yPosition);
-        yPosition += 7;
+        // Split long lines if needed
+        const text = lines[i] || '';
+        const splitText = doc.splitTextToSize(text, 170);
+        
+        for (let j = 0; j < splitText.length; j++) {
+          if (yPosition > pageHeight) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(splitText[j], 20, yPosition);
+          yPosition += lineHeight;
+        }
       }
+
+      console.log('All text added to PDF');
 
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="lease-agreement-${application.firstName}-${application.lastName}.pdf"`);
 
-      console.log('Sending PDF response');
-      // Send PDF buffer
-      res.send(doc.output('arraybuffer'));
+      console.log('Generating PDF buffer...');
+      // Send PDF buffer directly
+      const pdfBuffer = doc.output('arraybuffer');
+      console.log('PDF buffer generated, size:', pdfBuffer.byteLength);
+      
+      if (pdfBuffer.byteLength === 0) {
+        throw new Error('Generated PDF buffer is empty');
+      }
+      
+      res.send(Buffer.from(pdfBuffer));
+      console.log('PDF response sent successfully');
     } catch (pdfError) {
       console.error('PDF generation error:', pdfError);
       // Fallback to text if PDF generation fails
@@ -203,6 +229,25 @@ router.get('/download', auth, async (req, res) => {
   } catch (error) {
     console.error('Lease download error:', error);
     res.status(500).json({ error: 'Server error downloading lease agreement' });
+  }
+});
+
+// Test PDF generation endpoint
+router.get('/test-pdf', (req, res) => {
+  try {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Test PDF', 20, 20);
+    doc.text('This is a test PDF generation.', 20, 40);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="test.pdf"');
+    
+    const pdfBuffer = doc.output('arraybuffer');
+    res.send(Buffer.from(pdfBuffer));
+  } catch (error) {
+    console.error('Test PDF error:', error);
+    res.status(500).json({ error: 'Test PDF generation failed' });
   }
 });
 

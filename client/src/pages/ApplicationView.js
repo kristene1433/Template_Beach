@@ -220,15 +220,30 @@ const ApplicationView = () => {
       console.log('PDF blob type:', pdfBlob.type);
       console.log('PDF blob size:', pdfBlob.size);
       
+      // Validate that we received a PDF
+      if (pdfBlob.size === 0) {
+        throw new Error('Empty PDF file received');
+      }
+      
+      console.log('PDF blob validation passed, creating download link');
+      
       // Create and trigger download
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `lease-agreement-${application.firstName}-${application.lastName}.pdf`;
+      link.style.display = 'none';
       document.body.appendChild(link);
+      
+      console.log('Triggering download...');
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      // Clean up after a short delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        console.log('Download cleanup completed');
+      }, 1000);
       
       toast.success('Lease agreement downloaded successfully!');
     } catch (error) {
