@@ -71,6 +71,7 @@ async function handleStripeWebhook(req, res) {
         }
         
         console.log(`Payment ${payment._id} created and marked as successful`);
+        console.log(`Updated application ${session.metadata.applicationId} with paymentReceived: true`);
       } catch (error) {
         console.error('Error processing webhook:', error);
       }
@@ -141,6 +142,7 @@ async function handleStripeWebhook(req, res) {
               lastUpdated: new Date()
             }
           );
+          console.log(`Updated application ${pi.metadata.applicationId} with paymentReceived: true`);
         }
       } catch (err) {
         console.error('payment_intent.succeeded handling error:', err);
@@ -320,9 +322,12 @@ router.get('/history', auth, async (req, res) => {
       query.applicationId = applicationId;
     }
     
+    console.log('Fetching payment history with query:', query);
+    
     const payments = await Payment.find(query)
       .sort({ createdAt: -1 });
 
+    console.log(`Found ${payments.length} payments for user ${req.user._id}, application ${applicationId}`);
     res.json({ payments });
   } catch (error) {
     console.error('Payment history fetch error:', error);

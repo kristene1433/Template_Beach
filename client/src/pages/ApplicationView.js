@@ -58,6 +58,8 @@ const ApplicationView = () => {
 
       if (applicationRes.ok) {
         const data = await applicationRes.json();
+        console.log('Application data received:', data.application);
+        console.log('Payment received status:', data.application?.paymentReceived);
         setApplication(data.application);
       } else {
         toast.error('Application not found');
@@ -72,6 +74,7 @@ const ApplicationView = () => {
 
       if (paymentsRes.ok) {
         const paymentsData = await paymentsRes.json();
+        console.log('Payments data received:', paymentsData.payments);
         setPayments(paymentsData.payments || []);
       }
     } catch (error) {
@@ -168,6 +171,31 @@ const ApplicationView = () => {
     if (isNaN(d.getTime())) return 'Invalid Date';
 
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const handleManualPaymentUpdate = async () => {
+    try {
+      const response = await fetch(`/api/application/${id}/payment-status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setApplication(result.application);
+        toast.success('Payment status updated manually!');
+        // Refresh data to show updated status
+        await fetchApplicationData();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update payment status');
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Error updating payment status');
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -800,13 +828,22 @@ const ApplicationView = () => {
                         }
                       </p>
                     </div>
-                    <button
-                      onClick={handleMakePayment}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Make Payment
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleMakePayment}
+                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Make Payment
+                      </button>
+                      <button
+                        onClick={handleManualPaymentUpdate}
+                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        title="Test payment status update"
+                      >
+                        Test Update
+                      </button>
+                    </div>
                   </div>
 
                   {payments.length > 0 ? (

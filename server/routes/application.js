@@ -73,6 +73,34 @@ router.get('/status', auth, async (req, res) => {
   }
 });
 
+// Manual payment status update for testing
+router.put('/:id/payment-status', auth, async (req, res) => {
+  try {
+    const application = await Application.findOne({ 
+      _id: req.params.id, 
+      userId: req.user._id 
+    });
+    
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    application.paymentReceived = true;
+    application.lastUpdated = new Date();
+    await application.save();
+    
+    console.log(`Manually updated application ${req.params.id} payment status to true`);
+    
+    res.json({ 
+      message: 'Payment status updated successfully',
+      application 
+    });
+  } catch (error) {
+    console.error('Manual payment status update error:', error);
+    res.status(500).json({ error: 'Server error updating payment status' });
+  }
+});
+
 // Get specific application by ID
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -84,6 +112,9 @@ router.get('/:id', auth, async (req, res) => {
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
+    
+    console.log(`Fetched application ${req.params.id} for user ${req.user._id}`);
+    console.log('Application paymentReceived status:', application.paymentReceived);
     
     res.json({ application });
   } catch (error) {
