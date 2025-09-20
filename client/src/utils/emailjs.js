@@ -95,7 +95,12 @@ export const sendLeaseNotification = async (leaseData) => {
     return { success: true, data: response };
   } catch (error) {
     console.error('EmailJS error:', error);
-    return { success: false, error: error.message };
+    // Handle specific EmailJS errors more gracefully
+    if (error.status === 400) {
+      console.warn('⚠️ EmailJS template may be missing or invalid. Lease notification email skipped.');
+      return { success: false, error: 'Email template not configured' };
+    }
+    return { success: false, error: error.message || 'Unknown email error' };
   }
 };
 
@@ -130,8 +135,13 @@ export const sendPaymentReceiptEmail = async (data) => {
     console.log('✅ Payment receipt email sent successfully!');
     return { success: true, data: response };
   } catch (error) {
-    console.error('❌ Payment receipt email failed:', error.message);
-    return { success: false, error: error.message };
+    console.error('❌ Payment receipt email failed:', error);
+    // Handle specific EmailJS errors more gracefully
+    if (error.status === 400) {
+      console.warn('⚠️ EmailJS template may be missing or invalid. Payment receipt email skipped.');
+      return { success: false, error: 'Email template not configured' };
+    }
+    return { success: false, error: error.message || 'Unknown email error' };
   }
 };
 

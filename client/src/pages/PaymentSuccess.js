@@ -69,7 +69,12 @@ const PaymentSuccess = () => {
               toast.success('Payment receipt sent to your email!');
             } else {
               console.error('❌ Email failed:', emailResult.error);
-              toast.error('Failed to send email receipt. Please contact support.');
+              // Only show error toast if it's not a template configuration issue
+              if (!emailResult.error.includes('template') && !emailResult.error.includes('configured')) {
+                toast.error('Failed to send email receipt. Please contact support.');
+              } else {
+                console.log('📧 Email receipt skipped - template not configured');
+              }
             }
             
             sessionStorage.setItem(sentKey, '1');
