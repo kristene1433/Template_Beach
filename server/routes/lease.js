@@ -535,6 +535,11 @@ be conducted. Based upon the condition of the Premises, all, a portion of, or no
 Security Deposit may be refunded, depending on whether any damage, beyond normal
 wear and tear, has occurred.
 
+**Credit Card Processing Fee**: A 3% processing fee will be applied to all credit card
+payments. This fee covers the cost of credit card processing services. Alternative payment
+methods (Zelle, PayPal, Venmo, Money Order, Fed Wire, USDC, or US Checks) do not incur
+this processing fee.
+
 3. **Quiet Enjoyment**: Renter shall enjoy use of the Premises and is expected to share
 the common areas respectfully. Renter is prohibited from hosting gatherings exceeding
 eight individuals or creating excessive noise that would interfere with the quiet enjoyment

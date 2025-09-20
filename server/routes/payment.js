@@ -46,6 +46,8 @@ async function handleStripeWebhook(req, res) {
           stripePaymentIntentId: session.payment_intent,
           stripeCustomerId: session.customer,
           amount: Math.round(parseFloat(session.metadata.amount) * 100), // Convert to cents
+          creditCardFee: Math.round(parseFloat(session.metadata.creditCardFee || 0) * 100), // Convert to cents
+          totalAmount: session.amount_total,
           currency: 'usd',
           paymentType: session.metadata.paymentType,
           description: `${session.metadata.paymentType} payment`,
@@ -132,7 +134,9 @@ async function handleStripeWebhook(req, res) {
             applicationId: pi.metadata?.applicationId,
             stripePaymentIntentId: pi.id,
             stripeCustomerId: pi.customer,
-            amount: pi.amount,
+            amount: Math.round(parseFloat(pi.metadata?.amount || '0') * 100), // Convert to cents
+            creditCardFee: Math.round(parseFloat(pi.metadata?.creditCardFee || '0') * 100), // Convert to cents
+            totalAmount: pi.amount,
             currency: pi.currency || 'usd',
             paymentType: pi.metadata?.paymentType || 'deposit',
             description: `${pi.metadata?.paymentType || 'deposit'} payment`,
@@ -242,7 +246,7 @@ router.post('/test-payment', auth, async (req, res) => {
 // Create Stripe Checkout session
 router.post('/create-checkout-session', auth, async (req, res) => {
   try {
-    const { amount, paymentType = 'deposit', description, successUrl, cancelUrl, applicationId } = req.body;
+    const { amount, creditCardFee = 0, totalAmount, paymentType = 'deposit', description, successUrl, cancelUrl, applicationId } = req.body;
     
     console.log('=== CREATE CHECKOUT SESSION ===');
     console.log('Request body:', { amount, paymentType, description, applicationId });
@@ -295,7 +299,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
                 userId: user._id.toString()
               }
             },
-            unit_amount: Math.round(amount * 100), // Convert to cents
+            unit_amount: Math.round((totalAmount || amount) * 100), // Convert to cents
           },
           quantity: 1,
         },
@@ -308,6 +312,8 @@ router.post('/create-checkout-session', auth, async (req, res) => {
         applicationId: applicationId,
         paymentType,
         amount: amount.toString(),
+        creditCardFee: creditCardFee.toString(),
+        totalAmount: (totalAmount || amount).toString(),
         propertyAddress: user.getFullAddress()
       },
       billing_address_collection: 'required',

@@ -74,21 +74,36 @@ const Payment = () => {
     return parseFloat(selectedAmount);
   };
 
+  const getCreditCardFee = (amount) => {
+    // 3% credit card processing fee
+    return Math.round(amount * 0.03 * 100) / 100; // Round to 2 decimal places
+  };
+
+  const getTotalAmount = (amount) => {
+    const fee = getCreditCardFee(amount);
+    return amount + fee;
+  };
+
   const handlePayment = async () => {
-    const amount = getPaymentAmount();
-    if (!amount || amount <= 0) {
+    const baseAmount = getPaymentAmount();
+    if (!baseAmount || baseAmount <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
+
+    const creditCardFee = getCreditCardFee(baseAmount);
+    const totalAmount = getTotalAmount(baseAmount);
 
     setLoading(true);
     try {
       // Create Stripe Checkout session
       const response = await axios.post('/api/payment/create-checkout-session', {
-        amount: amount,
+        amount: baseAmount,
+        creditCardFee: creditCardFee,
+        totalAmount: totalAmount,
         paymentType,
         applicationId: applicationId,
-        description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${amount.toFixed(2)}`,
+        description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${baseAmount.toFixed(2)} + $${creditCardFee.toFixed(2)} processing fee`,
         successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/payment/cancel`
       });
@@ -300,6 +315,23 @@ const Payment = () => {
                 />
               </div>
 
+              {/* Credit Card Fee Notice */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-amber-800 mb-1">
+                      Credit Card Processing Fee Notice
+                    </h4>
+                    <p className="text-sm text-amber-700">
+                      A 3% processing fee will be applied to credit card payments to cover processing costs. 
+                      Alternative payment methods (Zelle, PayPal, Venmo, Money Order, Fed Wire, USDC, or US Checks) 
+                      do not incur this fee.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Payment Summary */}
               <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3">Payment Summary</h3>
@@ -317,14 +349,16 @@ const Payment = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Processing Fee:</span>
-                    <span className="text-gray-600">$0.00</span>
+                    <span className="text-gray-600">Credit Card Processing Fee (3%):</span>
+                    <span className="text-gray-600">
+                      ${getCreditCardFee(getPaymentAmount()).toFixed(2)}
+                    </span>
                   </div>
                   <div className="border-t pt-2">
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-900">Total:</span>
                       <span className="font-bold text-xl text-primary">
-                        ${getPaymentAmount().toFixed(2)}
+                        ${getTotalAmount(getPaymentAmount()).toFixed(2)}
                       </span>
                     </div>
                   </div>

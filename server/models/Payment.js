@@ -32,6 +32,20 @@ const paymentSchema = new mongoose.Schema({
     min: 0
   },
   
+  // Credit card processing fee
+  creditCardFee: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  
+  // Total amount including fees
+  totalAmount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  
   currency: {
     type: String,
     default: 'usd'

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Home, FileText, CreditCard, LogOut, Building2, Mail } from 'lucide-react';
+import { Menu, X, Home, FileText, LogOut, Mail } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -23,8 +23,6 @@ const Navbar = () => {
   ] : [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/application', label: 'Application', icon: FileText },
-    { path: '/lease', label: 'Lease', icon: Building2 },
-    { path: '/payment', label: 'Payment', icon: CreditCard },
     { path: '/contact', label: 'Contact', icon: Mail },
   ]) : [];
 
