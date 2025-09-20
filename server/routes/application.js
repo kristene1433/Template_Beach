@@ -58,13 +58,32 @@ router.get('/status', auth, async (req, res) => {
       latestStatus: overallStatus,
       applications: applications.map(app => ({
         id: app._id,
+        _id: app._id,
         status: app.status,
         requestedStartDate: app.requestedStartDate,
         requestedEndDate: app.requestedEndDate,
         submittedAt: app.submittedAt,
         reviewedAt: app.reviewedAt,
         notes: app.notes,
-        createdAt: app.createdAt
+        createdAt: app.createdAt,
+        paymentReceived: app.paymentReceived,
+        leaseGenerated: app.leaseGenerated,
+        leaseSigned: app.leaseSigned,
+        firstName: app.firstName,
+        lastName: app.lastName,
+        email: app.email,
+        phone: app.phone,
+        address: app.address,
+        city: app.city,
+        state: app.state,
+        zipCode: app.zipCode,
+        coApplicantName: app.coApplicantName,
+        coApplicantEmail: app.coApplicantEmail,
+        coApplicantPhone: app.coApplicantPhone,
+        requestedMonths: app.requestedMonths,
+        guestCount: app.guestCount,
+        petInfo: app.petInfo,
+        specialRequests: app.specialRequests
       }))
     });
   } catch (error) {
