@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Mail, Phone, User, MessageSquare, Send } from 'lucide-react';
-import { sendContactEmail, initEmailJS } from '../utils/emailjs';
+// Contact email functionality removed - using direct email link instead
 
 const ContactForm = () => {
-  const [loading, setLoading] = useState(false);
-  const [emailjsReady, setEmailjsReady] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,20 +12,6 @@ const ContactForm = () => {
     message: ''
   });
 
-  useEffect(() => {
-    // Initialize EmailJS when component mounts
-    try {
-      const initialized = initEmailJS();
-      setEmailjsReady(initialized);
-      if (!initialized) {
-        console.error('EmailJS initialization failed');
-      }
-    } catch (error) {
-      console.error('EmailJS initialization error:', error);
-      setEmailjsReady(false);
-    }
-  }, []);
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -35,7 +19,7 @@ const ContactForm = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.message) {
@@ -43,39 +27,33 @@ const ContactForm = () => {
       return;
     }
 
-    setLoading(true);
+    // Create mailto link with form data
+    const subject = encodeURIComponent(formData.subject || `Contact from ${formData.name}`);
+    const body = encodeURIComponent(`
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+
+Message:
+${formData.message}
+    `);
     
-    try {
-      // Check if EmailJS is configured
-      if (!process.env.REACT_APP_EMAILJS_SERVICE_ID || 
-          !process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID || 
-          !process.env.REACT_APP_EMAILJS_PUBLIC_KEY) {
-        throw new Error('EmailJS not configured. Please check your environment variables.');
-      }
-
-      // EmailJS configuration check - sensitive data removed from logs
-
-      const result = await sendContactEmail(formData);
-      
-      if (result.success) {
-        toast.success('Message sent successfully! We\'ll get back to you soon.');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          subject: '',
-          message: ''
-        });
-      } else {
-        console.error('EmailJS Error:', result.error);
-        toast.error(`Failed to send message: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Contact form error:', error);
-      toast.error(`An error occurred: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+    const mailtoLink = `mailto:palmrunbeachcondo@gmail.com?subject=${subject}&body=${body}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+    
+    // Show success message
+    toast.success('Opening your email client... Please send the email to contact us.');
+    
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      message: ''
+    });
   };
 
   return (
@@ -99,6 +77,13 @@ const ContactForm = () => {
           </div>
 
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg p-6 shadow-medium">
+            {/* Notice about email client */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Note:</strong> This form will open your email client with a pre-filled message. 
+                Simply send the email to contact us directly.
+              </p>
+            </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -198,20 +183,10 @@ const ContactForm = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={loading}
-            className="btn-primary inline-flex items-center px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary inline-flex items-center px-6 py-3"
           >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Sending...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-5 w-5" />
-                Send Message
-              </>
-            )}
+            <Send className="mr-2 h-5 w-5" />
+            Open Email Client
           </button>
         </div>
       </form>

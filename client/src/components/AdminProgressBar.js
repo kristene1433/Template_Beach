@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Circle, Clock, AlertCircle, Edit3, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -9,7 +9,7 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
   const [manuallyCompletedSteps, setManuallyCompletedSteps] = useState(new Set());
 
   // Define the booking process steps with admin controls
-  const getInitialSteps = () => [
+  const getInitialSteps = useCallback(() => [
     {
       id: 'application',
       title: 'Application Submitted',
@@ -60,10 +60,10 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
             application?.paymentReceived ? Clock : Circle,
       adminControllable: true
     }
-  ];
+  ], [application]);
 
   // Get steps with preserved manual completions
-  const getStepsWithPreservedCompletions = () => {
+  const getStepsWithPreservedCompletions = useCallback(() => {
     const baseSteps = getInitialSteps();
     return baseSteps.map(step => {
       // If this step was manually completed by admin, keep it completed
@@ -76,14 +76,14 @@ const AdminProgressBar = ({ application, onProgressUpdate }) => {
       }
       return step;
     });
-  };
+  }, [manuallyCompletedSteps, getInitialSteps]);
 
   const [steps, setSteps] = useState(() => getStepsWithPreservedCompletions());
 
   // Update steps when application prop changes, but preserve manually completed steps
   useEffect(() => {
     setSteps(getStepsWithPreservedCompletions());
-  }, [application?.status, application?.leaseGenerated, application?.leaseSigned, application?.paymentReceived, manuallyCompletedSteps]);
+  }, [application?.status, application?.leaseGenerated, application?.leaseSigned, application?.paymentReceived, manuallyCompletedSteps, getStepsWithPreservedCompletions]);
 
   const completedSteps = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;

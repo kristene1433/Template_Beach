@@ -73,7 +73,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       id: 'approval',
       title: 'Application Approved',
       description: 'Application reviewed and approved',
-      instruction: 'Our team will review your application and approve it if all requirements are met. This typically takes 1-2 business days.',
+      instruction: 'We will review your application and approve it if all requirements are met. This typically takes 1-2 business days.',
       completed: currentApplication?.status === 'approved' || currentApplication?.status === 'completed',
       icon: currentApplication?.status === 'approved' || currentApplication?.status === 'completed' ? CheckCircle : 
             currentApplication?.status === 'rejected' ? AlertCircle : Clock
@@ -82,7 +82,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       id: 'lease',
       title: 'Lease Generated',
       description: 'Lease agreement prepared',
-      instruction: 'Once approved, we will generate your lease agreement with all terms, dates, and payment details. You will receive this via email.',
+      instruction: 'Once approved, we will generate your lease agreement with all terms, dates, and payment details. You will receive a notification via email when ready to view.',
       completed: currentApplication?.leaseGenerated || false,
       icon: currentApplication?.leaseGenerated ? CheckCircle : Circle
     },
@@ -90,7 +90,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       id: 'signed',
       title: 'Lease Uploaded',
       description: 'Signed lease agreement uploaded',
-      instruction: 'Review the lease agreement carefully, sign it digitally, and upload the signed document. You can also print, sign, and upload a scanned copy.',
+      instruction: 'Review the lease agreement carefully, print, sign, and upload a scanned copy.',
       completed: currentApplication?.leaseSigned || false,
       icon: currentApplication?.leaseSigned ? CheckCircle : Circle
     },
@@ -98,7 +98,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       id: 'payment',
       title: 'Payment Made',
       description: 'Deposit and first payment completed',
-      instruction: 'Make your security deposit and first month\'s rent payment using our secure payment system. You will receive a receipt via email.',
+      instruction: 'Make your security deposit and rent payment using our secure payment system. You will receive a confirmation via email.',
       completed: currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded'),
       icon: (currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? CheckCircle : Circle
     },
@@ -106,7 +106,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       id: 'admin_verification',
       title: 'Admin Verification',
       description: 'All payments verified and booking confirmed by admin',
-      instruction: 'Our team will verify all payments and documents, then send you a final confirmation with check-in instructions and property details.',
+      instruction: 'We will verify all payments and documents, then send you a final signed copy of the lease agreement.',
       completed: currentApplication?.status === 'completed',
       icon: currentApplication?.status === 'completed' ? CheckCircle : 
             (currentApplication?.paymentReceived || applicationPayments.some(payment => payment.status === 'succeeded')) ? Clock : Circle

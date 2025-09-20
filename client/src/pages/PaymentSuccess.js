@@ -160,11 +160,11 @@ const PaymentSuccess = () => {
               <ul className="space-y-2 text-blue-800">
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  You'll receive a confirmation email with your receipt
+                  You'll receive a confirmation email with your payment details
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  If you have any questions, please contact our support team
+                  If you have any questions, please contact us at palmrunbeachcondo@gmail.com
                 </li>
               </ul>
             </div>
