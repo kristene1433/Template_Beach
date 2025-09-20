@@ -91,6 +91,8 @@ const PaymentSuccess = () => {
 
 
   const handleBackToDashboard = () => {
+    // Set a flag to indicate we're returning from a payment success
+    sessionStorage.setItem('paymentSuccessReturn', 'true');
     navigate('/dashboard');
   };
 

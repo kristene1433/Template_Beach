@@ -497,9 +497,11 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         // Filter payments for this specific application
-        const filteredPayments = data.payments.filter(payment => 
-          payment.applicationId && payment.applicationId.toString() === applicationId
-        );
+        const filteredPayments = data.payments.filter(payment => {
+          // Handle both populated and non-populated applicationId
+          const paymentAppId = payment.applicationId?._id || payment.applicationId;
+          return paymentAppId && paymentAppId.toString() === applicationId;
+        });
         setApplicationPayments(filteredPayments);
       }
     } catch (error) {

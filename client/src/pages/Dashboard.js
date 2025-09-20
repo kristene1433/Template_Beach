@@ -25,6 +25,9 @@ const Dashboard = () => {
       console.log('Fetching dashboard data...');
       const applicationRes = await axios.get('/api/application/status');
       setApplicationStatus(applicationRes.data);
+      
+      // Clear the payment success flag after successful data fetch
+      sessionStorage.removeItem('paymentSuccessReturn');
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       if (error.response) {
@@ -43,12 +46,45 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    // Check if we're returning from a payment success page
+    const isReturningFromPayment = sessionStorage.getItem('paymentSuccessReturn');
+    
     fetchDashboardData();
+    
+    // If returning from payment, do an immediate additional refresh to ensure we have the latest data
+    if (isReturningFromPayment) {
+      setTimeout(() => {
+        fetchDashboardData();
+      }, 500); // Small delay to ensure the first request completes
+    }
     
     // Set up periodic refresh every 10 seconds for real-time updates
     const interval = setInterval(fetchDashboardData, 10000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Refresh data when component becomes visible (e.g., returning from payment success)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Component became visible, refresh data to catch any updates
+        fetchDashboardData();
+      }
+    };
+
+    const handleFocus = () => {
+      // Page regained focus, refresh data
+      fetchDashboardData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const getStatusColor = (status) => {
