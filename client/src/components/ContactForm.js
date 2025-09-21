@@ -103,13 +103,6 @@ const ContactForm = () => {
           </div>
 
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg p-6 shadow-medium">
-            {/* Notice about EmailJS contact */}
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Direct Contact:</strong> Your message will be sent directly to our team via EmailJS. 
-                We'll respond to your email address within 24 hours.
-              </p>
-            </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

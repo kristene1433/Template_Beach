@@ -129,14 +129,19 @@ async function handleStripeWebhook(req, res) {
       try {
         let payment = await Payment.findOne({ stripePaymentIntentId: pi.id });
         if (!payment) {
+          // Use metadata if available, otherwise use payment intent amount
+          const amountFromMetadata = pi.metadata?.amount ? Math.round(parseFloat(pi.metadata.amount) * 100) : pi.amount;
+          const creditCardFeeFromMetadata = pi.metadata?.creditCardFee ? Math.round(parseFloat(pi.metadata.creditCardFee) * 100) : 0;
+          const totalAmountFromMetadata = pi.metadata?.totalAmount ? Math.round(parseFloat(pi.metadata.totalAmount) * 100) : pi.amount;
+          
           payment = new Payment({
             userId: pi.metadata?.userId,
             applicationId: pi.metadata?.applicationId,
             stripePaymentIntentId: pi.id,
             stripeCustomerId: pi.customer,
-            amount: Math.round(parseFloat(pi.metadata?.amount || '0') * 100), // Convert to cents
-            creditCardFee: Math.round(parseFloat(pi.metadata?.creditCardFee || '0') * 100), // Convert to cents
-            totalAmount: pi.amount,
+            amount: amountFromMetadata,
+            creditCardFee: creditCardFeeFromMetadata,
+            totalAmount: totalAmountFromMetadata,
             currency: pi.currency || 'usd',
             paymentType: pi.metadata?.paymentType || 'deposit',
             description: `${pi.metadata?.paymentType || 'deposit'} payment`,
@@ -150,6 +155,16 @@ async function handleStripeWebhook(req, res) {
         } else {
           payment.status = 'succeeded';
           payment.paidAt = new Date();
+          // Update amount if it's still 0 (from previous incorrect processing)
+          if (payment.amount === 0) {
+            const amountFromMetadata = pi.metadata?.amount ? Math.round(parseFloat(pi.metadata.amount) * 100) : pi.amount;
+            const creditCardFeeFromMetadata = pi.metadata?.creditCardFee ? Math.round(parseFloat(pi.metadata.creditCardFee) * 100) : 0;
+            const totalAmountFromMetadata = pi.metadata?.totalAmount ? Math.round(parseFloat(pi.metadata.totalAmount) * 100) : pi.amount;
+            
+            payment.amount = amountFromMetadata;
+            payment.creditCardFee = creditCardFeeFromMetadata;
+            payment.totalAmount = totalAmountFromMetadata;
+          }
         }
         const charge = pi.charges?.data?.[0];
         payment.receiptUrl = charge?.receipt_url || payment.receiptUrl;
@@ -322,6 +337,9 @@ router.post('/create-checkout-session', auth, async (req, res) => {
           userId: user._id.toString(),
           applicationId: applicationId,
           paymentType,
+          amount: amount.toString(),
+          creditCardFee: creditCardFee.toString(),
+          totalAmount: (totalAmount || amount).toString(),
           propertyAddress: user.getFullAddress()
         }
       }
