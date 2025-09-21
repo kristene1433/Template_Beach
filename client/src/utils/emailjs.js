@@ -3,6 +3,7 @@ import emailjs from '@emailjs/browser';
 // EmailJS configuration from environment variables
 export const EMAILJS_CONFIG = {
   SERVICE_ID: process.env.REACT_APP_EMAILJS_SERVICE_ID,
+  CONTACT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID,
   LEASE_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_LEASE_TEMPLATE_ID,
   PAYMENT_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PAYMENT_TEMPLATE_ID,
   PASSWORD_RESET_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_PASSWORD_RESET_TEMPLATE_ID,
@@ -12,6 +13,7 @@ export const EMAILJS_CONFIG = {
 // Debug: Log configuration on load (without exposing sensitive data)
 console.log('🔧 EmailJS Configuration loaded:', {
   SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
+  CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
   LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
   PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
   PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
@@ -21,6 +23,7 @@ console.log('🔧 EmailJS Configuration loaded:', {
 export const validateEmailJSConfig = () => {
   console.log('EmailJS Config Check:', {
     SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
+    CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
     LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
     PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
     PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
@@ -178,6 +181,48 @@ export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
     return { success: true, data: response };
   } catch (error) {
     console.error('❌ Password reset email failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send contact form email to admin
+export const sendContactEmail = async (contactData) => {
+  try {
+    console.log('📧 Sending contact email...', {
+      name: contactData.name,
+      email: contactData.email,
+      subject: contactData.subject || 'No subject'
+    });
+
+    const response = await emailjs.send(
+      EMAILJS_CONFIG.SERVICE_ID,
+      EMAILJS_CONFIG.CONTACT_TEMPLATE_ID,
+      {
+        from_name: contactData.name,
+        from_email: contactData.email,
+        phone: contactData.phone || 'Not provided',
+        subject: contactData.subject || 'Contact Form Submission',
+        message: contactData.message,
+        to_email: 'palmrunbeachcondo@gmail.com',
+        sent_date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      },
+      EMAILJS_CONFIG.PUBLIC_KEY
+    );
+    
+    console.log('✅ Contact email sent successfully!');
+    return { success: true, data: response };
+  } catch (error) {
+    console.error('❌ Contact email failed:', error.message);
+    if (error.status === 400) {
+      console.warn('⚠️ EmailJS contact template may be missing or invalid. Contact email skipped.');
+      return { success: false, error: 'Email template not configured' };
+    }
     return { success: false, error: error.message };
   }
 };

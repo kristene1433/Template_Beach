@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Mail, Phone, User, MessageSquare, Send } from 'lucide-react';
-// Contact email functionality removed - using direct email link instead
+import { sendContactEmail, initEmailJS } from '../utils/emailjs';
 
 const ContactForm = () => {
+  const [loading, setLoading] = useState(false);
+  const [emailjsReady, setEmailjsReady] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,6 +14,22 @@ const ContactForm = () => {
     message: ''
   });
 
+  // Initialize EmailJS
+  useEffect(() => {
+    const initializeEmailJS = async () => {
+      try {
+        await initEmailJS();
+        setEmailjsReady(true);
+        console.log('✅ EmailJS initialized for contact form');
+      } catch (error) {
+        console.error('❌ EmailJS initialization failed:', error);
+        setEmailjsReady(false);
+      }
+    };
+
+    initializeEmailJS();
+  }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -19,7 +37,7 @@ const ContactForm = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.message) {
@@ -27,33 +45,41 @@ const ContactForm = () => {
       return;
     }
 
-    // Create mailto link with form data
-    const subject = encodeURIComponent(formData.subject || `Contact from ${formData.name}`);
-    const body = encodeURIComponent(`
-Name: ${formData.name}
-Email: ${formData.email}
-Phone: ${formData.phone || 'Not provided'}
+    if (!emailjsReady) {
+      toast.error('Email service is not ready. Please try again in a moment.');
+      return;
+    }
 
-Message:
-${formData.message}
-    `);
+    setLoading(true);
     
-    const mailtoLink = `mailto:palmrunbeachcondo@gmail.com?subject=${subject}&body=${body}`;
-    
-    // Open email client
-    window.location.href = mailtoLink;
-    
-    // Show success message
-    toast.success('Opening your email client... Please send the email to contact us.');
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
+    try {
+      const result = await sendContactEmail(formData);
+
+      if (result.success) {
+        toast.success('Message sent successfully! We\'ll get back to you soon.');
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        console.error('❌ Contact email failed:', result.error);
+        if (!result.error.includes('template') && !result.error.includes('configured')) {
+          toast.error('Failed to send message. Please try again or contact us directly.');
+        } else {
+          console.log('📧 Contact email skipped - template not configured');
+          toast.error('Contact service temporarily unavailable. Please email us directly at palmrunbeachcondo@gmail.com');
+        }
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      toast.error('An error occurred while sending your message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,11 +103,11 @@ ${formData.message}
           </div>
 
           <div className="bg-white/90 backdrop-blur-md border border-white/30 rounded-lg p-6 shadow-medium">
-            {/* Notice about email client */}
+            {/* Notice about EmailJS contact */}
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
-                <strong>Note:</strong> This form will open your email client with a pre-filled message. 
-                Simply send the email to contact us directly.
+                <strong>Direct Contact:</strong> Your message will be sent directly to our team via EmailJS. 
+                We'll respond to your email address within 24 hours.
               </p>
             </div>
 
@@ -183,10 +209,20 @@ ${formData.message}
         <div className="flex justify-end">
           <button
             type="submit"
-            className="btn-primary inline-flex items-center px-6 py-3"
+            disabled={loading}
+            className="btn-primary inline-flex items-center px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="mr-2 h-5 w-5" />
-            Open Email Client
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-5 w-5" />
+                Send Message
+              </>
+            )}
           </button>
         </div>
       </form>
