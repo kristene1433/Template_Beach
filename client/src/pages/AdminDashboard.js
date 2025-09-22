@@ -1232,10 +1232,16 @@ const AdminDashboard = () => {
                         <div className="text-center">
                           <h5 className="text-sm font-medium text-blue-900">Total Owed</h5>
                           <p className="text-lg font-bold text-blue-900">
-                            ${(selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)}
+                            ${selectedApplication.leaseGenerated 
+                              ? (selectedApplication.depositAmount || 0) + (selectedApplication.rentalAmount || 0)
+                              : 0
+                            }
                           </p>
                           <p className="text-xs text-blue-700">
-                            ${selectedApplication.depositAmount || 500} deposit + ${selectedApplication.rentalAmount || 2500} rent
+                            {selectedApplication.leaseGenerated 
+                              ? `$${selectedApplication.depositAmount || 0} deposit + $${selectedApplication.rentalAmount || 0} rent`
+                              : 'Amounts will be set when lease is created'
+                            }
                           </p>
                         </div>
                         <div className="text-center">
@@ -1251,17 +1257,35 @@ const AdminDashboard = () => {
                         </div>
                         <div className="text-center">
                           <h5 className="text-sm font-medium text-gray-700">Balance</h5>
-                          <p className={`text-lg font-bold ${((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
-                            .filter(payment => payment.status === 'succeeded')
-                            .reduce((total, payment) => total + payment.amount, 0) / 100) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            ${(((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
+                          <p className={`text-lg font-bold ${(() => {
+                            const totalOwed = selectedApplication.leaseGenerated 
+                              ? (selectedApplication.depositAmount || 0) + (selectedApplication.rentalAmount || 0)
+                              : 0;
+                            const totalPaid = applicationPayments
                               .filter(payment => payment.status === 'succeeded')
-                              .reduce((total, payment) => total + payment.amount, 0) / 100)).toFixed(2)}
+                              .reduce((total, payment) => total + payment.amount, 0) / 100;
+                            return totalOwed - totalPaid > 0 ? 'text-red-600' : 'text-green-600';
+                          })()}`}>
+                            ${(() => {
+                              const totalOwed = selectedApplication.leaseGenerated 
+                                ? (selectedApplication.depositAmount || 0) + (selectedApplication.rentalAmount || 0)
+                                : 0;
+                              const totalPaid = applicationPayments
+                                .filter(payment => payment.status === 'succeeded')
+                                .reduce((total, payment) => total + payment.amount, 0) / 100;
+                              return (totalOwed - totalPaid).toFixed(2);
+                            })()}
                           </p>
                           <p className="text-xs text-gray-600">
-                            {((selectedApplication.depositAmount || 500) + (selectedApplication.rentalAmount || 2500)) - (applicationPayments
-                              .filter(payment => payment.status === 'succeeded')
-                              .reduce((total, payment) => total + payment.amount, 0) / 100) > 0 ? 'Amount owed' : 'Overpaid'}
+                            {(() => {
+                              const totalOwed = selectedApplication.leaseGenerated 
+                                ? (selectedApplication.depositAmount || 0) + (selectedApplication.rentalAmount || 0)
+                                : 0;
+                              const totalPaid = applicationPayments
+                                .filter(payment => payment.status === 'succeeded')
+                                .reduce((total, payment) => total + payment.amount, 0) / 100;
+                              return totalOwed - totalPaid > 0 ? 'Amount owed' : 'Overpaid';
+                            })()}
                           </p>
                         </div>
                       </div>
