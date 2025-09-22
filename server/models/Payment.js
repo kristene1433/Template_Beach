@@ -53,7 +53,7 @@ const paymentSchema = new mongoose.Schema({
   
   paymentType: {
     type: String,
-    enum: ['deposit', 'rent', 'late_fee', 'deposit_transfer', 'other'],
+    enum: ['deposit', 'rent', 'late_fee', 'deposit_transfer', 'admin_transfer', 'other'],
     required: true
   },
   
