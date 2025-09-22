@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 const Home = () => {
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [reviews, setReviews] = useState([
     {
       id: 1,
@@ -246,7 +247,7 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {reviews.slice(0, 3).map((review) => (
+            {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
               <div key={review.id} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
@@ -294,6 +295,27 @@ const Home = () => {
               </div>
             ))}
           </div>
+          
+          {reviews.length > 3 && (
+            <div className="text-center">
+              <button
+                onClick={() => setShowAllReviews(!showAllReviews)}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                {showAllReviews ? (
+                  <>
+                    Show Less Reviews
+                    <ChevronUp className="w-5 h-5 ml-2" />
+                  </>
+                ) : (
+                  <>
+                    View All {reviews.length} Reviews
+                    <ChevronDown className="w-5 h-5 ml-2" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
