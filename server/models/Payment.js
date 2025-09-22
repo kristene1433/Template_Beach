@@ -28,8 +28,8 @@ const paymentSchema = new mongoose.Schema({
   // Payment details
   amount: {
     type: Number,
-    required: true,
-    min: 0
+    required: true
+    // Removed min: 0 to allow negative amounts for transfers
   },
   
   // Credit card processing fee
@@ -42,8 +42,8 @@ const paymentSchema = new mongoose.Schema({
   // Total amount including fees
   totalAmount: {
     type: Number,
-    required: true,
-    min: 0
+    required: true
+    // Removed min: 0 to allow negative amounts for transfers
   },
   
   currency: {
