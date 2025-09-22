@@ -98,6 +98,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-
 app.use('/api/auth', authRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/lease', leaseRoutes);
+app.use('/api/rates', require('./routes/rates'));
+app.use('/api/availability', require('./routes/availability'));
 
 // Payment routes (JSON parsed)
 app.use('/api/payment', paymentRoutes.router);

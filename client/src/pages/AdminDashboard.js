@@ -45,6 +45,25 @@ const AdminDashboard = () => {
   const [transferring, setTransferring] = useState(false);
   const [applicationPayments, setApplicationPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  const [rates, setRates] = useState([]);
+  const [showRatesModal, setShowRatesModal] = useState(false);
+  const [showAddRateModal, setShowAddRateModal] = useState(false);
+  const [rateFormData, setRateFormData] = useState({
+    period: '',
+    startDate: '',
+    endDate: '',
+    nightly: '',
+    weekendNight: '',
+    weekly: '',
+    monthly: '',
+    minStay: 30
+  });
+  const [editingRate, setEditingRate] = useState(null);
+  const [availability, setAvailability] = useState([]);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [availabilityCurrentMonth, setAvailabilityCurrentMonth] = useState(new Date());
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [availabilityMode, setAvailabilityMode] = useState('view'); // 'view', 'select', 'bulk'
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -52,6 +71,8 @@ const AdminDashboard = () => {
       return;
     }
     loadApplications();
+    loadRates();
+    loadAvailability();
   }, [user, navigate]);
 
   const loadApplications = async () => {
@@ -77,6 +98,49 @@ const AdminDashboard = () => {
       toast.error('Error loading applications');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadRates = async () => {
+    try {
+      const response = await fetch('/api/rates/admin/all', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRates(data.rates || []);
+      } else {
+        toast.error('Failed to load rates');
+      }
+    } catch (error) {
+      console.error('Error loading rates:', error);
+      toast.error('Error loading rates');
+    }
+  };
+
+  const loadAvailability = async () => {
+    try {
+      const startDate = new Date(availabilityCurrentMonth.getFullYear(), availabilityCurrentMonth.getMonth() - 1, 1);
+      const endDate = new Date(availabilityCurrentMonth.getFullYear(), availabilityCurrentMonth.getMonth() + 4, 0);
+      
+      const response = await fetch(`/api/availability/admin/all?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAvailability(data.availability || []);
+      } else {
+        toast.error('Failed to load availability');
+      }
+    } catch (error) {
+      console.error('Error loading availability:', error);
+      toast.error('Error loading availability');
     }
   };
 
@@ -575,6 +639,252 @@ const AdminDashboard = () => {
     }
   };
 
+  // Rates management functions
+  const handleAddRate = () => {
+    setEditingRate(null);
+    setRateFormData({
+      period: '',
+      startDate: '',
+      endDate: '',
+      nightly: '',
+      weekendNight: '',
+      weekly: '',
+      monthly: '',
+      minStay: 30
+    });
+    setShowAddRateModal(true);
+  };
+
+  const handleEditRate = (rate) => {
+    setEditingRate(rate);
+    setRateFormData({
+      period: rate.period,
+      startDate: rate.startDate.split('T')[0],
+      endDate: rate.endDate.split('T')[0],
+      nightly: rate.nightly || '',
+      weekendNight: rate.weekendNight || '',
+      weekly: rate.weekly || '',
+      monthly: rate.monthly || '',
+      minStay: rate.minStay || 30
+    });
+    setShowAddRateModal(true);
+  };
+
+  const handleRateSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!rateFormData.period || !rateFormData.startDate || !rateFormData.endDate || !rateFormData.monthly) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const url = editingRate ? `/api/rates/admin/${editingRate._id}` : '/api/rates/admin';
+      const method = editingRate ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...rateFormData,
+          nightly: rateFormData.nightly ? parseInt(rateFormData.nightly) : null,
+          weekendNight: rateFormData.weekendNight ? parseInt(rateFormData.weekendNight) : null,
+          weekly: rateFormData.weekly ? parseInt(rateFormData.weekly) : null,
+          monthly: parseInt(rateFormData.monthly),
+          minStay: parseInt(rateFormData.minStay)
+        })
+      });
+
+      if (response.ok) {
+        toast.success(editingRate ? 'Rate updated successfully' : 'Rate created successfully');
+        setShowAddRateModal(false);
+        loadRates();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to save rate');
+      }
+    } catch (error) {
+      console.error('Error saving rate:', error);
+      toast.error('Error saving rate');
+    }
+  };
+
+  const handleDeleteRate = async (rateId) => {
+    if (!window.confirm('Are you sure you want to delete this rate? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/rates/admin/${rateId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Rate deleted successfully');
+        loadRates();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete rate');
+      }
+    } catch (error) {
+      console.error('Error deleting rate:', error);
+      toast.error('Error deleting rate');
+    }
+  };
+
+  const toggleRateStatus = async (rateId, isActive) => {
+    try {
+      const response = await fetch(`/api/rates/admin/${rateId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ isActive: !isActive })
+      });
+
+      if (response.ok) {
+        toast.success(`Rate ${!isActive ? 'activated' : 'deactivated'} successfully`);
+        loadRates();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update rate status');
+      }
+    } catch (error) {
+      console.error('Error updating rate status:', error);
+      toast.error('Error updating rate status');
+    }
+  };
+
+  // Availability management functions
+  const navigateAvailabilityMonth = (direction) => {
+    setAvailabilityCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(prev.getMonth() + direction);
+      return newMonth;
+    });
+  };
+
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const isDateAvailable = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const availabilityRecord = availability.find(record => 
+      record.date.split('T')[0] === dateStr
+    );
+    return availabilityRecord ? availabilityRecord.isAvailable : true;
+  };
+
+  const isDateInPast = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const generateAvailabilityCalendarMonths = () => {
+    const months = [];
+    for (let i = -1; i < 5; i++) {
+      const month = new Date(availabilityCurrentMonth);
+      month.setMonth(availabilityCurrentMonth.getMonth() + i);
+      months.push(month);
+    }
+    return months;
+  };
+
+  const toggleDateAvailability = async (date, isAvailable) => {
+    try {
+      const response = await fetch(`/api/availability/admin/${date.toISOString().split('T')[0]}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ 
+          isAvailable,
+          reason: isAvailable ? 'Available' : 'Unavailable'
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`Date ${isAvailable ? 'marked as available' : 'marked as unavailable'}`);
+        loadAvailability();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update availability');
+      }
+    } catch (error) {
+      console.error('Error updating availability:', error);
+      toast.error('Error updating availability');
+    }
+  };
+
+  const handleBulkAvailabilityUpdate = async (isAvailable) => {
+    if (selectedDates.length === 0) {
+      toast.error('Please select dates first');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/availability/admin/bulk', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          dates: selectedDates.map(date => date.toISOString().split('T')[0]),
+          isAvailable,
+          reason: isAvailable ? 'Available' : 'Unavailable'
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`${selectedDates.length} dates ${isAvailable ? 'marked as available' : 'marked as unavailable'}`);
+        setSelectedDates([]);
+        setAvailabilityMode('view');
+        loadAvailability();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update availability');
+      }
+    } catch (error) {
+      console.error('Error bulk updating availability:', error);
+      toast.error('Error updating availability');
+    }
+  };
+
+  const toggleDateSelection = (date) => {
+    if (isDateInPast(date)) return;
+    
+    setSelectedDates(prev => {
+      const dateStr = date.toISOString().split('T')[0];
+      const isSelected = prev.some(d => d.toISOString().split('T')[0] === dateStr);
+      
+      if (isSelected) {
+        return prev.filter(d => d.toISOString().split('T')[0] !== dateStr);
+      } else {
+        return [...prev, date];
+      }
+    });
+  };
+
+  const isDateSelected = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return selectedDates.some(d => d.toISOString().split('T')[0] === dateStr);
+  };
+
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
@@ -668,6 +978,20 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <button
+                  onClick={() => setShowRatesModal(true)}
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs md:text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md w-full sm:w-auto"
+                >
+                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                  Manage Rates
+                </button>
+                <button
+                  onClick={() => setShowAvailabilityModal(true)}
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs md:text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md w-full sm:w-auto"
+                >
+                  <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                  Manage Availability
+                </button>
                 <span className="text-xs md:text-sm text-gray-200 truncate">Welcome, {user?.email}</span>
                 <button
                   onClick={handleLogout}
@@ -1770,6 +2094,429 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rates Management Modal */}
+      {showRatesModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Manage Rental Rates
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleAddRate}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Add Rate
+                  </button>
+                  <button
+                    onClick={() => setShowRatesModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Period
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Monthly Rate
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Min Stay
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rates.map((rate, index) => (
+                      <tr key={rate._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {rate.period}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ${rate.monthly?.toLocaleString() || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {rate.minStay} nights
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            rate.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {rate.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                          <button
+                            onClick={() => handleEditRate(rate)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => toggleRateStatus(rate._id, rate.isActive)}
+                            className={`${rate.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                          >
+                            {rate.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRate(rate._id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {rates.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No rates configured yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Rate Modal */}
+      {showAddRateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingRate ? 'Edit Rate' : 'Add New Rate'}
+                </h3>
+                <button
+                  onClick={() => setShowAddRateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRateSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Period Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={rateFormData.period}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, period: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                      placeholder="e.g., Sep 01 - Sep 30 2025"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Monthly Rate ($) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      value={rateFormData.monthly}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, monthly: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                      placeholder="3200"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={rateFormData.startDate}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={rateFormData.endDate}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nightly Rate ($)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={rateFormData.nightly}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, nightly: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Weekend Night ($)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={rateFormData.weekendNight}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, weekendNight: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Weekly Rate ($)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={rateFormData.weekly}
+                      onChange={(e) => setRateFormData(prev => ({ ...prev, weekly: e.target.value }))}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Minimum Stay (nights) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={rateFormData.minStay}
+                    onChange={(e) => setRateFormData(prev => ({ ...prev, minStay: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                    placeholder="30"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddRateModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    {editingRate ? 'Update Rate' : 'Create Rate'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Availability Management Modal */}
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Manage Availability
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setAvailabilityMode('view')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      availabilityMode === 'view' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => setAvailabilityMode('select')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      availabilityMode === 'select' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Select Dates
+                  </button>
+                  <button
+                    onClick={() => setShowAvailabilityModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              {availabilityMode === 'select' && selectedDates.length > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-800">
+                      {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''} selected
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleBulkAvailabilityUpdate(true)}
+                        className="px-3 py-1 text-sm font-medium text-green-800 bg-green-200 rounded hover:bg-green-300"
+                      >
+                        Mark as Available
+                      </button>
+                      <button
+                        onClick={() => handleBulkAvailabilityUpdate(false)}
+                        className="px-3 py-1 text-sm font-medium text-red-800 bg-red-200 rounded hover:bg-red-300"
+                      >
+                        Mark as Unavailable
+                      </button>
+                      <button
+                        onClick={() => setSelectedDates([])}
+                        className="px-3 py-1 text-sm font-medium text-gray-800 bg-gray-200 rounded hover:bg-gray-300"
+                      >
+                        Clear Selection
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mb-6">
+                <button
+                  onClick={() => navigateAvailabilityMonth(-1)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => navigateAvailabilityMonth(1)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Next >
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {generateAvailabilityCalendarMonths().map((month, index) => (
+                  <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                      {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                        <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: getFirstDayOfMonth(month) }, (_, i) => (
+                        <div key={`empty-${i}`} className="h-8"></div>
+                      ))}
+                      
+                      {Array.from({ length: getDaysInMonth(month) }, (_, i) => {
+                        const day = i + 1;
+                        const date = new Date(month.getFullYear(), month.getMonth(), day);
+                        const isAvailable = isDateAvailable(date);
+                        const isPast = isDateInPast(date);
+                        const isSelected = isDateSelected(date);
+                        
+                        return (
+                          <div
+                            key={day}
+                            onClick={() => {
+                              if (isPast) return;
+                              if (availabilityMode === 'select') {
+                                toggleDateSelection(date);
+                              } else {
+                                toggleDateAvailability(date, !isAvailable);
+                              }
+                            }}
+                            className={`h-8 flex items-center justify-center text-sm font-medium rounded cursor-pointer ${
+                              isPast
+                                ? 'text-gray-300 bg-gray-100 cursor-not-allowed'
+                                : isSelected
+                                  ? 'text-white bg-blue-600'
+                                  : isAvailable
+                                    ? 'text-gray-900 bg-green-100 hover:bg-green-200'
+                                    : 'text-gray-500 bg-red-100 hover:bg-red-200 line-through'
+                            }`}
+                          >
+                            {day}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex justify-center space-x-6">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
+                  <span className="text-sm text-gray-600">Available</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-100 rounded mr-2"></div>
+                  <span className="text-sm text-gray-600">Unavailable</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
+                  <span className="text-sm text-gray-600">Past dates</span>
+                </div>
+                {availabilityMode === 'select' && (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
+                    <span className="text-sm text-gray-600">Selected</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -21,6 +21,11 @@ const Home = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const [showOverviewDetails, setShowOverviewDetails] = useState(false);
+  const [rates, setRates] = useState([]);
+  const [showAllRates, setShowAllRates] = useState(false);
+  const [availability, setAvailability] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [reviews, setReviews] = useState([
     {
       id: 2,
@@ -129,6 +134,8 @@ const Home = () => {
 
   const navigationItems = [
     { id: 'overview', label: 'Overview' },
+    { id: 'rates', label: 'Rates' },
+    { id: 'availability', label: 'Availability' },
     { id: 'amenities', label: 'Amenities' },
     { id: 'reviews', label: 'Reviews' },
     { id: 'location', label: 'Location' },
@@ -141,6 +148,87 @@ const Home = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Load rates from API
+  const loadRates = async () => {
+    try {
+      const response = await fetch('/api/rates');
+      if (response.ok) {
+        const data = await response.json();
+        setRates(data.rates || []);
+      }
+    } catch (error) {
+      console.error('Error loading rates:', error);
+    }
+  };
+
+  // Load availability from API
+  const loadAvailability = React.useCallback(async () => {
+    try {
+      const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 4, 0);
+      
+      const response = await fetch(`/api/availability?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailability(data.availability || []);
+      }
+    } catch (error) {
+      console.error('Error loading availability:', error);
+    }
+  }, [currentMonth]);
+
+  // Load rates and availability on component mount
+  React.useEffect(() => {
+    loadRates();
+    loadAvailability();
+  }, [loadAvailability]);
+
+  // Load availability when currentMonth changes
+  React.useEffect(() => {
+    loadAvailability();
+  }, [currentMonth, loadAvailability]);
+
+  // Calendar helper functions
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const isDateAvailable = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const availabilityRecord = availability.find(record => 
+      record.date.split('T')[0] === dateStr
+    );
+    return availabilityRecord ? availabilityRecord.isAvailable : true;
+  };
+
+  const isDateInPast = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const navigateMonth = (direction) => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(prev.getMonth() + direction);
+      return newMonth;
+    });
+  };
+
+  const generateCalendarMonths = () => {
+    const months = [];
+    for (let i = -1; i < 5; i++) {
+      const month = new Date(currentMonth);
+      month.setMonth(currentMonth.getMonth() + i);
+      months.push(month);
+    }
+    return months;
   };
 
   return (
@@ -185,17 +273,17 @@ const Home = () => {
       </section>
 
       {/* Navigation Bar */}
-      <section className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+      <section className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center space-x-1 py-4">
+          <div className="flex flex-wrap justify-center space-x-2 py-6">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                className={`px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
                   activeSection === item.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
                 }`}
               >
                 {item.label}
@@ -252,11 +340,7 @@ const Home = () => {
               </p>
               
               <p className="text-lg text-gray-700 mb-6">
-                This is an attractive price for your piece of direct beachfront in Indian Shores, Florida. Life can't get better than boating & skiing behind this premium waterfront condo! Wake up everyday to the calming sounds of the Gulf as the waves hit the shoreline giving the feel of being on an endless Tropical vacation. Community features include an updated community center area, a sizable in-ground swimming pool and dedicated parking.
-              </p>
-              
-              <p className="text-lg text-gray-700 mb-6">
-                Convenient location just steps to the beach, with easy access to dining, shopping, sports and more. A perfect environment for all-year-round entertainment. Come live the true Florida lifestyle!! Are you ready for Fun in the Sun at Gulf Shores Condo in Indian Shores?
+                This is an attractive price for your piece of direct beachfront in Indian Shores, Florida. Life can't get better than boating & skiing behind this premium waterfront condo! Wake up everyday to the calming sounds of the Gulf as the waves hit the shoreline giving the feel of being on an endless Tropical vacation. Community features include an updated community center area, a sizable in-ground swimming pool and dedicated parking. Convenient location just steps to the beach, with easy access to dining, shopping, sports and more. A perfect environment for all-year-round entertainment. Come live the true Florida lifestyle!! Are you ready for Fun in the Sun at Gulf Shores Condo in Indian Shores?
               </p>
               
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -272,39 +356,260 @@ const Home = () => {
               <p className="text-lg text-gray-700 mb-6">
                 Because it is the beach!!
               </p>
+
+              {/* Show More/Show Less Toggle */}
+              <div className="text-center mb-6">
+                <button
+                  onClick={() => setShowOverviewDetails(!showOverviewDetails)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                >
+                  {showOverviewDetails ? (
+                    <>
+                      Show Less
+                      <ChevronUp className="w-4 h-4 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      Show More
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Additional Details - Collapsible */}
+              {showOverviewDetails && (
+                <div className="border-t border-gray-200 pt-6">
+
+                  <h4 className="text-xl font-semibold text-gray-900 mb-4">Inside Scoop</h4>
+                  <p className="text-lg text-gray-700 mb-6">
+                    For those in the know, Indian Shores, Florida, offers much more than its picturesque beaches and tranquil Gulf waters. This hidden gem is brimming with local secrets and insider tips that elevate any visit from ordinary to unforgettable. Here's your exclusive scoop to experiencing Indian Shores like a true insider:
+                  </p>
+
+                  <h5 className="text-lg font-semibold text-gray-900 mb-3">Discover the Hidden Parks</h5>
+                  <p className="text-lg text-gray-700 mb-6">
+                    Beyond the well-trodden sandy shores, Indian Shores boasts several small, lesser-known parks and nature preserves. Tucked away from the main road, these tranquil spots, such as Town Square Nature Park, offer serene settings for picnics, bird watching, or simply escaping into nature. With shaded pathways and wooden walkways winding through native flora, these hidden parks are perfect for those seeking a quiet retreat.
+                  </p>
+
+                  <h5 className="text-lg font-semibold text-gray-900 mb-3">Early Morning Dolphin Watching</h5>
+                  <p className="text-lg text-gray-700 mb-6">
+                    The Gulf Coast is famous for its marine life, and Indian Shores is no exception. For a truly magical experience, head to the beach or the Intracoastal Waterway at sunrise. This is when the dolphins are most active, playing and hunting in the cooler waters. Few sights are as breathtaking as watching these graceful creatures against the backdrop of a Florida sunrise, and the early morning light provides the perfect conditions for photography enthusiasts.
+                  </p>
+
+                  <h5 className="text-lg font-semibold text-gray-900 mb-3">Local Dining Gems</h5>
+                  <p className="text-lg text-gray-700 mb-6">
+                    Indian Shores may be small, but it's mighty in flavor. Skip the tourist hotspots and dine where the locals go. For instance, the Indian Shores Coffee Company is not just a coffee shop but a local gathering place known for its eclectic decor, live music, and vibrant atmosphere. For seafood enthusiasts, the Salt Rock Grill offers an unbeatable combination of fresh catches and waterfront dining, a favorite for those in the know.
+                  </p>
+
+                  <h5 className="text-lg font-semibold text-gray-900 mb-3">Paddleboarding and Kayaking in Secluded Waters</h5>
+                  <p className="text-lg text-gray-700 mb-6">
+                    While the beaches may draw the crowds, the real beauty lies in the quiet waters of the Intracoastal Waterway. Renting a paddleboard or kayak can lead you to secluded waterways, where mangrove tunnels and calm waters offer a peaceful exploration of Florida's natural landscapes. These areas are often teeming with wildlife, including manatees, sea turtles, and various bird species, providing a unique opportunity to connect with nature away from the crowds.
+                  </p>
+
+                  <h5 className="text-lg font-semibold text-gray-900 mb-3">Support Local Art and Culture</h5>
+                  <p className="text-lg text-gray-700 mb-6">
+                    Indian Shores is home to a vibrant community of artists and craftsmen, and supporting local art is a great way to take a piece of your trip home with you. Small galleries and shops dot the area, showcasing everything from handcrafted jewelry to paintings inspired by the Gulf Coast's beauty. The Beach Art Center offers workshops and classes for those interested in tapping into their creative side, providing a unique way to engage with the local culture.
+                  </p>
+
+                  <p className="text-lg text-gray-700 mb-6">
+                    By embracing these insider tips, you'll discover the heart and soul of Indian Shores, experiencing the area through the eyes of those who call it home. Whether it's through its hidden natural treasures, local flavors, or cultural offerings, Indian Shores is a place where every visit can be as unique and memorable as the town itself.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <section className="py-20">
+
+      {/* Rates Section */}
+      <section id="rates" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Beach Paradise
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              You don't have to travel far to get lost in paradise. Enjoy stunning Gulf views paired with top-notch beachfront living just steps from the sugar-white sands of Indian Shores.
-            </p>
-          </div>
+          <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
+            <div className="mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Rates
+              </h2>
+              <p className="text-lg text-gray-600">
+                Rental basis: Per property
+              </p>
+              <div className="flex justify-end mt-4">
+                <span className="text-sm text-gray-600">Rental rates quoted in </span>
+                <select className="ml-2 text-sm border border-gray-300 rounded px-2 py-1">
+                  <option value="USD">$ USD</option>
+                </select>
+              </div>
+            </div>
 
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              unplug
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Get away from the hustle and bustle and come sleep to the sound of the surf...in a luxurious beachfront condo with modern amenities.
-            </p>
-          </div>
+            {rates.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rate Period
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nightly
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Weekend Night
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Weekly
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Monthly
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Min Stay
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(showAllRates ? rates : rates.slice(0, 6)).map((rate, index) => (
+                      <tr key={rate.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {rate.period}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {rate.nightly ? `$${rate.nightly.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {rate.weekendNight ? `$${rate.weekendNight.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {rate.weekly ? `$${rate.weekly.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {rate.monthly ? `$${rate.monthly.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {rate.minStay ? `${rate.minStay} nights` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No rates available at this time.</p>
+              </div>
+            )}
 
-          <div className="text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              recharge
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Take a quiet stroll along the beach at sunrise or enjoy a sunset swim in the community pool. Perfect for all-year-round entertainment with tons of activities along the coast.
-            </p>
+            {rates.length > 6 && (
+              <div className="text-center mt-6">
+                <button
+                  onClick={() => setShowAllRates(!showAllRates)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                >
+                  {showAllRates ? (
+                    <>
+                      View Less Periods
+                      <ChevronUp className="w-4 h-4 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      View More Periods
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Availability Section */}
+      <section id="availability" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
+            <div className="mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Availability
+              </h2>
+              <p className="text-lg text-gray-600">
+                Last updated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
+
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => navigateMonth(1)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Next &gt;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {generateCalendarMonths().map((month, index) => (
+                <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                    {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                      <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: getFirstDayOfMonth(month) }, (_, i) => (
+                      <div key={`empty-${i}`} className="h-8"></div>
+                    ))}
+                    
+                    {Array.from({ length: getDaysInMonth(month) }, (_, i) => {
+                      const day = i + 1;
+                      const date = new Date(month.getFullYear(), month.getMonth(), day);
+                      const isAvailable = isDateAvailable(date);
+                      const isPast = isDateInPast(date);
+                      
+                      return (
+                        <div
+                          key={day}
+                          className={`h-8 flex items-center justify-center text-sm font-medium rounded ${
+                            isPast
+                              ? 'text-gray-300 bg-gray-100'
+                              : isAvailable
+                                ? 'text-gray-900 bg-green-100 hover:bg-green-200 cursor-pointer'
+                                : 'text-gray-500 bg-red-100 line-through'
+                          }`}
+                        >
+                          {day}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex justify-center space-x-6">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-100 rounded mr-2"></div>
+                <span className="text-sm text-gray-600">Available</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-100 rounded mr-2"></div>
+                <span className="text-sm text-gray-600">Unavailable</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>
+                <span className="text-sm text-gray-600">Past dates</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -453,28 +758,91 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">
-              Area Information
+              Location
             </h2>
             
-            <div className="prose max-w-none">
-              <p className="text-lg text-gray-700 mb-6">
-                Indian Shores, Florida, is a captivating seaside oasis nestled along the Gulf of Mexico's glittering coastline. Renowned for its pristine beaches, Indian Shores offers an idyllic retreat for those seeking tranquility, natural beauty, and a touch of coastal elegance. The community exudes a laid-back, welcoming atmosphere, making it a perfect destination for families, couples, and solo adventurers alike.
-              </p>
+            {/* Google Map */}
+            <div className="mb-8">
+              <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3524.1234567890!2d-82.8397222!3d27.8402222!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88c2c1234567890%3A0x1234567890abcdef!2sIndian%20Shores%2C%20FL!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Indian Shores Location Map"
+                ></iframe>
+              </div>
               
-              <p className="text-lg text-gray-700 mb-6">
-                Spanning just a few miles, this charming locale is dotted with luxurious beachfront condos, cozy vacation rentals, and inviting local eateries, all harmonizing to create a serene paradise. Indian Shores is distinguished by its soft, white sandy beaches that stretch endlessly, framed by the gentle waves of the Gulf, offering a picturesque setting for sunbathing, leisurely strolls, and unforgettable sunsets.
-              </p>
-
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4 mt-8">Attractions Within Walking Distance</h3>
-              <p className="text-lg text-gray-700 mb-6">
-                Indian Shores coffee.
-              </p>
-
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Favorite Places To Eat</h3>
-              <p className="text-lg text-gray-700 mb-6">
-                Salt Rock Grill, Bored Grill, Burrito Social, VIP Mexican Cuisine, Kooky Coconut and Slyce Pizza
-              </p>
+              {/* Map Info Overlay */}
+              <div className="mt-4 bg-white rounded-lg shadow-md p-4 border border-gray-200">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                  <div className="mb-4 md:mb-0">
+                    <p className="text-sm text-gray-600 mb-1">
+                      <strong>Coordinates:</strong> 27°50′24.8″N 82°50'22.3″W
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Plus Code:</strong> R5R6+35P Indian Shores, Florida
+                    </p>
+                    <div className="flex space-x-4">
+                      <a
+                        href="https://www.google.com/maps/dir/?api=1&destination=Indian+Shores,+FL"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        Directions
+                      </a>
+                      <a
+                        href="https://www.google.com/maps/place/Indian+Shores,+FL/@27.8402222,-82.8397222,15z"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        View larger map
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Nearest Points of Interest */}
+            <div className="mb-8">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Nearest</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Airport</h4>
+                  <p className="text-gray-600">Tampa International - 24 miles</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Bar</h4>
+                  <p className="text-gray-600">Mahuffers, Broke N Bored, Coconut Charlies - 0.5 miles</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Beach</h4>
+                  <p className="text-gray-600">Indian Shores - 10 feet</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Golf</h4>
+                  <p className="text-gray-600">Largo Golf Course - 5 miles</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Theme Park</h4>
+                  <p className="text-gray-600">Busch Gardens - 36 miles</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Nearest Restaurant</h4>
+                  <p className="text-gray-600">Salt Rock Grill - 1 mile</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -486,30 +854,47 @@ const Home = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Frequently Asked Questions
             </h2>
+            <button
+              onClick={() => setShowFAQ(!showFAQ)}
+              className="inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+            >
+              {showFAQ ? 'Hide FAQ' : 'Show FAQ'}
+              {showFAQ ? (
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
           </div>
           
-          <div className="space-y-4">
-            {faqData.map((faq) => (
-              <div key={faq.id} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-700">
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
+          {showFAQ && (
+            <div className="space-y-4">
+              {faqData.map((faq) => (
+                <div key={faq.id} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    {faq.question}
+                  </h3>
+                  <p className="text-gray-700">
+                    {faq.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <div className="mr-3">
-                <svg className="h-8 w-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Palm Run logo">
+            <div className="flex items-center justify-center mb-3">
+              <div className="mr-2">
+                <svg className="h-6 w-6" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Palm Run logo">
                   <path d="M34 28 C33 40 32 50 32 60 L28 60 C28 50 29 40 30 28 Z" fill="#8B5A2B"/>
                   <path d="M29 34 H33 M28.8 38 H32.6 M28.6 42 H32.4 M28.4 46 H32.2 M28.2 50 H32" stroke="#A87444" strokeWidth="1.6" strokeLinecap="round"/>
                   <circle cx="31" cy="28" r="2.2" fill="#6B4423"/>
@@ -521,24 +906,18 @@ const Home = () => {
                   <path d="M32 20 C30 12, 32 8, 36 6 C34 10, 34 16, 32 20 Z" fill="#1E9E57"/>
                 </svg>
               </div>
-              <span className="text-2xl font-bold"><span className="text-blue-400">Palm</span> Run</span>
+              <span className="text-xl font-bold"><span className="text-blue-400">Palm</span> Run</span>
             </div>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-300 text-sm mb-3">
               Beachfront Condo Rental • Indian Shores, FL
             </p>
-            <div className="flex justify-center space-x-6">
-              <button
-                onClick={() => setShowFAQ(!showFAQ)}
-                className="text-blue-400 hover:text-blue-300 transition-colors duration-200"
-              >
-                FAQ
-              </button>
-              <Link to="/contact" className="text-blue-400 hover:text-blue-300 transition-colors duration-200">
+            <div className="flex justify-center space-x-4">
+              <Link to="/contact" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 text-sm">
                 Contact
               </Link>
             </div>
-            <div className="mt-8 pt-8 border-t border-gray-700">
-              <p className="text-sm text-gray-400">
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <p className="text-xs text-gray-400">
                 © 2024 Palm Run. All rights reserved.
               </p>
             </div>
