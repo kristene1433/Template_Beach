@@ -431,11 +431,12 @@ const AdminDashboard = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setAvailableDeposits(data.deposits);
+        console.log('Available deposits/payments data:', data);
+        setAvailableDeposits(data.deposits || []);
       }
     } catch (error) {
-      console.error('Error fetching available deposits:', error);
-      toast.error('Failed to load available deposits');
+      console.error('Error fetching applications with payments:', error);
+      toast.error('Failed to load applications with payments');
     }
   };
 
@@ -1628,11 +1629,14 @@ const AdminDashboard = () => {
                     required
                   >
                     <option value="">Choose source application...</option>
+                    {availableDeposits.length === 0 && (
+                      <option value="" disabled>No applications with payments found</option>
+                    )}
                     {availableDeposits.map((deposit) => (
                       <option key={deposit._id} value={deposit.applicationId._id}>
                         {deposit.applicationId.applicationNumber 
-                          ? `${deposit.applicationId.applicationNumber} - ${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)}`
-                          : `${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)}`
+                          ? `${deposit.applicationId.applicationNumber} - ${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)} (${deposit.paymentCount} payment${deposit.paymentCount > 1 ? 's' : ''})`
+                          : `${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)} (${deposit.paymentCount} payment${deposit.paymentCount > 1 ? 's' : ''})`
                         }
                       </option>
                     ))}

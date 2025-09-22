@@ -745,7 +745,7 @@ router.get('/available-deposits', auth, async (req, res) => {
   }
 });
 
-// Admin: Get available deposits for transfer (any user)
+// Admin: Get applications with available payments for transfer (any user)
 router.get('/admin/available-deposits', auth, async (req, res) => {
   try {
     // Check if user is admin
@@ -759,26 +759,47 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Get all successful deposit payments for this user
-    const deposits = await Payment.find({
+    // Get all successful payments for this user (not just deposits)
+    const payments = await Payment.find({
       userId: userId,
-      paymentType: 'deposit',
       status: 'succeeded',
-      isDepositTransfer: false // Exclude already transferred deposits
+      isDepositTransfer: false // Exclude already transferred payments
     })
     .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate applicationNumber')
     .sort({ createdAt: -1 });
 
-    // Filter out deposits that have already been transferred
-    const availableDeposits = deposits.filter(deposit => {
-      // Check if this deposit has been transferred
-      return !deposit.transferredToApplicationId;
+    // Filter out payments that have already been transferred and group by application
+    const availablePayments = payments.filter(payment => {
+      return !payment.transferredToApplicationId;
     });
 
-    res.json({ deposits: availableDeposits });
+    // Group payments by application and calculate total balance for each
+    const applicationBalances = {};
+    availablePayments.forEach(payment => {
+      const appId = payment.applicationId._id.toString();
+      if (!applicationBalances[appId]) {
+        applicationBalances[appId] = {
+          applicationId: payment.applicationId,
+          totalBalance: 0,
+          paymentCount: 0
+        };
+      }
+      applicationBalances[appId].totalBalance += payment.amount;
+      applicationBalances[appId].paymentCount += 1;
+    });
+
+    // Convert to array format for frontend
+    const deposits = Object.values(applicationBalances).map(balance => ({
+      _id: balance.applicationId._id,
+      applicationId: balance.applicationId,
+      amount: balance.totalBalance,
+      paymentCount: balance.paymentCount
+    }));
+
+    res.json({ deposits });
   } catch (error) {
-    console.error('Admin available deposits fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching available deposits' });
+    console.error('Admin available payments fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching available payments' });
   }
 });
 
