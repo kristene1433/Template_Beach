@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Availability = require('../models/Availability');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { auth, adminAuth } = require('../middleware/auth');
 
 // Get availability for a date range (public endpoint)
 router.get('/', async (req, res) => {
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get all availability (admin only)
-router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/admin/all', auth, adminAuth, async (req, res) => {
   try {
 
     const { startDate, endDate } = req.query;
@@ -55,7 +55,7 @@ router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, 
 });
 
 // Update availability for a specific date (admin only)
-router.put('/admin/:date', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/admin/:date', auth, adminAuth, async (req, res) => {
   try {
 
     const { date } = req.params;
@@ -101,7 +101,7 @@ router.put('/admin/:date', authenticateToken, authorizeRole('admin'), async (req
 });
 
 // Bulk update availability for multiple dates (admin only)
-router.put('/admin/bulk', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
   try {
 
     const { dates, isAvailable, reason } = req.body;
@@ -147,7 +147,7 @@ router.put('/admin/bulk', authenticateToken, authorizeRole('admin'), async (req,
 });
 
 // Delete availability record (admin only)
-router.delete('/admin/:date', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.delete('/admin/:date', auth, adminAuth, async (req, res) => {
   try {
 
     const { date } = req.params;

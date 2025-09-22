@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Rate = require('../models/Rate');
-const { authenticateToken, authorizeRole } = require('../middleware/auth');
+const { auth, adminAuth } = require('../middleware/auth');
 
 // Get all active rates (public endpoint)
 router.get('/', async (req, res) => {
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get all rates (admin only)
-router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.get('/admin/all', auth, adminAuth, async (req, res) => {
   try {
 
     const rates = await Rate.find()
@@ -33,7 +33,7 @@ router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, 
 });
 
 // Create new rate (admin only)
-router.post('/admin', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.post('/admin', auth, adminAuth, async (req, res) => {
   try {
 
     const {
@@ -91,7 +91,7 @@ router.post('/admin', authenticateToken, authorizeRole('admin'), async (req, res
 });
 
 // Update rate (admin only)
-router.put('/admin/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.put('/admin/:id', auth, adminAuth, async (req, res) => {
   try {
 
     const {
@@ -152,7 +152,7 @@ router.put('/admin/:id', authenticateToken, authorizeRole('admin'), async (req, 
 });
 
 // Delete rate (admin only)
-router.delete('/admin/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
+router.delete('/admin/:id', auth, adminAuth, async (req, res) => {
   try {
 
     const rate = await Rate.findById(req.params.id);
