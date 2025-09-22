@@ -413,8 +413,9 @@ const AdminDashboard = () => {
     setSelectedApplicationForLease(application);
     setTransferData(prev => ({ 
       ...prev, 
-      toApplicationId: application._id,
-      fromApplicationId: '',
+      // Source is the currently viewed application
+      fromApplicationId: application._id,
+      toApplicationId: '',
       depositAmount: '',
       transferNotes: ''
     }));
@@ -460,7 +461,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     
     if (!transferData.fromApplicationId || !transferData.toApplicationId || !transferData.depositAmount) {
-      toast.error('Please select source application, destination application, and enter transfer amount');
+      toast.error('Please select destination application and enter transfer amount');
       return;
     }
 
@@ -1644,27 +1645,14 @@ const AdminDashboard = () => {
               <form onSubmit={handleTransferSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    From Application *
+                    From Application
                   </label>
-                  <select
-                    value={transferData.fromApplicationId}
-                    onChange={(e) => setTransferData(prev => ({ ...prev, fromApplicationId: e.target.value }))}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                    required
-                  >
-                    <option value="">Choose source application...</option>
-                    {availableDeposits.length === 0 && (
-                      <option value="" disabled>No applications with payments found</option>
-                    )}
-                    {availableDeposits.map((deposit) => (
-                      <option key={deposit._id} value={deposit.applicationId._id}>
-                        {deposit.applicationId.applicationNumber 
-                          ? `${deposit.applicationId.applicationNumber} - ${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)} (${deposit.paymentCount} payment${deposit.paymentCount > 1 ? 's' : ''})`
-                          : `${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)} (${deposit.paymentCount} payment${deposit.paymentCount > 1 ? 's' : ''})`
-                        }
-                      </option>
-                    ))}
-                  </select>
+                  <div className="px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-700">
+                    {selectedApplicationForLease.applicationNumber 
+                      ? `${selectedApplicationForLease.applicationNumber} - ${selectedApplicationForLease.requestedStartDate ? new Date(selectedApplicationForLease.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Current'}`
+                      : `${selectedApplicationForLease.requestedStartDate ? new Date(selectedApplicationForLease.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Current'}`
+                    }
+                  </div>
                 </div>
 
                 <div>

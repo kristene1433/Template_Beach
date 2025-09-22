@@ -152,8 +152,14 @@ const ApplicationView = () => {
       return value.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
 
+    // Normalize YYYY-MM-DD strings to local midnight to avoid UTC timezone shift
+    let normalizedValue = value;
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      normalizedValue = `${value}T00:00:00`;
+    }
+
     // If it's a number (timestamp) or string (ISO) – let Date handle it
-    const d = new Date(value);
+    const d = new Date(normalizedValue);
     if (isNaN(d.getTime())) return 'Invalid Date';
 
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
