@@ -1017,6 +1017,7 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
       stripePaymentIntentId: `admin_transfer_${Date.now()}`, // Unique ID for admin transfer
       stripeCustomerId: sourcePayments[0].stripeCustomerId, // Use customer ID from source payments
       amount: depositAmount,
+      totalAmount: depositAmount, // Set totalAmount to same as amount for admin transfers (no fees)
       currency: 'usd',
       paymentType: 'admin_transfer',
       description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,

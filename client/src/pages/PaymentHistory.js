@@ -83,6 +83,10 @@ const PaymentHistory = () => {
         return 'Security Deposit';
       case 'rent':
         return 'Rent Payment';
+      case 'admin_transfer':
+        return 'Admin Transfer';
+      case 'deposit_transfer':
+        return 'Deposit Transfer';
       default:
         return paymentType;
     }
