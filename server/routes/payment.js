@@ -762,16 +762,23 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
     // Get all successful payments for this user (not just deposits)
     const payments = await Payment.find({
       userId: userId,
-      status: 'succeeded',
-      isDepositTransfer: false // Exclude already transferred payments
+      status: 'succeeded'
+      // Removed isDepositTransfer filter to include all payments
     })
     .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate applicationNumber')
     .sort({ createdAt: -1 });
+
+    console.log(`Found ${payments.length} total successful payments for user ${userId}`);
+    payments.forEach(payment => {
+      console.log(`Payment: ${payment._id}, App: ${payment.applicationId?._id}, Amount: $${(payment.amount / 100).toFixed(2)}, Type: ${payment.paymentType}, Transfer: ${payment.isDepositTransfer}`);
+    });
 
     // Filter out payments that have already been transferred and group by application
     const availablePayments = payments.filter(payment => {
       return !payment.transferredToApplicationId;
     });
+
+    console.log(`After filtering transfers: ${availablePayments.length} available payments`);
 
     // Group payments by application and calculate total balance for each
     const applicationBalances = {};
@@ -788,6 +795,8 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
       applicationBalances[appId].paymentCount += 1;
     });
 
+    console.log(`Grouped into ${Object.keys(applicationBalances).length} applications with balances`);
+
     // Convert to array format for frontend
     const deposits = Object.values(applicationBalances).map(balance => ({
       _id: balance.applicationId._id,
@@ -795,6 +804,13 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
       amount: balance.totalBalance,
       paymentCount: balance.paymentCount
     }));
+
+    console.log(`Returning ${deposits.length} applications with balances:`, deposits.map(d => ({
+      appId: d.applicationId._id,
+      appNumber: d.applicationId.applicationNumber,
+      amount: (d.amount / 100).toFixed(2),
+      paymentCount: d.paymentCount
+    })));
 
     res.json({ deposits });
   } catch (error) {
