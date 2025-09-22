@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Rate = require('../models/Rate');
-const auth = require('../middleware/auth');
+const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
 // Get all active rates (public endpoint)
 router.get('/', async (req, res) => {
@@ -18,11 +18,8 @@ router.get('/', async (req, res) => {
 });
 
 // Get all rates (admin only)
-router.get('/admin/all', auth, async (req, res) => {
+router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const rates = await Rate.find()
       .sort({ startDate: 1 })
@@ -36,11 +33,8 @@ router.get('/admin/all', auth, async (req, res) => {
 });
 
 // Create new rate (admin only)
-router.post('/admin', auth, async (req, res) => {
+router.post('/admin', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const {
       period,
@@ -97,11 +91,8 @@ router.post('/admin', auth, async (req, res) => {
 });
 
 // Update rate (admin only)
-router.put('/admin/:id', auth, async (req, res) => {
+router.put('/admin/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const {
       period,
@@ -161,11 +152,8 @@ router.put('/admin/:id', auth, async (req, res) => {
 });
 
 // Delete rate (admin only)
-router.delete('/admin/:id', auth, async (req, res) => {
+router.delete('/admin/:id', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const rate = await Rate.findById(req.params.id);
     if (!rate) {

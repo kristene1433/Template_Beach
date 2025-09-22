@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Availability = require('../models/Availability');
-const auth = require('../middleware/auth');
+const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
 // Get availability for a date range (public endpoint)
 router.get('/', async (req, res) => {
@@ -30,11 +30,8 @@ router.get('/', async (req, res) => {
 });
 
 // Get all availability (admin only)
-router.get('/admin/all', auth, async (req, res) => {
+router.get('/admin/all', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const { startDate, endDate } = req.query;
     
@@ -58,11 +55,8 @@ router.get('/admin/all', auth, async (req, res) => {
 });
 
 // Update availability for a specific date (admin only)
-router.put('/admin/:date', auth, async (req, res) => {
+router.put('/admin/:date', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const { date } = req.params;
     const { isAvailable, reason } = req.body;
@@ -107,11 +101,8 @@ router.put('/admin/:date', auth, async (req, res) => {
 });
 
 // Bulk update availability for multiple dates (admin only)
-router.put('/admin/bulk', auth, async (req, res) => {
+router.put('/admin/bulk', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const { dates, isAvailable, reason } = req.body;
 
@@ -156,11 +147,8 @@ router.put('/admin/bulk', auth, async (req, res) => {
 });
 
 // Delete availability record (admin only)
-router.delete('/admin/:date', auth, async (req, res) => {
+router.delete('/admin/:date', authenticateToken, authorizeRole('admin'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
 
     const { date } = req.params;
     const targetDate = new Date(date);
