@@ -408,8 +408,8 @@ const AdminDashboard = () => {
     setLeaseGenerated(false);
   };
 
-  // Admin deposit transfer functions
-  const handleTransferDeposit = (application) => {
+  // Admin amount transfer functions
+  const handleTransferAmount = (application) => {
     setSelectedApplicationForLease(application);
     setTransferData(prev => ({ 
       ...prev, 
@@ -459,7 +459,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     
     if (!transferData.fromApplicationId || !transferData.toApplicationId || !transferData.depositAmount) {
-      toast.error('Please select a source deposit, destination application, and enter transfer amount');
+      toast.error('Please select source application, destination application, and enter transfer amount');
       return;
     }
 
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
     try {
       setTransferring(true);
       
-      const response = await fetch('/api/payment/admin/transfer-deposit', {
+      const response = await fetch('/api/payment/admin/transfer-amount', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -486,17 +486,17 @@ const AdminDashboard = () => {
       });
 
       if (response.ok) {
-        toast.success('Deposit transferred successfully!');
+        toast.success('Amount transferred successfully!');
         setShowTransferModal(false);
         setTransferData({ fromApplicationId: '', toApplicationId: '', depositAmount: '', transferNotes: '' });
         loadApplications(); // Refresh applications
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to transfer deposit');
+        toast.error(error.error || 'Failed to transfer amount');
       }
     } catch (error) {
-      console.error('Error transferring deposit:', error);
-      toast.error('Error transferring deposit');
+      console.error('Error transferring amount:', error);
+      toast.error('Error transferring amount');
     } finally {
       setTransferring(false);
     }
@@ -1329,11 +1329,11 @@ const AdminDashboard = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => handleTransferDeposit(selectedApplication)}
+                  onClick={() => handleTransferAmount(selectedApplication)}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                 >
                   <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  Transfer Deposit
+                  Transfer Amount
                 </button>
                 <button
                   onClick={() => deleteApplication(selectedApplication._id)}
@@ -1587,14 +1587,14 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Admin Deposit Transfer Modal */}
+      {/* Admin Amount Transfer Modal */}
       {showTransferModal && selectedApplicationForLease && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Transfer Deposit
+                  Transfer Amount
                 </h3>
                 <button
                   onClick={resetTransferModal}
@@ -1611,12 +1611,15 @@ const AdminDashboard = () => {
                 <p className="text-xs text-gray-500">
                   User ID: {selectedApplicationForLease.userId._id}
                 </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Admin can transfer any amount between this user's applications
+                </p>
               </div>
 
               <form onSubmit={handleTransferSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Deposit to Transfer *
+                    From Application *
                   </label>
                   <select
                     value={transferData.fromApplicationId}
@@ -1624,7 +1627,7 @@ const AdminDashboard = () => {
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
                     required
                   >
-                    <option value="">Choose a deposit...</option>
+                    <option value="">Choose source application...</option>
                     {availableDeposits.map((deposit) => (
                       <option key={deposit._id} value={deposit.applicationId._id}>
                         {deposit.applicationId.applicationNumber 
@@ -1638,7 +1641,7 @@ const AdminDashboard = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Transfer To Application *
+                    To Application *
                   </label>
                   <select
                     value={transferData.toApplicationId}
@@ -1660,7 +1663,7 @@ const AdminDashboard = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Transfer Amount ($) *
+                    Amount to Transfer ($) *
                   </label>
                   <input
                     type="number"
@@ -1700,7 +1703,7 @@ const AdminDashboard = () => {
                     disabled={transferring}
                     className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
                   >
-                    {transferring ? 'Transferring...' : 'Transfer Deposit'}
+                    {transferring ? 'Transferring...' : 'Transfer Amount'}
                   </button>
                 </div>
               </form>

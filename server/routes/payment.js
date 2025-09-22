@@ -908,8 +908,8 @@ router.post('/transfer-deposit', auth, async (req, res) => {
   }
 });
 
-// Admin: Transfer deposit from one application to another
-router.post('/admin/transfer-deposit', auth, async (req, res) => {
+// Admin: Transfer amount from one application to another
+router.post('/admin/transfer-amount', auth, async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
@@ -950,23 +950,26 @@ router.post('/admin/transfer-deposit', auth, async (req, res) => {
       });
     }
 
-    // Find the original deposit payment
-    const originalDeposit = await Payment.findOne({
+    // Find any successful payments for the source application to validate available balance
+    const sourcePayments = await Payment.find({
       userId: fromApp.userId._id,
       applicationId: fromApplicationId,
-      paymentType: 'deposit',
-      status: 'succeeded',
-      isDepositTransfer: false
+      status: 'succeeded'
     });
 
-    if (!originalDeposit) {
-      return res.status(404).json({ error: 'No deposit found in source application' });
+    if (sourcePayments.length === 0) {
+      return res.status(404).json({ error: 'No payments found in source application' });
     }
 
-    // Check if deposit amount is valid
-    if (depositAmount > originalDeposit.amount) {
+    // Calculate total available balance from source application
+    const totalSourceBalance = sourcePayments.reduce((sum, payment) => {
+      return sum + payment.amount;
+    }, 0);
+
+    // Check if transfer amount is valid (admin can transfer any amount up to total balance)
+    if (depositAmount > totalSourceBalance) {
       return res.status(400).json({ 
-        error: 'Transfer amount cannot exceed original deposit amount' 
+        error: `Transfer amount cannot exceed available balance of $${(totalSourceBalance / 100).toFixed(2)}` 
       });
     }
 
@@ -975,23 +978,23 @@ router.post('/admin/transfer-deposit', auth, async (req, res) => {
       userId: fromApp.userId._id,
       applicationId: toApplicationId,
       stripePaymentIntentId: `admin_transfer_${Date.now()}`, // Unique ID for admin transfer
-      stripeCustomerId: originalDeposit.stripeCustomerId,
+      stripeCustomerId: sourcePayments[0].stripeCustomerId, // Use customer ID from source payments
       amount: depositAmount,
       currency: 'usd',
-      paymentType: 'deposit_transfer',
-      description: `Admin transfer: Deposit from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      paymentType: 'admin_transfer',
+      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
       status: 'succeeded',
       paidAt: new Date(),
       isDepositTransfer: true,
       transferredFromApplicationId: fromApplicationId,
       transferredToApplicationId: toApplicationId,
-      originalDepositAmount: originalDeposit.amount,
+      originalDepositAmount: depositAmount,
       transferNotes: transferNotes || '',
       metadata: {
         propertyAddress: toApp.address,
         leaseStartDate: toApp.requestedStartDate,
         leaseEndDate: toApp.requestedEndDate,
-        notes: `Admin transferred from application ${fromApplicationId}`,
+        notes: `Admin transferred $${(depositAmount / 100).toFixed(2)} from application ${fromApplicationId}`,
         adminTransferred: true
       }
     });
@@ -1003,19 +1006,15 @@ router.post('/admin/transfer-deposit', auth, async (req, res) => {
     toApp.lastUpdated = new Date();
     await toApp.save();
 
-    // Mark the original deposit as transferred
-    originalDeposit.transferredToApplicationId = toApplicationId;
-    await originalDeposit.save();
-
-    console.log(`Admin deposit transfer completed: ${depositAmount} from ${fromApplicationId} to ${toApplicationId} for user ${fromApp.userId.email}`);
+    console.log(`Admin amount transfer completed: $${(depositAmount / 100).toFixed(2)} from ${fromApplicationId} to ${toApplicationId} for user ${fromApp.userId.email}`);
 
     res.json({ 
-      message: 'Deposit transfer completed successfully',
+      message: 'Amount transfer completed successfully',
       transfer: transferPayment
     });
   } catch (error) {
-    console.error('Admin deposit transfer error:', error);
-    res.status(500).json({ error: 'Server error processing deposit transfer' });
+    console.error('Admin amount transfer error:', error);
+    res.status(500).json({ error: 'Server error processing amount transfer' });
   }
 });
 
