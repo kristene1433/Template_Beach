@@ -150,10 +150,15 @@ export const sendPaymentReceiptEmail = async (data) => {
 
 // Send password reset email
 export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
-  console.log('📧 Sending password reset email...');
+  console.log('📧 Sending password reset email...', { email, resetUrl });
   
   if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
     console.error('❌ Password reset email skipped: EmailJS not configured');
+    console.error('Missing config:', {
+      SERVICE_ID: !!EMAILJS_CONFIG.SERVICE_ID,
+      PASSWORD_RESET_TEMPLATE_ID: !!EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID,
+      PUBLIC_KEY: !!EMAILJS_CONFIG.PUBLIC_KEY
+    });
     return { success: false, error: 'EmailJS not fully configured for password reset emails' };
   }
 
@@ -162,9 +167,9 @@ export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
       EMAILJS_CONFIG.SERVICE_ID,
       EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID,
       {
-        to_email: email,
+        user_email: email,
+        user_name: email.split('@')[0], // Use email prefix as name if no name available
         reset_url: resetUrl,
-        reset_token: resetToken,
         company_name: 'Palm Run LLC',
         property_address: '18650 Gulf Blvd Unit 207, Indian Shores, FL 33785',
         sent_date: new Date().toLocaleDateString('en-US', {
@@ -180,8 +185,12 @@ export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
     console.log('✅ Password reset email sent successfully!');
     return { success: true, data: response };
   } catch (error) {
-    console.error('❌ Password reset email failed:', error.message);
-    return { success: false, error: error.message };
+    console.error('❌ Password reset email failed:', error);
+    if (error.status === 400) {
+      console.warn('⚠️ EmailJS password reset template may be missing or invalid. Password reset email skipped.');
+      return { success: false, error: 'Email template not configured' };
+    }
+    return { success: false, error: error.message || 'Unknown email error' };
   }
 };
 

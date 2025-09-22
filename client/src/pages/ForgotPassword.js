@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendPasswordResetEmail } from '../utils/emailjs';
+import { testPasswordResetConfig } from '../utils/debugEmailJS';
 import Navigation from '../components/Navigation';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -30,6 +31,16 @@ const ForgotPassword = () => {
       return;
     }
 
+    // Debug EmailJS configuration
+    console.log('🔍 Debugging EmailJS configuration...');
+    const isConfigured = testPasswordResetConfig();
+    
+    if (!isConfigured) {
+      console.error('❌ EmailJS password reset not configured properly');
+      setError('Email service not configured. Please contact support.');
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await forgotPassword(email);
@@ -43,10 +54,17 @@ const ForgotPassword = () => {
               setEmailSent(true);
               toast.success('Password reset instructions sent to your email!');
             } else {
-              // Email failed but token was generated, still show success for security
-              setEmailSent(true);
-              toast.success('Password reset instructions sent to your email!');
-              console.warn('Email sending failed but token was generated:', emailResult.error);
+              // Check if it's a template configuration issue
+              if (emailResult.error.includes('template') || emailResult.error.includes('configured')) {
+                setEmailSent(true);
+                toast.success('Password reset instructions sent to your email!');
+                console.warn('Email template not configured, but token was generated:', emailResult.error);
+              } else {
+                // Other email errors - show error but still generate token for security
+                setEmailSent(true);
+                toast.success('Password reset instructions sent to your email!');
+                console.error('Email sending failed but token was generated:', emailResult.error);
+              }
             }
           } catch (emailError) {
             // Email failed but token was generated, still show success for security
