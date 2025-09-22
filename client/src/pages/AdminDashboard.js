@@ -1024,6 +1024,53 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
+                {/* Quick Lookups */}
+                <div className="space-y-2">
+                  <h4 className="text-md font-medium text-gray-900 border-b pb-2">
+                    Quick Lookups
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${selectedApplication.firstName} ${selectedApplication.lastName}`)}${selectedApplication.userId?.email ? `%20${encodeURIComponent(selectedApplication.userId.email)}` : ''}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Google Search
+                    </a>
+                    <a
+                      href={`https://www.facebook.com/search/people/?q=${encodeURIComponent(`${selectedApplication.firstName} ${selectedApplication.lastName}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Facebook People
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${selectedApplication.firstName} ${selectedApplication.lastName}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      LinkedIn People
+                    </a>
+                    {selectedApplication.userId?.email && (
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(selectedApplication.userId.email)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Google Email
+                      </a>
+                    )}
+                  </div>
+                </div>
+
                 {/* Application Status */}
                 <div className="space-y-4">
                   <h4 className="text-md font-medium text-gray-900 border-b pb-2">

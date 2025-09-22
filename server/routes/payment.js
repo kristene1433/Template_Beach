@@ -1020,7 +1020,7 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
       totalAmount: depositAmount, // Set totalAmount to same as amount for admin transfers (no fees)
       currency: 'usd',
       paymentType: 'admin_transfer',
-      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} from ${fromApp.requestedStartDate ? new Date(fromApp.requestedStartDate).getFullYear() : 'previous'} to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} from ${fromApp.applicationNumber || 'Previous'} to ${toApp.applicationNumber || 'Current'} application`,
       status: 'succeeded',
       paidAt: new Date(),
       isDepositTransfer: true,
@@ -1047,7 +1047,7 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
       totalAmount: -depositAmount, // Negative amount to show as debit
       currency: 'usd',
       paymentType: 'admin_transfer',
-      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} transferred to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} transferred to ${toApp.applicationNumber || 'Current'} application`,
       status: 'succeeded',
       paidAt: new Date(),
       isDepositTransfer: true,
