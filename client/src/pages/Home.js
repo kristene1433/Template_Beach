@@ -51,6 +51,28 @@ const Home = () => {
       verified: true,
       stayed: 'October 2024',
       expanded: false
+    },
+    {
+      id: 4,
+      name: 'Kathy V.',
+      rating: 4,
+      date: '2023-12-07',
+      title: 'Beautiful View',
+      content: 'The perfect spot right on the Beach facing the ocean watching the dolphins go by,quiet area on the beach.Condo was stocked with whatever you need and the owner very responsive if u need anything.Booked for next year already.',
+      verified: true,
+      stayed: 'October 2023',
+      expanded: false
+    },
+    {
+      id: 5,
+      name: 'Sheron M.',
+      rating: 3,
+      date: '2023-06-05',
+      title: 'Winter 2 month getaway',
+      content: 'We had a very nice 2 month stay at this really well equipped 2 bdrm condo which had been renovated with a new kitchen, living room and everything you could need. Being located on the 2nd floor was perfect for coming and going without using elevators. Jay the owner was extremely helpful. Was very quick answering any questions and came right over when the battery in the electric door opener died. The beach was steps away. Easy walk to restaurants and short drive to shopping. I would recommend this unit to anyone.',
+      verified: true,
+      stayed: 'January 2023',
+      expanded: false
     }
   ]);
 
