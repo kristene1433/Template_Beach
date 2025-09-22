@@ -1010,11 +1010,11 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
       });
     }
 
-    // Create transfer record
+    // Create transfer record for destination (positive)
     const transferPayment = new Payment({
       userId: fromApp.userId._id,
       applicationId: toApplicationId,
-      stripePaymentIntentId: `admin_transfer_${Date.now()}`, // Unique ID for admin transfer
+      stripePaymentIntentId: `admin_transfer_${Date.now()}_to`, // Unique ID for admin transfer
       stripeCustomerId: sourcePayments[0].stripeCustomerId, // Use customer ID from source payments
       amount: depositAmount,
       totalAmount: depositAmount, // Set totalAmount to same as amount for admin transfers (no fees)
@@ -1037,7 +1037,35 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
       }
     });
 
-    await transferPayment.save();
+    // Create debit record for source (negative)
+    const transferDebit = new Payment({
+      userId: fromApp.userId._id,
+      applicationId: fromApplicationId,
+      stripePaymentIntentId: `admin_transfer_${Date.now()}_from`, // Unique ID for admin transfer
+      stripeCustomerId: sourcePayments[0].stripeCustomerId, // Use customer ID from source payments
+      amount: -depositAmount, // Negative amount to show as debit
+      totalAmount: -depositAmount, // Negative amount to show as debit
+      currency: 'usd',
+      paymentType: 'admin_transfer',
+      description: `Admin transfer: $${(depositAmount / 100).toFixed(2)} transferred to ${toApp.requestedStartDate ? new Date(toApp.requestedStartDate).getFullYear() : 'current'} application`,
+      status: 'succeeded',
+      paidAt: new Date(),
+      isDepositTransfer: true,
+      transferredFromApplicationId: fromApplicationId,
+      transferredToApplicationId: toApplicationId,
+      originalDepositAmount: depositAmount,
+      transferNotes: transferNotes || '',
+      metadata: {
+        propertyAddress: fromApp.address,
+        leaseStartDate: fromApp.requestedStartDate,
+        leaseEndDate: fromApp.requestedEndDate,
+        notes: `Admin transferred $${(depositAmount / 100).toFixed(2)} to application ${toApplicationId}`,
+        adminTransferred: true
+      }
+    });
+
+    // Save both records
+    await Promise.all([transferPayment.save(), transferDebit.save()]);
 
     // Update the destination application to mark payment as received
     toApp.paymentReceived = true;
