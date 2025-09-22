@@ -766,7 +766,7 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
       status: 'succeeded',
       isDepositTransfer: false // Exclude already transferred deposits
     })
-    .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate')
+    .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate applicationNumber')
     .sort({ createdAt: -1 });
 
     // Filter out deposits that have already been transferred
@@ -779,6 +779,34 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
   } catch (error) {
     console.error('Admin available deposits fetch error:', error);
     res.status(500).json({ error: 'Server error fetching available deposits' });
+  }
+});
+
+// Admin: Get all user applications for transfer destination selection
+router.get('/admin/user-applications', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Get all applications for this user
+    const applications = await Application.find({
+      userId: userId
+    })
+    .select('firstName lastName requestedStartDate requestedEndDate applicationNumber status paymentReceived createdAt')
+    .sort({ createdAt: -1 });
+
+    res.json({ applications });
+  } catch (error) {
+    console.error('Admin user applications fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching user applications' });
   }
 });
 

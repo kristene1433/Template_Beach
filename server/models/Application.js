@@ -6,6 +6,11 @@ const applicationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  applicationNumber: {
+    type: String,
+    unique: true,
+    sparse: true // Allow null values but ensure uniqueness when set
+  },
   // Personal Information
   firstName: {
     type: String,
@@ -181,7 +186,33 @@ applicationSchema.virtual('fullAddress').get(function() {
 });
 
 // Pre-save middleware to automatically set submittedAt when status changes to 'pending'
-applicationSchema.pre('save', function(next) {
+applicationSchema.pre('save', async function(next) {
+  // Generate application number if not set
+  if (!this.applicationNumber && this.isNew) {
+    try {
+      // Find the highest application number
+      const lastApp = await this.constructor.findOne(
+        { applicationNumber: { $exists: true, $ne: null } },
+        { applicationNumber: 1 },
+        { sort: { applicationNumber: -1 } }
+      );
+      
+      let nextNumber = 1;
+      if (lastApp && lastApp.applicationNumber) {
+        const lastNum = parseInt(lastApp.applicationNumber.replace('APP-', ''));
+        if (!isNaN(lastNum)) {
+          nextNumber = lastNum + 1;
+        }
+      }
+      
+      this.applicationNumber = `APP-${nextNumber.toString().padStart(4, '0')}`;
+      console.log(`Generated application number: ${this.applicationNumber}`);
+    } catch (error) {
+      console.error('Error generating application number:', error);
+      // Continue without application number if generation fails
+    }
+  }
+
   // Only set submittedAt when status changes to 'pending' and it's not already set
   if (this.isModified('status') && this.status === 'pending' && !this.submittedAt) {
     this.submittedAt = new Date();

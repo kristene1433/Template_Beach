@@ -35,6 +35,7 @@ const AdminDashboard = () => {
   const [selectedApplicationForDocuments, setSelectedApplicationForDocuments] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [availableDeposits, setAvailableDeposits] = useState([]);
+  const [userApplications, setUserApplications] = useState([]);
   const [transferData, setTransferData] = useState({
     fromApplicationId: '',
     toApplicationId: '',
@@ -410,9 +411,16 @@ const AdminDashboard = () => {
   // Admin deposit transfer functions
   const handleTransferDeposit = (application) => {
     setSelectedApplicationForLease(application);
-    setTransferData(prev => ({ ...prev, toApplicationId: application._id }));
+    setTransferData(prev => ({ 
+      ...prev, 
+      toApplicationId: application._id,
+      fromApplicationId: '',
+      depositAmount: '',
+      transferNotes: ''
+    }));
     setShowTransferModal(true);
     fetchAvailableDeposits(application.userId._id);
+    fetchUserApplications(application.userId._id);
   };
 
   const fetchAvailableDeposits = async (userId) => {
@@ -431,11 +439,32 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchUserApplications = async (userId) => {
+    try {
+      const response = await fetch(`/api/payment/admin/user-applications?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUserApplications(data.applications);
+      }
+    } catch (error) {
+      console.error('Error fetching user applications:', error);
+      toast.error('Failed to load user applications');
+    }
+  };
+
   const handleTransferSubmit = async (e) => {
     e.preventDefault();
     
     if (!transferData.fromApplicationId || !transferData.toApplicationId || !transferData.depositAmount) {
-      toast.error('Please select a deposit, destination application, and enter transfer amount');
+      toast.error('Please select a source deposit, destination application, and enter transfer amount');
+      return;
+    }
+
+    if (transferData.fromApplicationId === transferData.toApplicationId) {
+      toast.error('Source and destination applications cannot be the same');
       return;
     }
 
@@ -477,6 +506,7 @@ const AdminDashboard = () => {
     setShowTransferModal(false);
     setTransferData({ fromApplicationId: '', toApplicationId: '', depositAmount: '', transferNotes: '' });
     setAvailableDeposits([]);
+    setUserApplications([]);
   };
 
   // Fetch payments for a specific application
@@ -796,6 +826,11 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
+                            {application.applicationNumber && (
+                              <span className="text-blue-600 font-semibold mr-2">
+                                {application.applicationNumber}
+                              </span>
+                            )}
                             {application.firstName} {application.lastName}
                             {application.secondApplicantFirstName && application.secondApplicantLastName && (
                               <span className="text-gray-500 ml-1">
@@ -917,6 +952,11 @@ const AdminDashboard = () => {
                       <UserCheck className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-sm">
                         <strong>Name:</strong> {selectedApplication.firstName} {selectedApplication.lastName}
+                        {selectedApplication.applicationNumber && (
+                          <span className="ml-2 text-blue-600 font-semibold">
+                            ({selectedApplication.applicationNumber})
+                          </span>
+                        )}
                       </span>
                     </div>
                     {selectedApplication.secondApplicantFirstName && selectedApplication.secondApplicantLastName && (
@@ -1564,15 +1604,12 @@ const AdminDashboard = () => {
                 </button>
               </div>
 
-              <div className="mb-4">
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  Transfer deposit to: <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
+                  Transferring for: <strong>{selectedApplicationForLease.firstName} {selectedApplicationForLease.lastName}</strong>
                 </p>
                 <p className="text-xs text-gray-500">
-                  Application: {selectedApplicationForLease.requestedStartDate 
-                    ? `${new Date(selectedApplicationForLease.requestedStartDate).getFullYear()}`
-                    : 'Current Application'
-                  }
+                  User ID: {selectedApplicationForLease.userId._id}
                 </p>
               </div>
 
@@ -1590,9 +1627,31 @@ const AdminDashboard = () => {
                     <option value="">Choose a deposit...</option>
                     {availableDeposits.map((deposit) => (
                       <option key={deposit._id} value={deposit.applicationId._id}>
-                        {deposit.applicationId.requestedStartDate 
-                          ? `${new Date(deposit.applicationId.requestedStartDate).getFullYear()} - $${(deposit.amount / 100).toFixed(2)}`
-                          : `Previous Application - $${(deposit.amount / 100).toFixed(2)}`
+                        {deposit.applicationId.applicationNumber 
+                          ? `${deposit.applicationId.applicationNumber} - ${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)}`
+                          : `${deposit.applicationId.requestedStartDate ? new Date(deposit.applicationId.requestedStartDate).getFullYear() : 'Previous'} - $${(deposit.amount / 100).toFixed(2)}`
+                        }
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer To Application *
+                  </label>
+                  <select
+                    value={transferData.toApplicationId}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, toApplicationId: e.target.value }))}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    required
+                  >
+                    <option value="">Choose destination application...</option>
+                    {userApplications.map((application) => (
+                      <option key={application._id} value={application._id}>
+                        {application.applicationNumber 
+                          ? `${application.applicationNumber} - ${application.requestedStartDate ? new Date(application.requestedStartDate).getFullYear() : 'Current'} (${application.status})`
+                          : `${application.requestedStartDate ? new Date(application.requestedStartDate).getFullYear() : 'Current'} (${application.status})`
                         }
                       </option>
                     ))}
