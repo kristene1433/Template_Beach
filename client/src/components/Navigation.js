@@ -60,7 +60,7 @@ const Navigation = () => {
                     : 'text-gray-600 hover:text-blue-600'
                 }`}
               >
-                Gallery
+                {/* Gallery link removed; now a section in Home */}
               </Link>
               <Link 
                 to="/register" 
@@ -129,7 +129,7 @@ const Navigation = () => {
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Gallery
+              {/* Gallery */}
             </Link>
             <Link 
               to="/register" 

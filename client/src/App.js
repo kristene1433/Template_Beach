@@ -29,7 +29,6 @@ import AdminPaymentHistory from './pages/AdminPaymentHistory';
 import ContactForm from './components/ContactForm';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
-import Gallery from './pages/Gallery';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -149,7 +148,7 @@ const AppRoutes = () => {
         path="/contact" 
         element={<ContactForm />} 
       />
-      <Route path="/gallery" element={<Gallery />} />
+      {/* Gallery route removed; moved into Home as a section */}
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route 

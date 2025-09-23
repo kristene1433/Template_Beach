@@ -114,13 +114,31 @@ router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
       return res.status(400).json({ error: 'isAvailable must be a boolean' });
     }
 
-    const operations = dates.map(date => ({
+    // Normalize all dates to the start of the day to ensure consistent matching
+    const toStartOfDay = (d) => {
+      const parsed = new Date(d);
+      if (isNaN(parsed.getTime())) return null;
+      parsed.setHours(0, 0, 0, 0);
+      return parsed;
+    };
+
+    const normalizedDates = dates
+      .map(toStartOfDay)
+      .filter(Boolean);
+
+    if (normalizedDates.length === 0) {
+      return res.status(400).json({ error: 'No valid dates provided' });
+    }
+
+    const operations = normalizedDates.map(date => ({
       updateOne: {
-        filter: { date: new Date(date) },
+        filter: { date },
         update: {
-          isAvailable,
-          reason: reason || '',
-          updatedBy: req.user.id
+          $set: {
+            isAvailable,
+            reason: reason || '',
+            updatedBy: req.user.id
+          }
         },
         upsert: true
       }
@@ -130,7 +148,7 @@ router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
 
     // Update createdBy for any new records
     const newRecords = await Availability.find({
-      date: { $in: dates.map(d => new Date(d)) },
+      date: { $in: normalizedDates },
       createdBy: { $exists: false }
     });
 

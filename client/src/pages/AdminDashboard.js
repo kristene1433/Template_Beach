@@ -131,7 +131,12 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setAvailability(data.availability || []);
+        // Normalize dates to YYYY-MM-DD for stable comparisons in UI
+        const normalized = (data.availability || []).map(item => ({
+          ...item,
+          date: new Date(item.date).toISOString() // ensure iso string
+        }));
+        setAvailability(normalized);
       } else {
         toast.error('Failed to load availability');
       }
@@ -810,7 +815,17 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         toast.success(`Date ${isAvailable ? 'marked as available' : 'marked as unavailable'}`);
-        loadAvailability();
+        // Optimistic update
+        const dateKey = date.toISOString().split('T')[0];
+        setAvailability(prev => {
+          const idx = prev.findIndex(r => r.date.split('T')[0] === dateKey);
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = { ...copy[idx], isAvailable };
+            return copy;
+          }
+          return [...prev, { date: new Date(dateKey).toISOString(), isAvailable }];
+        });
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to update availability');
@@ -843,9 +858,21 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         toast.success(`${selectedDates.length} dates ${isAvailable ? 'marked as available' : 'marked as unavailable'}`);
+        const keys = selectedDates.map(d => d.toISOString().split('T')[0]);
+        setAvailability(prev => {
+          const map = new Map(prev.map(r => [r.date.split('T')[0], r]));
+          keys.forEach(k => {
+            const existing = map.get(k);
+            if (existing) {
+              map.set(k, { ...existing, isAvailable });
+            } else {
+              map.set(k, { date: new Date(k).toISOString(), isAvailable });
+            }
+          });
+          return Array.from(map.values());
+        });
         setSelectedDates([]);
         setAvailabilityMode('view');
-        loadAvailability();
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to update availability');

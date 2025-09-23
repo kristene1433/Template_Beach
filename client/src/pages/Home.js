@@ -19,12 +19,12 @@ import {
 
 const Home = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
-  const [showFAQ, setShowFAQ] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [showOverviewDetails, setShowOverviewDetails] = useState(false);
   const [rates, setRates] = useState([]);
   const [showAllRates, setShowAllRates] = useState(false);
   const [availability, setAvailability] = useState([]);
+  const [showGallery, setShowGallery] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [reviews, setReviews] = useState([
     {
@@ -114,32 +114,16 @@ const Home = () => {
 
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
 
-  const faqData = [
-    {
-      id: 1,
-      question: "Is the condo fully stocked with amenities like high speed wifi, cable, one 45\" HDTV in living room, beach towels, beach chairs, paper towels, toilet paper, etc.",
-      answer: "Yes"
-    },
-    {
-      id: 2,
-      question: "How do I access the property to check in.",
-      answer: "You will be provided with a door code on your day of arrival one hour before check in."
-    },
-    {
-      id: 3,
-      question: "What about parking?",
-      answer: "There is a dedicated parking spot for 1 car. Additional cars may park in visitor spots if available. There is also a public parking, boat dock across the street for a small daily fee."
-    }
-  ];
+  // FAQ removed
 
   const navigationItems = [
     { id: 'overview', label: 'Overview' },
+    { id: 'gallery', label: 'Gallery' },
     { id: 'rates', label: 'Rates' },
     { id: 'availability', label: 'Availability' },
     { id: 'amenities', label: 'Amenities' },
     { id: 'reviews', label: 'Reviews' },
-    { id: 'location', label: 'Location' },
-    { id: 'faq', label: 'FAQ' }
+    { id: 'location', label: 'Location' }
   ];
 
   const scrollToSection = (sectionId) => {
@@ -272,10 +256,52 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Gallery Section */}
+      <section id="gallery" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Gallery</h2>
+              <button
+                onClick={() => setShowGallery(prev => !prev)}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                {showGallery ? 'Hide Photos' : 'Show Photos'}
+              </button>
+            </div>
+
+            {showGallery && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[
+                  '/images/condoFront.jpeg',
+                  '/images/condoBack.jpeg',
+                  '/images/livingroom.jpg',
+                  '/images/kitchen.jpg',
+                  '/images/bedroom1.jpg',
+                  '/images/bedroom2.jpg',
+                  '/images/bathroom1.jpg',
+                  '/images/bathroom2.jpg',
+                  '/images/patio.jpg'
+                ].map((src, idx) => (
+                  <div key={idx} className="overflow-hidden rounded-lg shadow-sm">
+                    <img
+                      src={src}
+                      alt={`Gallery ${idx + 1}`}
+                      className="w-full h-40 md:h-48 object-cover transform hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Navigation Bar */}
       <section className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center space-x-2 py-6">
+          <div className="flex flex-wrap justify-center items-center gap-3 py-6">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
@@ -829,46 +855,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
-            </h2>
-            <button
-              onClick={() => setShowFAQ(!showFAQ)}
-              className="inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
-            >
-              {showFAQ ? 'Hide FAQ' : 'Show FAQ'}
-              {showFAQ ? (
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </button>
-          </div>
-          
-          {showFAQ && (
-            <div className="space-y-4">
-              {faqData.map((faq) => (
-                <div key={faq.id} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    {faq.question}
-                  </h3>
-                  <p className="text-gray-700">
-                    {faq.answer}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      {/* FAQ removed per request */}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-6">
