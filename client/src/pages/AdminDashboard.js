@@ -132,10 +132,12 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         // Normalize dates to YYYY-MM-DD for stable comparisons in UI
-        const normalized = (data.availability || []).map(item => ({
-          ...item,
-          date: new Date(item.date).toISOString() // ensure iso string
-        }));
+        const normalized = (data.availability || []).map(item => {
+          const d = new Date(item.date);
+          // Store as UTC midnight string to ensure consistent match
+          d.setUTCHours(0, 0, 0, 0);
+          return { ...item, date: d.toISOString() };
+        });
         setAvailability(normalized);
       } else {
         toast.error('Failed to load availability');
@@ -824,7 +826,9 @@ const AdminDashboard = () => {
             copy[idx] = { ...copy[idx], isAvailable };
             return copy;
           }
-          return [...prev, { date: new Date(dateKey).toISOString(), isAvailable }];
+          const d = new Date(dateKey);
+          d.setUTCHours(0, 0, 0, 0);
+          return [...prev, { date: d.toISOString(), isAvailable }];
         });
       } else {
         const errorData = await response.json();
@@ -866,7 +870,9 @@ const AdminDashboard = () => {
             if (existing) {
               map.set(k, { ...existing, isAvailable });
             } else {
-              map.set(k, { date: new Date(k).toISOString(), isAvailable });
+              const d = new Date(k);
+              d.setUTCHours(0, 0, 0, 0);
+              map.set(k, { date: d.toISOString(), isAvailable });
             }
           });
           return Array.from(map.values());

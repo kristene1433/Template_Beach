@@ -219,7 +219,8 @@ const Home = () => {
 
   const generateCalendarMonths = () => {
     const months = [];
-    for (let i = -1; i < 5; i++) {
+    // Show only 3 months starting from the currentMonth selection
+    for (let i = 0; i < 3; i++) {
       const month = new Date(currentMonth);
       month.setMonth(currentMonth.getMonth() + i);
       months.push(month);
@@ -481,7 +482,7 @@ const Home = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {(showAllRates ? rates : rates.slice(0, 6)).map((rate, index) => (
+                    {(showAllRates ? rates : rates.slice(0, 5)).map((rate, index) => (
                       <tr key={rate.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {rate.period}
@@ -503,7 +504,7 @@ const Home = () => {
               </div>
             )}
 
-            {rates.length > 6 && (
+            {rates.length > 5 && (
               <div className="text-center mt-6">
                 <button
                   onClick={() => setShowAllRates(!showAllRates)}
