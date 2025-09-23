@@ -41,7 +41,7 @@ const Navigation = () => {
           </div>
           
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
+            <div className="ml-6 flex items-center space-x-8">
               <Link 
                 to="/" 
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
@@ -51,16 +51,6 @@ const Navigation = () => {
                 }`}
               >
                 Home
-              </Link>
-              <Link 
-                to="/gallery" 
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive('/gallery') 
-                    ? 'text-blue-600' 
-                    : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                {/* Gallery link removed; now a section in Home */}
               </Link>
               <Link 
                 to="/register" 
@@ -119,17 +109,6 @@ const Navigation = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
-            </Link>
-            <Link 
-              to="/gallery" 
-              className={`block px-3 py-2 transition-colors ${
-                isActive('/gallery') 
-                  ? 'text-blue-600' 
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {/* Gallery */}
             </Link>
             <Link 
               to="/register" 

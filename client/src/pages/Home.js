@@ -24,7 +24,6 @@ const Home = () => {
   const [rates, setRates] = useState([]);
   const [showAllRates, setShowAllRates] = useState(false);
   const [availability, setAvailability] = useState([]);
-  const [showGallery, setShowGallery] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [reviews, setReviews] = useState([
     {
@@ -113,6 +112,19 @@ const Home = () => {
   ];
 
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
+
+  // Gallery items with captions
+  const galleryItems = [
+    { src: '/images/condoFront.jpeg', caption: 'Front of Building' },
+    { src: '/images/condoBack.jpeg', caption: 'Back of Building' },
+    { src: '/images/livingroom.jpg', caption: 'Living Room' },
+    { src: '/images/kitchen.jpg', caption: 'Kitchen' },
+    { src: '/images/bedroom1.jpg', caption: 'Primary Bedroom' },
+    { src: '/images/bedroom2.jpg', caption: 'Second Bedroom' },
+    { src: '/images/bathroom1.jpg', caption: 'Primary Bathroom' },
+    { src: '/images/bathroom2.jpg', caption: 'Second Bathroom' },
+    { src: '/images/patio.jpg', caption: 'Patio / Balcony' }
+  ];
 
   // FAQ removed
 
@@ -256,60 +268,20 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Gallery Section */}
-      <section id="gallery" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Gallery</h2>
-              <button
-                onClick={() => setShowGallery(prev => !prev)}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                {showGallery ? 'Hide Photos' : 'Show Photos'}
-              </button>
-            </div>
-
-            {showGallery && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {[
-                  '/images/condoFront.jpeg',
-                  '/images/condoBack.jpeg',
-                  '/images/livingroom.jpg',
-                  '/images/kitchen.jpg',
-                  '/images/bedroom1.jpg',
-                  '/images/bedroom2.jpg',
-                  '/images/bathroom1.jpg',
-                  '/images/bathroom2.jpg',
-                  '/images/patio.jpg'
-                ].map((src, idx) => (
-                  <div key={idx} className="overflow-hidden rounded-lg shadow-sm">
-                    <img
-                      src={src}
-                      alt={`Gallery ${idx + 1}`}
-                      className="w-full h-40 md:h-48 object-cover transform hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      
 
       {/* Navigation Bar */}
       <section className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center items-center gap-3 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center md:justify-center gap-2 py-2 md:py-6 overflow-x-auto">
             {navigationItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
+                className={`px-3 py-2 text-sm md:px-6 md:py-3 md:text-base font-semibold rounded-full transition-all duration-200 whitespace-nowrap ${
                   activeSection === item.id
-                    ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 hover:shadow-sm'
+                    ? 'bg-blue-600 text-white shadow md:shadow-md'
+                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50 md:hover:shadow-sm'
                 }`}
               >
                 {item.label}
@@ -345,7 +317,7 @@ const Home = () => {
                   <div className="text-sm text-gray-600">Bathrooms</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">1000</div>
+                  <div className="text-2xl font-bold text-gray-900">990</div>
                   <div className="text-sm text-gray-600">sq. ft.</div>
                 </div>
               </div>
@@ -378,10 +350,7 @@ const Home = () => {
                 Perched on the 2nd floor in the heart of Gulfshores, our beachfront 2BR/2BA condo sits just 10 feet above the sugar-white sands of Indian Shores. Enjoy breathtaking ocean views, direct beach access, and relax in the Gulfshores pool after a day in the sun!
               </p>
 
-              <h4 className="text-xl font-semibold text-gray-900 mb-4">Why Kids Love It</h4>
-              <p className="text-lg text-gray-700 mb-6">
-                Because it is the beach!!
-              </p>
+              
 
               {/* Show More/Show Less Toggle */}
               <div className="text-center mb-6">
@@ -442,6 +411,34 @@ const Home = () => {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Section (below Overview) */}
+      <section id="gallery" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-lg p-8">
+            <div className="mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Gallery</h2>
+              <p className="text-gray-600 mt-2">A look inside and around the condo.</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {galleryItems.map((item, idx) => (
+                <figure key={idx} className="overflow-hidden rounded-lg shadow-sm bg-white">
+                  <img
+                    src={item.src}
+                    alt={item.caption}
+                    className="w-full h-40 md:h-48 object-cover transform hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <figcaption className="px-3 py-2 text-sm text-gray-700 border-t">
+                    {item.caption}
+                  </figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         </div>
