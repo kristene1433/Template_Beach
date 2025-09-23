@@ -15,12 +15,10 @@ const PaymentSuccess = () => {
 
   const sessionId = searchParams.get('session_id');
   
-  // Debug: Log when component loads
-  console.log('🚀 PaymentSuccess component loaded', {
-    sessionId: sessionId ? 'Present' : 'Missing',
-    user: user?.email,
-    authLoading
-  });
+  // Debug: Log when component loads (dev only)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🚀 PaymentSuccess component loaded');
+  }
   
   useEffect(() => {
     const load = async () => {

@@ -10,24 +10,27 @@ export const EMAILJS_CONFIG = {
   PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY,
 };
 
-// Debug: Log configuration on load (without exposing sensitive data)
-console.log('🔧 EmailJS Configuration loaded:', {
-  SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
-  CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
-  LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
-  PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
-  PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
-});
-
-// Validate configuration
-export const validateEmailJSConfig = () => {
-  console.log('EmailJS Config Check:', {
+if (process.env.NODE_ENV !== 'production') {
+  console.log('🔧 EmailJS Configuration loaded:', {
     SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
     CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
     LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
     PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
     PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
   });
+}
+
+// Validate configuration
+export const validateEmailJSConfig = () => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('EmailJS Config Check:', {
+      SERVICE_ID: EMAILJS_CONFIG.SERVICE_ID ? 'Set' : 'Missing',
+      CONTACT_TEMPLATE_ID: EMAILJS_CONFIG.CONTACT_TEMPLATE_ID ? 'Set' : 'Missing',
+      LEASE_TEMPLATE_ID: EMAILJS_CONFIG.LEASE_TEMPLATE_ID ? 'Set' : 'Missing',
+      PAYMENT_TEMPLATE_ID: EMAILJS_CONFIG.PAYMENT_TEMPLATE_ID ? 'Set' : 'Missing',
+      PUBLIC_KEY: EMAILJS_CONFIG.PUBLIC_KEY ? 'Set' : 'Missing'
+    });
+  }
   
   if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.LEASE_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
     console.error('EmailJS configuration missing. Please check your environment variables.');
@@ -150,7 +153,9 @@ export const sendPaymentReceiptEmail = async (data) => {
 
 // Send password reset email
 export const sendPasswordResetEmail = async (email, resetToken, resetUrl) => {
-  console.log('📧 Sending password reset email...', { email, resetUrl });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('📧 Sending password reset email...');
+  }
   
   if (!EMAILJS_CONFIG.SERVICE_ID || !EMAILJS_CONFIG.PASSWORD_RESET_TEMPLATE_ID || !EMAILJS_CONFIG.PUBLIC_KEY) {
     console.error('❌ Password reset email skipped: EmailJS not configured');

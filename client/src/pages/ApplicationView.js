@@ -219,8 +219,6 @@ const ApplicationView = () => {
       // Fetch lease data with proper authentication
       console.log('Downloading lease for application:', id);
       const token = localStorage.getItem('token');
-      console.log('Token exists:', !!token);
-      console.log('Token length:', token ? token.length : 0);
       
       const response = await fetch(`/api/lease/download?applicationId=${id}&leaseStartDate=${leaseStartDate}&leaseEndDate=${leaseEndDate}&rentalAmount=${rentalAmount}&depositAmount=${depositAmount}`, {
         headers: {

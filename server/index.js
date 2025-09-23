@@ -19,10 +19,10 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 // Security middleware - Updated to allow Stripe, EmailJS, and Google Fonts
 app.use(helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://api.emailjs.com"],
+      scriptSrc: ["'self'", "https://js.stripe.com", "https://api.emailjs.com"],
       connectSrc: ["'self'", "https://api.stripe.com", "https://api.emailjs.com", "https://api.emailjs.com/api/v1.0/email/send", "https://maps.googleapis.com"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com", "https://www.google.com", "https://maps.google.com"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -32,7 +32,7 @@ app.use(helmet({
       mediaSrc: ["'self'"],
       frameAncestors: ["'none'"],
     },
-  },
+  } : undefined,
   crossOriginEmbedderPolicy: false,
 }));
 
@@ -75,7 +75,12 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, cb) => {
+    const allow = [process.env.CLIENT_URL].filter(Boolean);
+    if (process.env.NODE_ENV !== 'production') allow.push('http://localhost:3000');
+    if (!origin || allow.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS not allowed'));
+  },
   credentials: true
 }));
 
@@ -87,6 +92,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Database connection with better error handling
+if (process.env.NODE_ENV === 'production') {
+  const required = ['MONGODB_URI', 'JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CLIENT_URL'];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length) {
+    console.error('Missing required env vars in production:', missing.join(', '));
+    process.exit(1);
+  }
+}
+
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-llc', {
   useNewUrlParser: true,
   useUnifiedTopology: true,

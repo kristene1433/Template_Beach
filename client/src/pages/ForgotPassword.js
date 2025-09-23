@@ -32,7 +32,7 @@ const ForgotPassword = () => {
     }
 
     // Debug EmailJS configuration
-    console.log('🔍 Debugging EmailJS configuration...');
+    if (process.env.NODE_ENV !== 'production') console.log('🔍 Debugging EmailJS configuration...');
     const isConfigured = testPasswordResetConfig();
     
     if (!isConfigured) {

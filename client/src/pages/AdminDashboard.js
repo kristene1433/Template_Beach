@@ -423,8 +423,7 @@ const AdminDashboard = () => {
 
   const viewSignedLease = async (applicationId) => {
     try {
-      console.log('Attempting to view signed lease for application:', applicationId);
-      console.log('User token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+      // Debug logs removed for production hardening
       
       const response = await axios.get(`/api/lease/view-signed/${applicationId}`, {
         responseType: 'blob',
@@ -433,7 +432,7 @@ const AdminDashboard = () => {
         }
       });
       
-      console.log('Response received:', response.status, response.headers);
+        // Debug log removed
       
       // Get the MIME type from the response headers or default to PDF
       const contentType = response.headers['content-type'] || 'application/pdf';
