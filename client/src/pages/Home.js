@@ -450,15 +450,6 @@ const Home = () => {
                         Rate Period
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Nightly
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Weekend Night
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Weekly
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Monthly
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -471,15 +462,6 @@ const Home = () => {
                       <tr key={rate.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {rate.period}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {rate.nightly ? `$${rate.nightly.toLocaleString()}` : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {rate.weekendNight ? `$${rate.weekendNight.toLocaleString()}` : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {rate.weekly ? `$${rate.weekly.toLocaleString()}` : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {rate.monthly ? `$${rate.monthly.toLocaleString()}` : '-'}
@@ -765,7 +747,7 @@ const Home = () => {
             <div className="mb-8">
               <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3524.1234567890!2d-82.8397222!3d27.8402222!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88c2c1234567890%3A0x1234567890abcdef!2sIndian%20Shores%2C%20FL!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3817.4159028563463!2d-82.84213442433193!3d27.840261919616356!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88c2f94974b36fcb%3A0x80193fd4662f0040!2s18650%20Gulf%20Blvd%2C%20Indian%20Shores%2C%20FL%2033785!5e1!3m2!1sen!2sus!4v1758637167222!5m2!1sen!2sus"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}

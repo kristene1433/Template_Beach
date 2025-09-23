@@ -52,9 +52,6 @@ const AdminDashboard = () => {
     period: '',
     startDate: '',
     endDate: '',
-    nightly: '',
-    weekendNight: '',
-    weekly: '',
     monthly: '',
     minStay: 30
   });
@@ -661,9 +658,6 @@ const AdminDashboard = () => {
       period: rate.period,
       startDate: rate.startDate.split('T')[0],
       endDate: rate.endDate.split('T')[0],
-      nightly: rate.nightly || '',
-      weekendNight: rate.weekendNight || '',
-      weekly: rate.weekly || '',
       monthly: rate.monthly || '',
       minStay: rate.minStay || 30
     });
@@ -690,9 +684,6 @@ const AdminDashboard = () => {
         },
         body: JSON.stringify({
           ...rateFormData,
-          nightly: rateFormData.nightly ? parseInt(rateFormData.nightly) : null,
-          weekendNight: rateFormData.weekendNight ? parseInt(rateFormData.weekendNight) : null,
-          weekly: rateFormData.weekly ? parseInt(rateFormData.weekly) : null,
           monthly: parseInt(rateFormData.monthly),
           minStay: parseInt(rateFormData.minStay)
         })
@@ -2278,47 +2269,6 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nightly Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={rateFormData.nightly}
-                      onChange={(e) => setRateFormData(prev => ({ ...prev, nightly: e.target.value }))}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      placeholder="Optional"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Weekend Night ($)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={rateFormData.weekendNight}
-                      onChange={(e) => setRateFormData(prev => ({ ...prev, weekendNight: e.target.value }))}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      placeholder="Optional"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Weekly Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={rateFormData.weekly}
-                      onChange={(e) => setRateFormData(prev => ({ ...prev, weekly: e.target.value }))}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      placeholder="Optional"
-                    />
-                  </div>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
