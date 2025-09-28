@@ -45,6 +45,9 @@ const AdminDashboard = () => {
   const [transferring, setTransferring] = useState(false);
   const [applicationPayments, setApplicationPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  const [isEditingApplication, setIsEditingApplication] = useState(false);
+  const [editApplicationData, setEditApplicationData] = useState({});
+  const [savingApplication, setSavingApplication] = useState(false);
   const [rates, setRates] = useState([]);
   const [showRatesModal, setShowRatesModal] = useState(false);
   const [showAddRateModal, setShowAddRateModal] = useState(false);
@@ -639,6 +642,86 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error deleting application:', error);
       toast.error('Error deleting application');
+    }
+  };
+
+  // Admin edit application functions
+  const handleEditApplication = () => {
+    if (selectedApplication) {
+      setEditApplicationData({
+        firstName: selectedApplication.firstName || '',
+        lastName: selectedApplication.lastName || '',
+        secondApplicantFirstName: selectedApplication.secondApplicantFirstName || '',
+        secondApplicantLastName: selectedApplication.secondApplicantLastName || '',
+        phone: selectedApplication.phone || '',
+        address: {
+          street: selectedApplication.address?.street || '',
+          city: selectedApplication.address?.city || '',
+          state: selectedApplication.address?.state || '',
+          zipCode: selectedApplication.address?.zipCode || ''
+        },
+        requestedStartDate: selectedApplication.requestedStartDate || '',
+        requestedEndDate: selectedApplication.requestedEndDate || '',
+        additionalGuests: selectedApplication.additionalGuests || [],
+        notes: selectedApplication.notes || ''
+      });
+      setIsEditingApplication(true);
+    }
+  };
+
+  const handleCancelEditApplication = () => {
+    setIsEditingApplication(false);
+    setEditApplicationData({});
+  };
+
+  const handleApplicationInputChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setEditApplicationData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setEditApplicationData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  const handleSaveApplicationEdit = async () => {
+    try {
+      setSavingApplication(true);
+      
+      const response = await fetch(`/api/application/admin/${selectedApplication._id}/edit`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(editApplicationData)
+      });
+
+      if (response.ok) {
+        const updatedApplication = await response.json();
+        setSelectedApplication(updatedApplication.application);
+        setIsEditingApplication(false);
+        setEditApplicationData({});
+        toast.success('Application updated successfully!');
+        // Refresh the applications list
+        loadApplications();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update application');
+      }
+    } catch (error) {
+      console.error('Error updating application:', error);
+      toast.error('Error updating application');
+    } finally {
+      setSavingApplication(false);
     }
   };
 
@@ -1293,29 +1376,108 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Personal Information */}
                 <div className="space-y-4">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2">
-                    Personal Information
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-md font-medium text-gray-900 border-b pb-2">
+                      Personal Information
+                    </h4>
+                    {!isEditingApplication ? (
+                      <button
+                        onClick={handleEditApplication}
+                        className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleSaveApplicationEdit}
+                          disabled={savingApplication}
+                          className="flex items-center px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {savingApplication ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={handleCancelEditApplication}
+                          disabled={savingApplication}
+                          className="flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <UserCheck className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm">
-                        <strong>Name:</strong> {selectedApplication.firstName} {selectedApplication.lastName}
-                        {selectedApplication.applicationNumber && (
-                          <span className="ml-2 text-blue-600 font-semibold">
-                            ({selectedApplication.applicationNumber})
+                      <div className="flex-1">
+                        {isEditingApplication ? (
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={editApplicationData.firstName || ''}
+                              onChange={(e) => handleApplicationInputChange('firstName', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="First Name"
+                            />
+                            <input
+                              type="text"
+                              value={editApplicationData.lastName || ''}
+                              onChange={(e) => handleApplicationInputChange('lastName', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Last Name"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm">
+                            <strong>Name:</strong> {selectedApplication.firstName} {selectedApplication.lastName}
+                            {selectedApplication.applicationNumber && (
+                              <span className="ml-2 text-blue-600 font-semibold">
+                                ({selectedApplication.applicationNumber})
+                              </span>
+                            )}
                           </span>
                         )}
-                      </span>
-                    </div>
-                    {selectedApplication.secondApplicantFirstName && selectedApplication.secondApplicantLastName && (
-                      <div className="flex items-center">
-                        <UserCheck className="h-5 w-5 text-gray-400 mr-2" />
-                        <span className="text-sm">
-                          <strong>Co-Applicant:</strong> {selectedApplication.secondApplicantFirstName} {selectedApplication.secondApplicantLastName}
-                        </span>
                       </div>
-                    )}
+                    </div>
+                    <div className="flex items-center">
+                      <UserCheck className="h-5 w-5 text-gray-400 mr-2" />
+                      <div className="flex-1">
+                        {isEditingApplication ? (
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={editApplicationData.secondApplicantFirstName || ''}
+                              onChange={(e) => handleApplicationInputChange('secondApplicantFirstName', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Co-Applicant First Name"
+                            />
+                            <input
+                              type="text"
+                              value={editApplicationData.secondApplicantLastName || ''}
+                              onChange={(e) => handleApplicationInputChange('secondApplicantLastName', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Co-Applicant Last Name"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm">
+                            <strong>Co-Applicant:</strong> {selectedApplication.secondApplicantFirstName && selectedApplication.secondApplicantLastName 
+                              ? `${selectedApplication.secondApplicantFirstName} ${selectedApplication.secondApplicantLastName}`
+                              : 'None'
+                            }
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center">
                       <Mail className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="text-sm">
@@ -1324,16 +1486,65 @@ const AdminDashboard = () => {
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm">
-                        <strong>Phone:</strong> {selectedApplication.phone}
-                      </span>
+                      <div className="flex-1">
+                        {isEditingApplication ? (
+                          <input
+                            type="tel"
+                            value={editApplicationData.phone || ''}
+                            onChange={(e) => handleApplicationInputChange('phone', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Phone Number"
+                          />
+                        ) : (
+                          <span className="text-sm">
+                            <strong>Phone:</strong> {selectedApplication.phone}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-start">
                       <MapPin className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                      <span className="text-sm">
-                        <strong>Address:</strong><br />
-                        {selectedApplication.fullAddress}
-                      </span>
+                      <div className="flex-1">
+                        {isEditingApplication ? (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={editApplicationData.address?.street || ''}
+                              onChange={(e) => handleApplicationInputChange('address.street', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Street Address"
+                            />
+                            <div className="flex space-x-2">
+                              <input
+                                type="text"
+                                value={editApplicationData.address?.city || ''}
+                                onChange={(e) => handleApplicationInputChange('address.city', e.target.value)}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="City"
+                              />
+                              <input
+                                type="text"
+                                value={editApplicationData.address?.state || ''}
+                                onChange={(e) => handleApplicationInputChange('address.state', e.target.value)}
+                                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="State"
+                              />
+                              <input
+                                type="text"
+                                value={editApplicationData.address?.zipCode || ''}
+                                onChange={(e) => handleApplicationInputChange('address.zipCode', e.target.value)}
+                                className="w-24 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="ZIP"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-sm">
+                            <strong>Address:</strong><br />
+                            {selectedApplication.fullAddress}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {selectedApplication.rentalAmount && (
                       <div className="flex items-center">
@@ -1345,30 +1556,145 @@ const AdminDashboard = () => {
                     )}
                     <div className="flex items-center">
                       <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm">
-                                    <strong>Requested Dates:</strong> {selectedApplication.requestedStartDate && selectedApplication.requestedEndDate 
-              ? `${new Date(selectedApplication.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(selectedApplication.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-              : 'Not specified'
-            }
-                      </span>
+                      <div className="flex-1">
+                        {isEditingApplication ? (
+                          <div className="flex space-x-2">
+                            <input
+                              type="date"
+                              value={editApplicationData.requestedStartDate || ''}
+                              onChange={(e) => handleApplicationInputChange('requestedStartDate', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <span className="text-gray-500 self-center">to</span>
+                            <input
+                              type="date"
+                              value={editApplicationData.requestedEndDate || ''}
+                              onChange={(e) => handleApplicationInputChange('requestedEndDate', e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm">
+                            <strong>Requested Dates:</strong> {selectedApplication.requestedStartDate && selectedApplication.requestedEndDate 
+                              ? `${new Date(selectedApplication.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(selectedApplication.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                              : 'Not specified'
+                            }
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Additional Guests */}
-                  {selectedApplication.additionalGuests && selectedApplication.additionalGuests.length > 0 && (
-                    <div className="flex items-center">
-                      <Users className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm">
-                        <strong>Additional Guests ({selectedApplication.additionalGuests.length}):</strong> {selectedApplication.additionalGuests.map((guest, index) => (
-                          <span key={index}>
-                            {guest.firstName} {guest.lastName}
-                            {guest.isAdult ? ' (Adult)' : ' (Child)'}
-                            {index < selectedApplication.additionalGuests.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
-                      </span>
+                  <div className="flex items-start">
+                    <Users className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
+                    <div className="flex-1">
+                      {isEditingApplication ? (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Additional Guests:</label>
+                          {(editApplicationData.additionalGuests || []).map((guest, index) => (
+                            <div key={index} className="flex space-x-2 items-center">
+                              <input
+                                type="text"
+                                value={guest.firstName || ''}
+                                onChange={(e) => {
+                                  const newGuests = [...editApplicationData.additionalGuests];
+                                  newGuests[index] = { ...newGuests[index], firstName: e.target.value };
+                                  handleApplicationInputChange('additionalGuests', newGuests);
+                                }}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="First Name"
+                              />
+                              <input
+                                type="text"
+                                value={guest.lastName || ''}
+                                onChange={(e) => {
+                                  const newGuests = [...editApplicationData.additionalGuests];
+                                  newGuests[index] = { ...newGuests[index], lastName: e.target.value };
+                                  handleApplicationInputChange('additionalGuests', newGuests);
+                                }}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Last Name"
+                              />
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={guest.isAdult || false}
+                                  onChange={(e) => {
+                                    const newGuests = [...editApplicationData.additionalGuests];
+                                    newGuests[index] = { ...newGuests[index], isAdult: e.target.checked };
+                                    handleApplicationInputChange('additionalGuests', newGuests);
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="ml-1 text-xs text-gray-600">Adult</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newGuests = editApplicationData.additionalGuests.filter((_, i) => i !== index);
+                                  handleApplicationInputChange('additionalGuests', newGuests);
+                                }}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newGuests = [...(editApplicationData.additionalGuests || []), { firstName: '', lastName: '', isAdult: true }];
+                              handleApplicationInputChange('additionalGuests', newGuests);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            + Add Guest
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-sm">
+                          <strong>Additional Guests ({(selectedApplication.additionalGuests || []).length}):</strong> 
+                          {(selectedApplication.additionalGuests || []).length > 0 ? (
+                            selectedApplication.additionalGuests.map((guest, index) => (
+                              <span key={index}>
+                                {guest.firstName} {guest.lastName}
+                                {guest.isAdult ? ' (Adult)' : ' (Child)'}
+                                {index < selectedApplication.additionalGuests.length - 1 ? ', ' : ''}
+                              </span>
+                            ))
+                          ) : (
+                            ' None'
+                          )}
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Admin Notes */}
+                  <div className="flex items-start">
+                    <FileText className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
+                    <div className="flex-1">
+                      {isEditingApplication ? (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Admin Notes:</label>
+                          <textarea
+                            value={editApplicationData.notes || ''}
+                            onChange={(e) => handleApplicationInputChange('notes', e.target.value)}
+                            className="w-full mt-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Add admin notes..."
+                            rows={3}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-sm">
+                          <strong>Admin Notes:</strong> {selectedApplication.notes || 'None'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Quick Lookups */}
