@@ -1001,20 +1001,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <button
-                  onClick={() => setShowRatesModal(true)}
-                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs md:text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md w-full sm:w-auto"
-                >
-                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  Manage Rates
-                </button>
-                <button
-                  onClick={() => setShowAvailabilityModal(true)}
-                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-xs md:text-sm font-medium text-white bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md w-full sm:w-auto"
-                >
-                  <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  Manage Availability
-                </button>
                 <span className="text-xs md:text-sm text-gray-200 truncate">Welcome, {user?.email}</span>
                 <button
                   onClick={handleLogout}
@@ -1212,6 +1198,20 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setShowRatesModal(true)}
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">Manage Rates</span>
+                        </button>
+                        <button
+                          onClick={() => setShowAvailabilityModal(true)}
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">Manage Availability</span>
+                        </button>
                         <button
                           onClick={() => handleViewApplication(application)}
                           className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

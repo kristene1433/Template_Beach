@@ -39,6 +39,7 @@ const ApplicationView = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [isAdminEdit, setIsAdminEdit] = useState(false);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -357,12 +358,38 @@ const ApplicationView = () => {
         secondApplicantLastName: application.secondApplicantLastName || ''
       });
       setIsEditing(true);
+      setIsAdminEdit(false);
+    }
+  };
+
+  const handleAdminEditClick = () => {
+    if (application) {
+      setEditData({
+        firstName: application.firstName || '',
+        lastName: application.lastName || '',
+        phone: application.phone || '',
+        address: {
+          street: application.address?.street || '',
+          city: application.address?.city || '',
+          state: application.address?.state || '',
+          zipCode: application.address?.zipCode || ''
+        },
+        secondApplicantFirstName: application.secondApplicantFirstName || '',
+        secondApplicantLastName: application.secondApplicantLastName || '',
+        requestedStartDate: application.requestedStartDate || '',
+        requestedEndDate: application.requestedEndDate || '',
+        additionalGuests: application.additionalGuests || [],
+        notes: application.notes || ''
+      });
+      setIsEditing(true);
+      setIsAdminEdit(true);
     }
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditData({});
+    setIsAdminEdit(false);
   };
 
   const handleInputChange = (field, value) => {
@@ -387,7 +414,10 @@ const ApplicationView = () => {
     try {
       setSaving(true);
       
-      const response = await fetch(`/api/application/${id}`, {
+      // Use admin endpoint if admin edit, otherwise use regular endpoint
+      const endpoint = isAdminEdit ? `/api/application/admin/${id}/edit` : `/api/application/${id}`;
+      
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -401,6 +431,7 @@ const ApplicationView = () => {
         setApplication(updatedApplication.application);
         setIsEditing(false);
         setEditData({});
+        setIsAdminEdit(false);
         toast.success('Application updated successfully!');
       } else {
         const error = await response.json();
@@ -452,13 +483,24 @@ const ApplicationView = () => {
                     Personal Information
                   </h3>
                   {!isEditing ? (
-                    <button
-                      onClick={handleEditClick}
-                      className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4 mr-2" />
-                      Edit
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleEditClick}
+                        className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Edit
+                      </button>
+                      {user?.role === 'admin' && (
+                        <button
+                          onClick={handleAdminEditClick}
+                          className="flex items-center px-3 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Admin Edit
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex items-center space-x-2">
                       <button
@@ -616,15 +658,50 @@ const ApplicationView = () => {
                   <div className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-400" />
                     <div>
-                                              <p className="text-sm font-medium text-gray-900">Requested Dates</p>
-                      <p className="text-gray-600">
-                                  {application.requestedStartDate && application.requestedEndDate 
-              ? `${new Date(application.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-              : 'Not specified'
-            }
-                    </p>
+                      <p className="text-sm font-medium text-gray-900">Requested Dates</p>
+                      {isEditing && isAdminEdit ? (
+                        <div className="flex space-x-2 mt-1">
+                          <input
+                            type="date"
+                            value={editData.requestedStartDate || ''}
+                            onChange={(e) => handleInputChange('requestedStartDate', e.target.value)}
+                            className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <span className="text-gray-500">to</span>
+                          <input
+                            type="date"
+                            value={editData.requestedEndDate || ''}
+                            onChange={(e) => handleInputChange('requestedEndDate', e.target.value)}
+                            className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-gray-600">
+                          {application.requestedStartDate && application.requestedEndDate 
+                            ? `${new Date(application.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                            : 'Not specified'
+                          }
+                        </p>
+                      )}
                     </div>
                   </div>
+
+                  {/* Admin Edit: Notes Section */}
+                  {isEditing && isAdminEdit && (
+                    <div className="flex items-start space-x-3">
+                      <FileText className="w-5 h-5 text-gray-400 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 mb-1">Admin Notes</p>
+                        <textarea
+                          value={editData.notes || ''}
+                          onChange={(e) => handleInputChange('notes', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Add admin notes..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -637,34 +714,76 @@ const ApplicationView = () => {
                   </h3>
 
                   <div className="space-y-4">
-                    {application.additionalGuests.map((guest, index) => (
+                    {(isEditing && isAdminEdit ? editData.additionalGuests : application.additionalGuests).map((guest, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-900 mb-4">Guest {index + 1}</h4>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div className="flex items-center space-x-3">
                             <User className="w-4 h-4 text-gray-400" />
-                            <div>
+                            <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">First Name</p>
-                              <p className="text-gray-600">{guest.firstName}</p>
+                              {isEditing && isAdminEdit ? (
+                                <input
+                                  type="text"
+                                  value={guest.firstName || ''}
+                                  onChange={(e) => {
+                                    const newGuests = [...editData.additionalGuests];
+                                    newGuests[index] = { ...newGuests[index], firstName: e.target.value };
+                                    handleInputChange('additionalGuests', newGuests);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="text-gray-600">{guest.firstName}</p>
+                              )}
                             </div>
                           </div>
 
                           <div className="flex items-center space-x-3">
                             <User className="w-4 h-4 text-gray-400" />
-                            <div>
+                            <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">Last Name</p>
-                              <p className="text-gray-600">{guest.lastName}</p>
+                              {isEditing && isAdminEdit ? (
+                                <input
+                                  type="text"
+                                  value={guest.lastName || ''}
+                                  onChange={(e) => {
+                                    const newGuests = [...editData.additionalGuests];
+                                    newGuests[index] = { ...newGuests[index], lastName: e.target.value };
+                                    handleInputChange('additionalGuests', newGuests);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="text-gray-600">{guest.lastName}</p>
+                              )}
                             </div>
                           </div>
                         </div>
 
                         <div className="flex items-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            guest.isAdult ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {guest.isAdult ? 'Adult (18+)' : 'Minor'}
-                          </span>
+                          {isEditing && isAdminEdit ? (
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={guest.isAdult || false}
+                                onChange={(e) => {
+                                  const newGuests = [...editData.additionalGuests];
+                                  newGuests[index] = { ...newGuests[index], isAdult: e.target.checked };
+                                  handleInputChange('additionalGuests', newGuests);
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">Adult (18+)</span>
+                            </label>
+                          ) : (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              guest.isAdult ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {guest.isAdult ? 'Adult (18+)' : 'Minor'}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}

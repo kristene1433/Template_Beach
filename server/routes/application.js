@@ -456,6 +456,72 @@ router.put('/admin/:applicationId/progress', auth, async (req, res) => {
   }
 });
 
+// Admin: Edit application user information
+router.put('/admin/:applicationId/edit', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    const updates = req.body;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Define allowed fields that admins can edit
+    const allowedFields = [
+      'firstName',
+      'lastName', 
+      'secondApplicantFirstName',
+      'secondApplicantLastName',
+      'phone',
+      'address.street',
+      'address.city',
+      'address.state',
+      'address.zipCode',
+      'additionalGuests',
+      'requestedStartDate',
+      'requestedEndDate',
+      'notes'
+    ];
+
+    // Update allowed fields only
+    Object.keys(updates).forEach(key => {
+      if (allowedFields.includes(key)) {
+        if (key.includes('.')) {
+          const [parent, child] = key.split('.');
+          if (application[parent]) {
+            application[parent][child] = updates[key];
+          }
+        } else {
+          application[key] = updates[key];
+        }
+      }
+    });
+
+    // Add audit trail
+    application.lastUpdated = new Date();
+    application.updatedBy = req.user._id;
+
+    await application.save();
+
+    res.json({
+      message: 'Application updated successfully',
+      application
+    });
+  } catch (error) {
+    console.error('Admin application edit error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Server error updating application' });
+  }
+});
+
 // Admin: Delete application
 router.delete('/admin/:applicationId', auth, async (req, res) => {
   try {
