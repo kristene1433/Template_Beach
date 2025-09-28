@@ -522,29 +522,58 @@ to as the "Manager"), mailing address 18650 Gulf Blvd, #207, Indian Shores, FL 3
 and ${tenantNames} (hereinafter referred to as the "Renter"), mailing address ${application.address.street}, ${application.address.city}, ${application.address.state} ${application.address.zipCode}, concerning the premises known as "18650 Gulf Blvd, #207, Indian Shores, FL 33785". The
 Owner of the property is Palm Run, LLC.
 
-1. **Rent**: Renter agrees to pay a specified dollar amount (from FloridaRentals.com for month X) for the rental period (dates from input). Payment methods accepted: Zelle, Paypal, Venmo, Money order, fed wire, USDC, or US Checks payable to "Palm Run, LLC". The Rental Fee is non-refundable if canceled after 60 days from lease start, unless a replacement tenant is secured under the same or better terms. Rental period begins at 4 P.M. on the first day and ends at 10:00 A.M. on the last day.
+1. **Rent**: Renter agrees to pay the sum of $${rentalAmount}
+US Dollars (Rental Fee) for the rental period of ${startDate} to ${endDate}, to be paid in via Zelle,
+Paypal, Venmo, Money order, fed wire, USDC, or US Checks made payable to "Palm Run,
+LLC". The Rental Fee is non-refundable if Renter cancels this agreement after ${cancellationDeadlineFormatted}, unless the Manager can secure a replacement tenant for the same Rental
+Period, under the same or better terms. The rental period begins at 4 P.M. on the first day
+and ends at 10:00 A.M. the last day of the rental period.
 
-2. **Deposit & Payment**: A $500 US dollar deposit towards the Rental Fee is due upon execution of the agreement. The balance of the Rental Fee is due on or before 60 days before lease start. An inspection of the premises will be conducted after the renter's departure. The Security Deposit refund depends on whether any damage beyond normal wear and tear has occurred.
+2. **Deposit & Payment**: A $500 US dollar deposit towards the Rental Fee is due upon
+execution of this Agreement. The balance of the Rental Fee $${rentalAmount} is due on or before ${sixtyDaysBeforeFormatted}. Following the renter's departure, an inspection of the premises will
+be conducted. Based upon the condition of the Premises, all, a portion of, or none of the
+Security Deposit may be refunded, depending on whether any damage, beyond normal
+wear and tear, has occurred.
 
-3. **Quiet Enjoyment**: Renter is expected to share common areas respectfully. Prohibits hosting gatherings exceeding eight individuals or creating excessive noise that would interfere with other tenants.
+**Credit Card Processing Fee**: A 3% processing fee will be applied to all credit card
+payments. This fee covers the cost of credit card processing services. Alternative payment
+methods (Zelle, PayPal, Venmo, Money Order, Fed Wire, USDC, or US Checks) do not incur
+this processing fee.
 
-4. **Condition of the Premises**: An initial walk-through inspection will be conducted by both renter and manager. Manager confirms the premises are in good order, repair, and clean livable condition at the time of the agreement.
+3. **Quiet Enjoyment**: Renter shall enjoy use of the Premises and is expected to share
+the common areas respectfully. Renter is prohibited from hosting gatherings exceeding
+eight individuals or creating excessive noise that would interfere with the quiet enjoyment
+of other tenants or surrounding neighbors.
 
-5. **Manager Responsibility**: Manager is responsible for payment of normal electric, water, sewer, local telephone, basic cable TV, high-speed wireless internet, and lawn service. The rental property includes one dedicated parking space.
+4. **Condition of the Premises**: An initial walk-through inspection will be conducted by
+both the Renter and Manager to agree on the initial condition of the Premises. The Manager
+confirms that the Premises are in good order, repair, and clean livable condition at the time
+of this agreement.
 
-6. **Renter Responsibilities**: Renter agrees to maintain the premises in a clean and orderly condition. Overnight guests are limited to four persons (including Renters). Daytime guests (between 8 AM and 10 PM) are limited to four persons (including Renter), unless otherwise agreed by the Owner. Smoking and pets are strictly prohibited on the premises.
+5. **Manager Responsibility**: Manager is responsible for payment of normal electric,
+water, sewer, local telephone, basic cable TV, high speed wireless internet, and lawn care
+service. The rental property includes a one car dedicated parking space for sole use of
+Renter.
 
-7. **Limitation of Liability**: Manager or Owner is not responsible for injury to Renter or their guests, or for any damage to or theft of Renter's property, unless such injury, damage, or theft results from gross negligence or intentional misconduct of the Manager/Owner.
+6. **Renter Responsibilities**: Renter agrees to maintain the Premises in a clean and
+orderly condition. Overnight guests are limited to four persons (including Renters). Daytime
+guests, present between 8 AM and 10 PM, are limited to four persons (including Renter),
+unless otherwise agreed upon by the Owner. Smoking and pets are strictly prohibited on
+the premises.
 
-**Gulf Shores Condominium Rules and Regulations:**
+7. **Limitation of Liability**: Manager or Owner is not responsible for injury to Renter or
+their guests or for any damage to or theft of Renter's property, unless such injury, damage,
+or theft results from the gross negligence or intentional misconduct of the Manager/Owner.
 
-1. Lounge chairs, rafts, or tubes SHALL NOT be placed in corridors or walkways outside apartment doors (by order of Fire Marshall).
+**Gulf Shores Condominium Rules and Regulations**
 
-2. No towels or laundry of any kind shall be hung out or exposed on the balcony railings. Wet towels can be hung on chairs or a wooden drying rack.
+1. Lounge chairs, rafts or tubes SHALL NOT be placed in corridors or walkways outside Apartment doors (by order of Fire Marshall).
 
-3. ABSOLUTELY no feeding of birds from balconies, decks, or walkways.
+2. No towels or laundry of any kind shall be hung out or exposed on the balcony railings. Wet towels, etc. can be hung on chairs or a wooden drying rack.
 
-4. NO skateboarding, roller skating, or bike riding in WALKWAYS or PARKING LOT.
+3. ABSOLUTELY no feeding of birds from balconies, decks or walkways.
+
+4. NO skateboarding, roller skating or bike riding in WALKWAYS or PARKING LOT.
 
 5. Please observe RULES posted in POOL AREA.
 
@@ -556,27 +585,28 @@ Owner of the property is Palm Run, LLC.
 
 9. ELECTRIC GRILLS ONLY.
 
-10. Limit of 4 persons can occupy a 2-bedroom apartment.
+10. Limit of 4 persons can occupy a 2 bedroom apartment.
 
-**POOL HOURS:**
+**POOL HOURS**
 DAILY: 9:00 AM to 10:00 PM
 NO LIFEGUARDS ON DUTY
 
-**LOBBY AND COMMON AMENITIES HOURS:**
+**LOBBY AND COMMON AMENITIES HOURS**
 DAILY: 7:00 AM to 11:00 PM
 
-**Note:** Owners and agents are responsible for renters and guests to abide by these rules.
+**NOTE: OWNERS AND AGENTS ARE RESPONSIBLE FOR RENTERS AND GUESTS TO ABIDE BY THESE RULES.**
 
 IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS RENTAL AGREEMENT THE DAY
 AND YEAR FIRST ABOVE WRITTEN.
 
-**Renters:**
-(Renter 1) ${application.firstName} ${application.lastName} ________ DATED: ________
-${application.secondApplicantFirstName && application.secondApplicantLastName ? `(Renter 2) ${application.secondApplicantFirstName} ${application.secondApplicantLastName} ________ DATED: ________` : ''}
+Renters:
+${application.firstName} ${application.lastName}_______________ DATED: ____________________
 
-**Jay Pommrehn for Palm Run, LLC:** ________ DATED: ________
+Jay Pommrehn for Palm Run, LLC:
+_________________________ DATED: ____________________
 
-**Receipt of Deposit is hereby acknowledged by Manager (Owner's Agent):** ________ By ________ Date ________
+Receipt of Deposit is hereby acknowledged by Manager (Owner's Agent):
+By _________________________________ Date ________________________
 
 ---
 Generated on: ${currentDate}
