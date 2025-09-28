@@ -545,23 +545,16 @@ the common areas respectfully. Renter is prohibited from hosting gatherings exce
 eight individuals or creating excessive noise that would interfere with the quiet enjoyment
 of other tenants or surrounding neighbors.
 
-4. **Condition of the Premises**: An initial walk-through inspection will be conducted by
-both the Renter and Manager to agree on the initial condition of the Premises. The Manager
-confirms that the Premises are in good order, repair, and clean livable condition at the time
-of this agreement.
-
-5. **Manager Responsibility**: Manager is responsible for payment of normal electric,
-water, sewer, local telephone, basic cable TV, high speed wireless internet, and lawn care
-service. The rental property includes a one car dedicated parking space for sole use of
+4. **Manager Responsibility**: The rental property includes a one car dedicated parking space for sole use of
 Renter.
 
-6. **Renter Responsibilities**: Renter agrees to maintain the Premises in a clean and
+5. **Renter Responsibilities**: Renter agrees to maintain the Premises in a clean and
 orderly condition. Overnight guests are limited to four persons (including Renters). Daytime
 guests, present between 8 AM and 10 PM, are limited to four persons (including Renter),
 unless otherwise agreed upon by the Owner. Smoking and pets are strictly prohibited on
 the premises.
 
-7. **Limitation of Liability**: Manager or Owner is not responsible for injury to Renter or
+6. **Limitation of Liability**: Manager or Owner is not responsible for injury to Renter or
 their guests or for any damage to or theft of Renter's property, unless such injury, damage,
 or theft results from the gross negligence or intentional misconduct of the Manager/Owner.
 
