@@ -747,17 +747,10 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       }
     }
 
-    // Create a dedicated signature block page with precise layout
+    // Instead of a separate page, insert the signature block inline where "Renters:" appears
     const signedDate = new Date().toLocaleDateString('en-US');
-    page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let sigY = pageHeight - margin - 20;
-    page.drawText('Renters:', { x: margin, y: sigY + 20, size: 12, font, color: rgb(0,0,0) });
-
-    const nameX = margin;
-    const sigX = margin + 180;
     const imgWidth = 160;
     const dateOffset = 12;
-
     const drawTyped = (p, name, x, yBase) => {
       const size = 24;
       p.drawText(name, { x, y: yBase, size, font: fontItalic || font, color: rgb(0.1,0.1,0.1) });
@@ -765,7 +758,6 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       p.drawLine({ start: { x, y: yBase - 6 }, end: { x: x + w, y: yBase - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
       p.drawText(`DATED: ${signedDate}`, { x: x + w + dateOffset, y: yBase + 4, size: 10, font, color: rgb(0,0,0) });
     };
-
     const drawImageSig = async (p, dataUrl, x, yBase) => {
       const base64 = dataUrl.split(',')[1];
       const bytes = Buffer.from(base64, 'base64');
@@ -775,28 +767,46 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       p.drawText(`DATED: ${signedDate}`, { x: x + imgWidth + dateOffset, y: yBase - h/2, size: 10, font, color: rgb(0,0,0) });
     };
 
-    // Primary signer row
-    page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: sigY, size: 12, font, color: rgb(0,0,0) });
-    if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
-      await drawImageSig(page, signatureImageBase64, sigX, sigY);
-    } else {
-      drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, sigY);
-    }
-
-    // Co-applicant row if present
-    if (application.secondApplicantFirstName && application.secondApplicantLastName) {
-      sigY -= 34;
-      page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: sigY, size: 12, font, color: rgb(0,0,0) });
-      if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) {
-        await drawImageSig(page, signatureImageBase64_2, sigX, sigY);
-      } else if (typedName2) {
-        drawTyped(page, typedName2, sigX, sigY);
-      } else {
-        // leave blank if not provided
+    // Re-flow the lease text, injecting the signature block inline
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - margin;
+    const nameX = margin;
+    const sigX = margin + 180;
+    const paras = leaseText.split('\n');
+    let skip = 0;
+    for (const par of paras) {
+      if (skip > 0) { skip--; continue; }
+      const t = par.trim();
+      if (t.startsWith('Renters:')) {
+        drawLine('Renters:');
+        // Ensure space
+        const rows = 1 + (application.secondApplicantFirstName && application.secondApplicantLastName ? 1 : 0);
+        const needed = rows * 34 + 6;
+        if (y - needed < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+        // Primary row
+        const row1Y = y;
+        page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y, size: 12, font, color: rgb(0,0,0) });
+        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y);
+        else drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, row1Y);
+        y -= 34;
+        // Co-applicant row
+        if (application.secondApplicantFirstName && application.secondApplicantLastName) {
+          const row2Y = y;
+          page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y, size: 12, font, color: rgb(0,0,0) });
+          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y);
+          else if (typedName2) drawTyped(page, typedName2, sigX, row2Y);
+          y -= 34;
+          skip = 2; // skip the two printed lines following "Renters:"
+        } else {
+          skip = 1; // skip just the primary printed line
+        }
+        continue;
       }
+      const wrapped = t.length === 0 ? [''] : wrapText(par, 95);
+      wrapped.forEach(drawLine);
     }
 
-    // After signature block, add audit lines on the next page
+    // Add audit info on a separate page at the end
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     y = pageHeight - margin - 20;
     function auditLine(t){ page.drawText(t, { x: margin, y, size: 11, font, color: rgb(0,0,0) }); y -= 16; }
