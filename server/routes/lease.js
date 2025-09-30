@@ -13,7 +13,7 @@ const router = express.Router();
 // Trace all lease route hits
 router.use((req, res, next) => {
   try {
-    console.log('[lease] incoming', req.method, req.originalUrl);
+    console.log('[lease] incoming request', { method: req.method, path: req.path });
   } catch (e) {}
   next();
 });
@@ -666,7 +666,10 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
     const { typedName = '', typedName2 = '', signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
-    console.log('[lease:sign] appId=', applicationId, 'user=', req.user?._id?.toString());
+    console.log('[lease:sign] context', {
+      applicationId,
+      userAuthenticated: !!req.user?._id
+    });
     if (!consent) {
       console.warn('[lease:sign] missing consent');
       return res.status(400).json({ error: 'Consent is required' });
@@ -720,66 +723,8 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       y -= lineHeight;
     }
 
-    // Render body text and capture Y position of the renter/co-applicant name lines
-    let renterNameY = null;
-    let coApplicantY = null;
-    let captureNextAsName = false;
-    let captureNextAsCo = false;
-    const renterNamePrefix = `${application.firstName} ${application.lastName}`;
-    const coNamePrefix = application.secondApplicantFirstName && application.secondApplicantLastName
-      ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}`
-      : '';
-    const paragraphs = leaseText.split('\n');
-    for (const par of paragraphs) {
-      const wrapped = par.trim().length === 0 ? [''] : wrapText(par, 95);
-      for (const line of wrapped) {
-        if (captureNextAsName) {
-          renterNameY = y; // baseline for the renter name line
-          captureNextAsName = false;
-        }
-        if (captureNextAsCo) {
-          coApplicantY = y;
-          captureNextAsCo = false;
-        }
-        if (line.startsWith('Renters:')) {
-          captureNextAsName = true; // the next line contains the renter name
-        }
-        if (line.startsWith('(Renter 2)') || line.includes('Co-Applicant:')) {
-          captureNextAsCo = true;
-        }
-        if (!captureNextAsName && !renterNameY && line.startsWith(renterNamePrefix)) {
-          renterNameY = y;
-        }
-        if (!captureNextAsCo && !coApplicantY && coNamePrefix && line.startsWith(coNamePrefix)) {
-          coApplicantY = y;
-        }
-        drawLine(line);
-      }
-    }
-
-    // Instead of a separate page, insert the signature block inline where "Renters:" appears
-    const signedDate = new Date().toLocaleDateString('en-US');
-    const imgWidth = 160;
-    const dateOffset = 12;
-    const drawTyped = (p, name, x, yBase) => {
-      const size = 24;
-      p.drawText(name, { x, y: yBase, size, font: fontItalic || font, color: rgb(0.1,0.1,0.1) });
-      const w = (fontItalic || font).widthOfTextAtSize(name, size);
-      p.drawLine({ start: { x, y: yBase - 6 }, end: { x: x + w, y: yBase - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
-      p.drawText(`DATED: ${signedDate}`, { x: x + w + dateOffset, y: yBase + 4, size: 10, font, color: rgb(0,0,0) });
-    };
-    const drawImageSig = async (p, dataUrl, x, yBase) => {
-      const base64 = dataUrl.split(',')[1];
-      const bytes = Buffer.from(base64, 'base64');
-      const img = dataUrl.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
-      const h = (img.height / img.width) * imgWidth;
-      p.drawImage(img, { x, y: yBase - h + 6, width: imgWidth, height: h });
-      p.drawText(`DATED: ${signedDate}`, { x: x + imgWidth + dateOffset, y: yBase - h/2, size: 10, font, color: rgb(0,0,0) });
-    };
-
     // Re-flow the lease text, injecting the signature block inline
-    page = pdfDoc.addPage([pageWidth, pageHeight]);
-    y = pageHeight - margin;
+    const signedDate = new Date().toLocaleDateString('en-US');
     const nameX = margin;
     const sigX = margin + 180;
     const sigBoxWidth = 120;

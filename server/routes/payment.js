@@ -35,7 +35,7 @@ async function handleStripeWebhook(req, res) {
       const session = event.data.object;
       
       console.log('Processing checkout.session.completed webhook');
-      console.log('Session metadata:', session.metadata);
+      console.log('Session metadata keys:', Object.keys(session.metadata || {}));
       console.log('Session payment intent:', session.payment_intent);
       
       try {
@@ -1072,7 +1072,12 @@ router.post('/admin/transfer-amount', auth, async (req, res) => {
     toApp.lastUpdated = new Date();
     await toApp.save();
 
-    console.log(`Admin amount transfer completed: $${(depositAmount / 100).toFixed(2)} from ${fromApplicationId} to ${toApplicationId} for user ${fromApp.userId.email}`);
+    console.log('Admin amount transfer completed', {
+      amount: depositAmount,
+      fromApplicationId,
+      toApplicationId,
+      userId: fromApp.userId._id
+    });
 
     res.json({ 
       message: 'Amount transfer completed successfully',
