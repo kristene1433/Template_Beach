@@ -130,7 +130,11 @@ const applicationSchema = new mongoose.Schema({
     default: false
   },
   leaseSignedAt: Date,
-  leaseSignature: String,
+  leaseSignature: {
+    typedName: String,
+    method: String,
+    signedAt: Date
+  },
   rentalAmount: Number,
   depositAmount: Number,
   
@@ -160,6 +164,9 @@ const applicationSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  leaseAudit: {
+    type: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true

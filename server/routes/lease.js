@@ -10,6 +10,14 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
+// Trace all lease route hits
+router.use((req, res, next) => {
+  try {
+    console.log('[lease] incoming', req.method, req.originalUrl);
+  } catch (e) {}
+  next();
+});
+
 // Configure multer for memory storage (for Heroku compatibility)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -91,6 +99,7 @@ router.post('/admin/generate', auth, async (req, res) => {
 
     // Get application by ID
     const application = await Application.findById(applicationId).populate('userId', 'email');
+    console.log('[lease:sign] loaded application?', !!application);
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -640,6 +649,7 @@ router.get('/preview/:applicationId', auth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
     const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
+    console.log('[lease:sign] lease text length', leaseText?.length);
     const leaseTextHash = sha256(leaseText);
     res.json({ success: true, leaseText, leaseTextHash });
   } catch (err) {
