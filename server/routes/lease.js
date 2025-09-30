@@ -686,7 +686,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     try {
       pdfDoc = await PDFDocument.create();
       font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-      fontItalic = await pdfDoc.embedFont(StandardFonts.TimesItalic);
+      fontItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
     } catch (e) {
       console.error('[lease:sign] pdf-lib init error:', e);
       return res.status(500).json({ error: 'PDF engine initialization failed' });
