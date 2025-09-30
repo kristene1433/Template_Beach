@@ -772,30 +772,88 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     y = pageHeight - margin;
     const nameX = margin;
     const sigX = margin + 180;
+    const sigBoxWidth = 120;
+    const sigBoxHeight = 40;
+    const rowHeight = 70;
     const paras = leaseText.split('\n');
     let suppressOldNameLines = false;
+    
     for (const par of paras) {
       const t = par.trim();
       if (t.startsWith('Renters:')) {
         drawLine('Renters:');
-        // Ensure space
+        // Ensure space for signature block
         const rows = 1 + (application.secondApplicantFirstName && application.secondApplicantLastName ? 1 : 0);
-        const needed = rows * 60 + 6;
+        const needed = rows * rowHeight + 6;
         if (y - needed < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
-        // Primary row
+        
+        // Primary signer row - complete block
         const row1Y = y;
-        page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y, size: 12, font, color: rgb(0,0,0) });
-        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y, 100);
-        else drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, row1Y);
-        y -= 60;
-        // Co-applicant row
+        // Name
+        page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+        
+        // Signature box
+        page.drawRectangle({
+          x: sigX,
+          y: row1Y - sigBoxHeight,
+          width: sigBoxWidth,
+          height: sigBoxHeight,
+          borderColor: rgb(0, 0, 0),
+          borderWidth: 1,
+        });
+        
+        // Signature inside box
+        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
+          const base64 = signatureImageBase64.split(',')[1];
+          const bytes = Buffer.from(base64, 'base64');
+          const img = signatureImageBase64.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+          const h = (img.height / img.width) * sigBoxWidth;
+          const sigY = row1Y - (sigBoxHeight - h) / 2;
+          page.drawImage(img, { x: sigX, y: sigY, width: sigBoxWidth, height: h });
+        } else {
+          const sigText = typedName || `${application.firstName} ${application.lastName}`;
+          page.drawText(sigText, { x: sigX + 5, y: row1Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+        }
+        
+        // Date
+        page.drawText(`DATED: ${signedDate}`, { x: sigX + sigBoxWidth + 12, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+        
+        y -= rowHeight;
+        
+        // Co-applicant row - complete block
         if (application.secondApplicantFirstName && application.secondApplicantLastName) {
           const row2Y = y;
-          page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y, size: 12, font, color: rgb(0,0,0) });
-          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y, 100);
-          else if (typedName2) drawTyped(page, typedName2, sigX, row2Y);
-          y -= 60;
+          // Name
+          page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+          
+          // Signature box
+          page.drawRectangle({
+            x: sigX,
+            y: row2Y - sigBoxHeight,
+            width: sigBoxWidth,
+            height: sigBoxHeight,
+            borderColor: rgb(0, 0, 0),
+            borderWidth: 1,
+          });
+          
+          // Signature inside box
+          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) {
+            const base64 = signatureImageBase64_2.split(',')[1];
+            const bytes = Buffer.from(base64, 'base64');
+            const img = signatureImageBase64_2.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+            const h = (img.height / img.width) * sigBoxWidth;
+            const sigY = row2Y - (sigBoxHeight - h) / 2;
+            page.drawImage(img, { x: sigX, y: sigY, width: sigBoxWidth, height: h });
+          } else if (typedName2) {
+            page.drawText(typedName2, { x: sigX + 5, y: row2Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+          }
+          
+          // Date
+          page.drawText(`DATED: ${signedDate}`, { x: sigX + sigBoxWidth + 12, y: row2Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+          
+          y -= rowHeight;
         }
+        
         // Begin skipping old printed name lines until we reach the agent line
         suppressOldNameLines = true;
         continue;
