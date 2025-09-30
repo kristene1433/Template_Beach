@@ -663,7 +663,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
   try {
     console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
-    const { typedName = '', signatureImageBase64 = '', consent } = req.body;
+    const { typedName = '', typedName2 = '', signatureImageBase64 = '', consent } = req.body;
     console.log('[lease:sign] appId=', applicationId, 'user=', req.user?._id?.toString());
     if (!consent) {
       console.warn('[lease:sign] missing consent');
@@ -708,12 +708,42 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       y -= lineHeight;
     }
 
-    const lines = [];
-    leaseText.split('\n').forEach(par => {
-      if (par.trim().length === 0) lines.push('');
-      else wrapText(par, 95).forEach(l => lines.push(l));
-    });
-    lines.forEach(drawLine);
+    // Render body text and capture Y position of the renter/co-applicant name lines
+    let renterNameY = null;
+    let coApplicantY = null;
+    let captureNextAsName = false;
+    let captureNextAsCo = false;
+    const renterNamePrefix = `${application.firstName} ${application.lastName}`;
+    const coNamePrefix = application.secondApplicantFirstName && application.secondApplicantLastName
+      ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}`
+      : '';
+    const paragraphs = leaseText.split('\n');
+    for (const par of paragraphs) {
+      const wrapped = par.trim().length === 0 ? [''] : wrapText(par, 95);
+      for (const line of wrapped) {
+        if (captureNextAsName) {
+          renterNameY = y; // baseline for the renter name line
+          captureNextAsName = false;
+        }
+        if (captureNextAsCo) {
+          coApplicantY = y;
+          captureNextAsCo = false;
+        }
+        if (line.startsWith('Renters:')) {
+          captureNextAsName = true; // the next line contains the renter name
+        }
+        if (line.startsWith('(Renter 2)') || line.includes('Co-Applicant:')) {
+          captureNextAsCo = true;
+        }
+        if (!captureNextAsName && !renterNameY && line.startsWith(renterNamePrefix)) {
+          renterNameY = y;
+        }
+        if (!captureNextAsCo && !coApplicantY && coNamePrefix && line.startsWith(coNamePrefix)) {
+          coApplicantY = y;
+        }
+        drawLine(line);
+      }
+    }
 
     y -= 10;
     drawLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
@@ -722,30 +752,69 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     drawLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
     drawLine('Document Hash (SHA-256): ' + leaseTextHash);
 
+    const signedDate = new Date().toLocaleDateString('en-US');
     if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
       const base64Data = signatureImageBase64.split(',')[1];
       const bytes = Buffer.from(base64Data, 'base64');
       let img;
       if (signatureImageBase64.includes('image/png')) img = await pdfDoc.embedPng(bytes);
       else img = await pdfDoc.embedJpg(bytes);
-      const imgWidth = 200;
+      const imgWidth = 140;
       const imgHeight = (img.height / img.width) * imgWidth;
-      if (y - imgHeight < margin) {
+      // Default position: below text (previous behavior)
+      let imgX = margin;
+      let imgY = y - imgHeight;
+      // If we captured the renter name line Y, place signature to the right of the name line
+      if (renterNameY) {
+        imgX = margin + 180; // move to the right of the printed name
+        imgY = renterNameY - imgHeight + 6; // align with baseline
+      }
+      if (imgY < margin) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         y = pageHeight - margin;
+        imgY = y - imgHeight;
       }
-      page.drawImage(img, { x: margin, y: y - imgHeight, width: imgWidth, height: imgHeight });
-      y -= imgHeight + lineHeight;
+      page.drawImage(img, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
+      // Render date text near the signature
+      page.drawText(`DATED: ${signedDate}`, { x: imgX + imgWidth + 10, y: imgY + imgHeight/2 - 6, size: 10, font, color: rgb(0,0,0) });
+      // Only move cursor if we drew at the bottom; inline draw does not need y change
+      if (!renterNameY) y -= imgHeight + lineHeight;
     } else if (typedName) {
       const sigSize = 24;
-      if (y - sigSize < margin) {
+      // Default placement below text
+      let sigX = margin;
+      let sigBaseY = y - sigSize;
+      if (renterNameY) {
+        sigX = margin + 180;
+        sigBaseY = renterNameY - sigSize + 6;
+      }
+      if (sigBaseY < margin) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         y = pageHeight - margin;
+        sigBaseY = y - sigSize;
       }
-      page.drawText(typedName, { x: margin, y: y - sigSize, size: sigSize, font: fontItalic || font, color: rgb(0.1, 0.1, 0.1) });
+      page.drawText(typedName, { x: sigX, y: sigBaseY, size: sigSize, font: fontItalic || font, color: rgb(0.1, 0.1, 0.1) });
       const textWidth = (fontItalic || font).widthOfTextAtSize(typedName, sigSize);
-      page.drawLine({ start: { x: margin, y: y - sigSize - 6 }, end: { x: margin + textWidth, y: y - sigSize - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
-      y -= sigSize + lineHeight;
+      page.drawLine({ start: { x: sigX, y: sigBaseY - 6 }, end: { x: sigX + textWidth, y: sigBaseY - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
+      // Render date to the right of the signature
+      page.drawText(`DATED: ${signedDate}`, { x: sigX + textWidth + 12, y: sigBaseY + 4, size: 10, font, color: rgb(0,0,0) });
+      if (!renterNameY) y -= sigSize + lineHeight;
+    }
+
+    // Render co-applicant typed signature/date inline if present
+    if (typedName2 && coApplicantY) {
+      const sigSize2 = 24;
+      let sigX2 = margin + 180;
+      let sigBaseY2 = coApplicantY - sigSize2 + 6;
+      if (sigBaseY2 < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+        sigBaseY2 = y - sigSize2;
+      }
+      page.drawText(typedName2, { x: sigX2, y: sigBaseY2, size: sigSize2, font: fontItalic || font, color: rgb(0.1,0.1,0.1) });
+      const textWidth2 = (fontItalic || font).widthOfTextAtSize(typedName2, sigSize2);
+      page.drawLine({ start: { x: sigX2, y: sigBaseY2 - 6 }, end: { x: sigX2 + textWidth2, y: sigBaseY2 - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
+      page.drawText(`DATED: ${signedDate}`, { x: sigX2 + textWidth2 + 12, y: sigBaseY2 + 4, size: 10, font, color: rgb(0,0,0) });
     }
 
     let pdfBytes;

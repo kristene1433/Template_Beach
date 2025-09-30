@@ -50,6 +50,7 @@ const ApplicationView = () => {
   const ctxRef = useRef(null);
   const drawingRef = useRef(false);
   const [hasDrawing, setHasDrawing] = useState(false);
+  const [typedSignatureName2, setTypedSignatureName2] = useState('');
   const initCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -394,6 +395,9 @@ const ApplicationView = () => {
         // setLeasePreviewHash(data.leaseTextHash || '');
         if (application) {
           setTypedSignatureName(`${application.firstName} ${application.lastName}`);
+          if (application.secondApplicantFirstName && application.secondApplicantLastName) {
+            setTypedSignatureName2(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`);
+          }
         }
       } else {
         const e = await res.json();
@@ -424,7 +428,7 @@ const ApplicationView = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ typedName: typedSignatureName, signatureImageBase64, consent: true })
+        body: JSON.stringify({ typedName: typedSignatureName, typedName2: typedSignatureName2 || '', signatureImageBase64, consent: true })
       });
       if (res.ok) {
         toast.success('Lease signed successfully');
@@ -606,6 +610,17 @@ const ApplicationView = () => {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="First Last"
                   />
+                  {application?.secondApplicantFirstName && application?.secondApplicantLastName && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">Co‑Applicant Typed Signature Name</label>
+                      <input
+                        value={typedSignatureName2}
+                        onChange={(e) => setTypedSignatureName2(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="First Last"
+                      />
+                    </>
+                  )}
                 </>
               ) : (
                 <>
