@@ -682,10 +682,11 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
     const leaseTextHash = sha256(leaseText);
 
-    let pdfDoc, font;
+    let pdfDoc, font, fontItalic;
     try {
       pdfDoc = await PDFDocument.create();
       font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      fontItalic = await pdfDoc.embedFont(StandardFonts.TimesItalic);
     } catch (e) {
       console.error('[lease:sign] pdf-lib init error:', e);
       return res.status(500).json({ error: 'PDF engine initialization failed' });
@@ -735,6 +736,16 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       }
       page.drawImage(img, { x: margin, y: y - imgHeight, width: imgWidth, height: imgHeight });
       y -= imgHeight + lineHeight;
+    } else if (typedName) {
+      const sigSize = 24;
+      if (y - sigSize < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+      page.drawText(typedName, { x: margin, y: y - sigSize, size: sigSize, font: fontItalic || font, color: rgb(0.1, 0.1, 0.1) });
+      const textWidth = (fontItalic || font).widthOfTextAtSize(typedName, sigSize);
+      page.drawLine({ start: { x: margin, y: y - sigSize - 6 }, end: { x: margin + textWidth, y: y - sigSize - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
+      y -= sigSize + lineHeight;
     }
 
     let pdfBytes;

@@ -50,6 +50,27 @@ const ApplicationView = () => {
   const ctxRef = useRef(null);
   const drawingRef = useRef(false);
   const [hasDrawing, setHasDrawing] = useState(false);
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // Size canvas to container width
+    const parent = canvas.parentElement;
+    const width = parent ? parent.clientWidth : 520;
+    const height = 180;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#111827';
+    ctxRef.current = ctx;
+    setHasDrawing(false);
+  }, []);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -99,6 +120,13 @@ const ApplicationView = () => {
     if (!user) return;
     fetchApplicationData();
   }, [user, fetchApplicationData]);
+
+  // Initialize signature canvas when modal opens and Draw mode is active
+  useEffect(() => {
+    if (showSignModal && signMode === 'draw') {
+      initCanvas();
+    }
+  }, [showSignModal, signMode, initCanvas]);
 
   // Check if user is authenticated
   if (!user) {
@@ -372,25 +400,7 @@ const ApplicationView = () => {
         setLeasePreview(e.error || 'Failed to load preview');
       }
       // Prepare canvas after modal opens
-      setTimeout(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const parent = canvas.parentElement;
-        if (parent) {
-          canvas.width = parent.clientWidth;
-          canvas.height = 180;
-        } else {
-          canvas.width = 520;
-          canvas.height = 180;
-        }
-        const ctx = canvas.getContext('2d');
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#111827'; // gray-900
-        ctxRef.current = ctx;
-        setHasDrawing(false);
-      }, 0);
+      setTimeout(() => { if (signMode === 'draw') initCanvas(); }, 0);
     } catch (err) {
       console.error('Preview error', err);
       setLeasePreview('Error loading preview');
@@ -439,6 +449,7 @@ const ApplicationView = () => {
 
   // Canvas drawing handlers
   const startDraw = (e) => {
+    e.preventDefault();
     drawingRef.current = true;
     setHasDrawing(true);
     const rect = canvasRef.current.getBoundingClientRect();
@@ -465,6 +476,8 @@ const ApplicationView = () => {
     ctxRef.current.clearRect(0, 0, c.width, c.height);
     setHasDrawing(false);
   };
+
+  
 
   const handleEditClick = () => {
     if (application) {
