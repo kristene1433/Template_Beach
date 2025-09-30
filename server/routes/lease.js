@@ -701,6 +701,16 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     let y = pageHeight - margin;
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
 
+    // Helper: Title-case a full name for clean display
+    function titleCase(input) {
+      if (!input || typeof input !== 'string') return input;
+      return input
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+    }
+
     function drawLine(text) {
       if (y < margin) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -790,7 +800,8 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         // Primary signer row - complete block
         const row1Y = y;
         // Name
-        page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+        const primaryName = titleCase(`${application.firstName} ${application.lastName}`);
+        page.drawText(primaryName, { x: nameX, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
         
         // Signature box
         page.drawRectangle({
@@ -824,7 +835,8 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         if (application.secondApplicantFirstName && application.secondApplicantLastName) {
           const row2Y = y;
           // Name
-          page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
+          const coName = titleCase(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`);
+          page.drawText(coName, { x: nameX, y: row2Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
           
           // Signature box
           page.drawRectangle({
