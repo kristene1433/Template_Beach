@@ -665,7 +665,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
   try {
     console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
-    const { typedName = '', typedName2 = '', signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
+    const { signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
     console.log('[lease:sign] context', {
       applicationId,
       userAuthenticated: !!req.user?._id
@@ -682,6 +682,16 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     }
     if (!application.leaseGenerated) {
       return res.status(400).json({ error: 'Lease has not been generated yet' });
+    }
+
+    const requiresCoApplicant = !!(application.secondApplicantFirstName && application.secondApplicantLastName);
+
+    if (!signatureImageBase64 || !signatureImageBase64.startsWith('data:image')) {
+      return res.status(400).json({ error: 'A drawn signature is required to sign the lease.' });
+    }
+
+    if (requiresCoApplicant && (!signatureImageBase64_2 || !signatureImageBase64_2.startsWith('data:image'))) {
+      return res.status(400).json({ error: 'Co-applicant must draw their signature to sign the lease.' });
     }
 
     const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
@@ -714,6 +724,11 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         .join(' ');
     }
 
+    const primaryDisplayName = titleCase(`${application.firstName} ${application.lastName}`.trim());
+    const coDisplayName = requiresCoApplicant
+      ? titleCase(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`.trim())
+      : '';
+
     function drawLine(text) {
       if (y < margin) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -745,7 +760,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         // Primary signer row - complete block
         const row1Y = y;
         // Name
-        const primaryName = titleCase(`${application.firstName} ${application.lastName}`);
+        const primaryName = primaryDisplayName;
         page.drawText(primaryName, { x: nameX, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
         
         // Signature box
@@ -773,8 +788,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
           const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
           page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
         } else {
-          const sigText = typedName || `${application.firstName} ${application.lastName}`;
-          page.drawText(sigText, { x: sigX + 5, y: row1Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+          page.drawText(primaryDisplayName, { x: sigX + 5, y: row1Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
         }
         
         // Date
@@ -786,7 +800,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         if (application.secondApplicantFirstName && application.secondApplicantLastName) {
           const row2Y = y;
           // Name
-          const coName = titleCase(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`);
+          const coName = coDisplayName;
           page.drawText(coName, { x: nameX, y: row2Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
           
           // Signature box
@@ -813,8 +827,8 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
             const sigY = row2Y - sigBoxHeight + (sigBoxHeight - drawHeight) / 2;
             const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
             page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
-          } else if (typedName2) {
-            page.drawText(typedName2, { x: sigX + 5, y: row2Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+          } else if (coDisplayName) {
+            page.drawText(coDisplayName, { x: sigX + 5, y: row2Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
           }
           
           // Date
@@ -845,8 +859,8 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     if (y - 96 < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
     y -= 10;
     function auditLine(t){ if (y < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; } page.drawText(t, { x: margin, y, size: 11, font, color: rgb(0,0,0) }); y -= 16; }
-    auditLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
-    if (typedName2) auditLine('Signed electronically by (Co-Applicant): ' + typedName2);
+    auditLine('Signed electronically by: ' + primaryDisplayName);
+    if (coDisplayName) auditLine('Signed electronically by (Co-Applicant): ' + coDisplayName);
     auditLine('Signed at (UTC): ' + new Date().toISOString());
     auditLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
     auditLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
@@ -873,15 +887,15 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       content: base64
     };
     application.leaseSignature = {
-      typedName,
-      method: signatureImageBase64 ? 'draw' : 'type',
+      typedName: primaryDisplayName,
+      method: 'draw',
       signedAt: application.leaseSignedAt
     };
     application.leaseAudit = {
       leaseTextHash: 'sha256:' + leaseTextHash,
       signedByUserId: req.user._id,
-      signedName: typedName || `${application.firstName} ${application.lastName}`,
-      coSignedName: typedName2 || undefined,
+      signedName: primaryDisplayName,
+      coSignedName: coDisplayName || undefined,
       consent: !!consent,
       ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
       userAgent: req.headers['user-agent'] || 'n/a',
@@ -1084,4 +1098,3 @@ router.get('/view-signed', auth, async (req, res) => {
 });
 
 module.exports = router;
-
