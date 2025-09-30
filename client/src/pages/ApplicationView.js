@@ -51,27 +51,37 @@ const ApplicationView = () => {
   const drawingRef = useRef(false);
   const [hasDrawing, setHasDrawing] = useState(false);
   const [typedSignatureName2, setTypedSignatureName2] = useState('');
+  const canvasRef2 = useRef(null);
+  const ctxRef2 = useRef(null);
+  const drawingRef2 = useRef(false);
+  const [hasDrawing2, setHasDrawing2] = useState(false);
   const initCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // Size canvas to container width
-    const parent = canvas.parentElement;
-    const width = parent ? parent.clientWidth : 520;
-    const height = 180;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#111827';
-    ctxRef.current = ctx;
-    setHasDrawing(false);
-  }, []);
+    const setup = (canvas, setHas) => {
+      if (!canvas) return;
+      const parent = canvas.parentElement;
+      const width = parent ? parent.clientWidth : 520;
+      const height = 180;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#111827';
+      setHas(false);
+      return ctx;
+    };
+    const ctx1 = setup(canvasRef.current, setHasDrawing);
+    if (ctx1) ctxRef.current = ctx1;
+    if (application?.secondApplicantFirstName && application?.secondApplicantLastName) {
+      const ctx2 = setup(canvasRef2.current, setHasDrawing2);
+      if (ctx2) ctxRef2.current = ctx2;
+    }
+  }, [application?.secondApplicantFirstName, application?.secondApplicantLastName]);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -419,8 +429,14 @@ const ApplicationView = () => {
       }
       setSigning(true);
       let signatureImageBase64 = '';
-      if (signMode === 'draw' && hasDrawing && canvasRef.current) {
-        signatureImageBase64 = canvasRef.current.toDataURL('image/png');
+      let signatureImageBase64_2 = '';
+      if (signMode === 'draw') {
+        if (hasDrawing && canvasRef.current) {
+          signatureImageBase64 = canvasRef.current.toDataURL('image/png');
+        }
+        if (application?.secondApplicantFirstName && application?.secondApplicantLastName && hasDrawing2 && canvasRef2.current) {
+          signatureImageBase64_2 = canvasRef2.current.toDataURL('image/png');
+        }
       }
       const res = await fetch(`/api/lease/sign/${id}`, {
         method: 'POST',
@@ -428,7 +444,7 @@ const ApplicationView = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ typedName: typedSignatureName, typedName2: typedSignatureName2 || '', signatureImageBase64, consent: true })
+        body: JSON.stringify({ typedName: typedSignatureName, typedName2: typedSignatureName2 || '', signatureImageBase64, signatureImageBase64_2, consent: true })
       });
       if (res.ok) {
         toast.success('Lease signed successfully');
@@ -641,6 +657,28 @@ const ApplicationView = () => {
                   <div className="mt-2">
                     <button onClick={clearCanvas} className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Clear</button>
                   </div>
+
+                  {application?.secondApplicantFirstName && application?.secondApplicantLastName && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">Co‑Applicant Draw Signature</label>
+                      <div className="border rounded-md bg-white">
+                        <canvas
+                          ref={canvasRef2}
+                          onMouseDown={(e) => { drawingRef2.current = true; setHasDrawing2(true); const r = canvasRef2.current.getBoundingClientRect(); const x = (e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x,y); }}
+                          onMouseMove={(e) => { if(!drawingRef2.current) return; e.preventDefault(); const r = canvasRef2.current.getBoundingClientRect(); const x = (e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; ctxRef2.current.lineTo(x,y); ctxRef2.current.stroke(); }}
+                          onMouseUp={() => { drawingRef2.current = false; }}
+                          onMouseLeave={() => { drawingRef2.current = false; }}
+                          onTouchStart={(e) => { drawingRef2.current = true; setHasDrawing2(true); const r = canvasRef2.current.getBoundingClientRect(); const x = (e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x,y); }}
+                          onTouchMove={(e) => { if(!drawingRef2.current) return; e.preventDefault(); const r = canvasRef2.current.getBoundingClientRect(); const x = (e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; ctxRef2.current.lineTo(x,y); ctxRef2.current.stroke(); }}
+                          onTouchEnd={() => { drawingRef2.current = false; }}
+                          className="w-full h-44"
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <button onClick={() => { const c = canvasRef2.current; if (!c || !ctxRef2.current) return; ctxRef2.current.clearRect(0,0,c.width,c.height); setHasDrawing2(false); }} className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Clear</button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 

@@ -604,6 +604,8 @@ AND YEAR FIRST ABOVE WRITTEN.
 Renters:
 ${application.firstName} ${application.lastName}_______________ DATED: ____________________
 
+${application.secondApplicantFirstName && application.secondApplicantLastName ? `(Renter 2) ${application.secondApplicantFirstName} ${application.secondApplicantLastName}_______________ DATED: ____________________\n` : ''}
+
 Jay Pommrehn for Palm Run, LLC:
 _________________________ DATED: ____________________
 
@@ -663,7 +665,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
   try {
     console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
-    const { typedName = '', typedName2 = '', signatureImageBase64 = '', consent } = req.body;
+    const { typedName = '', typedName2 = '', signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
     console.log('[lease:sign] appId=', applicationId, 'user=', req.user?._id?.toString());
     if (!consent) {
       console.warn('[lease:sign] missing consent');
@@ -751,6 +753,9 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     drawLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
     drawLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
     drawLine('Document Hash (SHA-256): ' + leaseTextHash);
+    if (typedName2) {
+      drawLine('Signed electronically by (Co-Applicant): ' + typedName2);
+    }
 
     const signedDate = new Date().toLocaleDateString('en-US');
     if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
@@ -802,7 +807,21 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     }
 
     // Render co-applicant typed signature/date inline if present
-    if (typedName2 && coApplicantY) {
+    if (coApplicantY) {
+      if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) {
+        const base64Data2 = signatureImageBase64_2.split(',')[1];
+        const bytes2 = Buffer.from(base64Data2, 'base64');
+        let img2;
+        if (signatureImageBase64_2.includes('image/png')) img2 = await pdfDoc.embedPng(bytes2);
+        else img2 = await pdfDoc.embedJpg(bytes2);
+        const imgW2 = 140;
+        const imgH2 = (img2.height / img2.width) * imgW2;
+        let imgX2 = margin + 180;
+        let imgY2 = coApplicantY - imgH2 + 6;
+        if (imgY2 < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; imgY2 = y - imgH2; }
+        page.drawImage(img2, { x: imgX2, y: imgY2, width: imgW2, height: imgH2 });
+        page.drawText(`DATED: ${signedDate}`, { x: imgX2 + imgW2 + 10, y: imgY2 + imgH2/2 - 6, size: 10, font, color: rgb(0,0,0) });
+      } else if (typedName2) {
       const sigSize2 = 24;
       let sigX2 = margin + 180;
       let sigBaseY2 = coApplicantY - sigSize2 + 6;
@@ -815,6 +834,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       const textWidth2 = (fontItalic || font).widthOfTextAtSize(typedName2, sigSize2);
       page.drawLine({ start: { x: sigX2, y: sigBaseY2 - 6 }, end: { x: sigX2 + textWidth2, y: sigBaseY2 - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
       page.drawText(`DATED: ${signedDate}`, { x: sigX2 + textWidth2 + 12, y: sigBaseY2 + 4, size: 10, font, color: rgb(0,0,0) });
+      }
     }
 
     let pdfBytes;
@@ -846,6 +866,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       leaseTextHash: 'sha256:' + leaseTextHash,
       signedByUserId: req.user._id,
       signedName: typedName || `${application.firstName} ${application.lastName}`,
+      coSignedName: typedName2 || undefined,
       consent: !!consent,
       ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
       userAgent: req.headers['user-agent'] || 'n/a',
