@@ -747,95 +747,65 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       }
     }
 
-    y -= 10;
-    drawLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
-    if (typedName2) {
-      drawLine('Signed electronically by (Co-Applicant): ' + typedName2);
-    }
-    drawLine('Signed at (UTC): ' + new Date().toISOString());
-    drawLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
-    drawLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
-    drawLine('Document Hash (SHA-256): ' + leaseTextHash);
-
+    // Create a dedicated signature block page with precise layout
     const signedDate = new Date().toLocaleDateString('en-US');
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let sigY = pageHeight - margin - 20;
+    page.drawText('Renters:', { x: margin, y: sigY + 20, size: 12, font, color: rgb(0,0,0) });
+
+    const nameX = margin;
+    const sigX = margin + 180;
+    const imgWidth = 160;
+    const dateOffset = 12;
+
+    const drawTyped = (p, name, x, yBase) => {
+      const size = 24;
+      p.drawText(name, { x, y: yBase, size, font: fontItalic || font, color: rgb(0.1,0.1,0.1) });
+      const w = (fontItalic || font).widthOfTextAtSize(name, size);
+      p.drawLine({ start: { x, y: yBase - 6 }, end: { x: x + w, y: yBase - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
+      p.drawText(`DATED: ${signedDate}`, { x: x + w + dateOffset, y: yBase + 4, size: 10, font, color: rgb(0,0,0) });
+    };
+
+    const drawImageSig = async (p, dataUrl, x, yBase) => {
+      const base64 = dataUrl.split(',')[1];
+      const bytes = Buffer.from(base64, 'base64');
+      const img = dataUrl.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+      const h = (img.height / img.width) * imgWidth;
+      p.drawImage(img, { x, y: yBase - h + 6, width: imgWidth, height: h });
+      p.drawText(`DATED: ${signedDate}`, { x: x + imgWidth + dateOffset, y: yBase - h/2, size: 10, font, color: rgb(0,0,0) });
+    };
+
+    // Primary signer row
+    page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: sigY, size: 12, font, color: rgb(0,0,0) });
     if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
-      const base64Data = signatureImageBase64.split(',')[1];
-      const bytes = Buffer.from(base64Data, 'base64');
-      let img;
-      if (signatureImageBase64.includes('image/png')) img = await pdfDoc.embedPng(bytes);
-      else img = await pdfDoc.embedJpg(bytes);
-      const imgWidth = 140;
-      const imgHeight = (img.height / img.width) * imgWidth;
-      // Default position: below text (previous behavior)
-      let imgX = margin;
-      let imgY = y - imgHeight;
-      // If we captured the renter name line Y, place signature to the right of the name line
-      if (renterNameY) {
-        imgX = margin + 180; // move to the right of the printed name
-        imgY = renterNameY - imgHeight + 6; // align with baseline
-      }
-      if (imgY < margin) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        y = pageHeight - margin;
-        imgY = y - imgHeight;
-      }
-      page.drawImage(img, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
-      // Render date text near the signature
-      page.drawText(`DATED: ${signedDate}`, { x: imgX + imgWidth + 10, y: imgY + imgHeight/2 - 6, size: 10, font, color: rgb(0,0,0) });
-      // Only move cursor if we drew at the bottom; inline draw does not need y change
-      if (!renterNameY) y -= imgHeight + lineHeight;
-    } else if (typedName) {
-      const sigSize = 24;
-      // Default placement below text
-      let sigX = margin;
-      let sigBaseY = y - sigSize;
-      if (renterNameY) {
-        sigX = margin + 180;
-        sigBaseY = renterNameY - sigSize + 6;
-      }
-      if (sigBaseY < margin) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        y = pageHeight - margin;
-        sigBaseY = y - sigSize;
-      }
-      page.drawText(typedName, { x: sigX, y: sigBaseY, size: sigSize, font: fontItalic || font, color: rgb(0.1, 0.1, 0.1) });
-      const textWidth = (fontItalic || font).widthOfTextAtSize(typedName, sigSize);
-      page.drawLine({ start: { x: sigX, y: sigBaseY - 6 }, end: { x: sigX + textWidth, y: sigBaseY - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
-      // Render date to the right of the signature
-      page.drawText(`DATED: ${signedDate}`, { x: sigX + textWidth + 12, y: sigBaseY + 4, size: 10, font, color: rgb(0,0,0) });
-      if (!renterNameY) y -= sigSize + lineHeight;
+      await drawImageSig(page, signatureImageBase64, sigX, sigY);
+    } else {
+      drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, sigY);
     }
 
-    // Render co-applicant typed signature/date inline if present
-    if (coApplicantY) {
+    // Co-applicant row if present
+    if (application.secondApplicantFirstName && application.secondApplicantLastName) {
+      sigY -= 34;
+      page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: sigY, size: 12, font, color: rgb(0,0,0) });
       if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) {
-        const base64Data2 = signatureImageBase64_2.split(',')[1];
-        const bytes2 = Buffer.from(base64Data2, 'base64');
-        let img2;
-        if (signatureImageBase64_2.includes('image/png')) img2 = await pdfDoc.embedPng(bytes2);
-        else img2 = await pdfDoc.embedJpg(bytes2);
-        const imgW2 = 140;
-        const imgH2 = (img2.height / img2.width) * imgW2;
-        let imgX2 = margin + 180;
-        let imgY2 = coApplicantY - imgH2 + 6;
-        if (imgY2 < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; imgY2 = y - imgH2; }
-        page.drawImage(img2, { x: imgX2, y: imgY2, width: imgW2, height: imgH2 });
-        page.drawText(`DATED: ${signedDate}`, { x: imgX2 + imgW2 + 10, y: imgY2 + imgH2/2 - 6, size: 10, font, color: rgb(0,0,0) });
+        await drawImageSig(page, signatureImageBase64_2, sigX, sigY);
       } else if (typedName2) {
-      const sigSize2 = 24;
-      let sigX2 = margin + 180;
-      let sigBaseY2 = coApplicantY - sigSize2 + 6;
-      if (sigBaseY2 < margin) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        y = pageHeight - margin;
-        sigBaseY2 = y - sigSize2;
-      }
-      page.drawText(typedName2, { x: sigX2, y: sigBaseY2, size: sigSize2, font: fontItalic || font, color: rgb(0.1,0.1,0.1) });
-      const textWidth2 = (fontItalic || font).widthOfTextAtSize(typedName2, sigSize2);
-      page.drawLine({ start: { x: sigX2, y: sigBaseY2 - 6 }, end: { x: sigX2 + textWidth2, y: sigBaseY2 - 6 }, thickness: 0.5, color: rgb(0.2,0.2,0.2) });
-      page.drawText(`DATED: ${signedDate}`, { x: sigX2 + textWidth2 + 12, y: sigBaseY2 + 4, size: 10, font, color: rgb(0,0,0) });
+        drawTyped(page, typedName2, sigX, sigY);
+      } else {
+        // leave blank if not provided
       }
     }
+
+    // After signature block, add audit lines on the next page
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - margin - 20;
+    function auditLine(t){ page.drawText(t, { x: margin, y, size: 11, font, color: rgb(0,0,0) }); y -= 16; }
+    auditLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
+    if (typedName2) auditLine('Signed electronically by (Co-Applicant): ' + typedName2);
+    auditLine('Signed at (UTC): ' + new Date().toISOString());
+    auditLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
+    auditLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
+    auditLine('Document Hash (SHA-256): ' + leaseTextHash);
 
     let pdfBytes;
     try {
