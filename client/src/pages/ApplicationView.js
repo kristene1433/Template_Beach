@@ -39,6 +39,12 @@ const ApplicationView = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [showSignModal, setShowSignModal] = useState(false);
+  const [leasePreview, setLeasePreview] = useState('');
+  // const [leasePreviewHash, setLeasePreviewHash] = useState(''); // currently unused
+  const [typedSignatureName, setTypedSignatureName] = useState('');
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [signing, setSigning] = useState(false);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -341,6 +347,67 @@ const ApplicationView = () => {
     navigate(`/payment?applicationId=${id}`);
   };
 
+  const openSignModal = async () => {
+    try {
+      setShowSignModal(true);
+      setLeasePreview('Loading preview...');
+      // setLeasePreviewHash('');
+      const res = await fetch(`/api/lease/preview/${id}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeasePreview(data.leaseText || '');
+        // setLeasePreviewHash(data.leaseTextHash || '');
+        if (application) {
+          setTypedSignatureName(`${application.firstName} ${application.lastName}`);
+        }
+      } else {
+        const e = await res.json();
+        setLeasePreview(e.error || 'Failed to load preview');
+      }
+    } catch (err) {
+      console.error('Preview error', err);
+      setLeasePreview('Error loading preview');
+    }
+  };
+
+  const submitSignature = async () => {
+    try {
+      if (!typedSignatureName || !consentChecked) {
+        toast.error('Please provide your typed signature and consent.');
+        return;
+      }
+      setSigning(true);
+      const res = await fetch(`/api/lease/sign/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ typedName: typedSignatureName, signatureImageBase64: '', consent: true })
+      });
+      if (res.ok) {
+        toast.success('Lease signed successfully');
+        setShowSignModal(false);
+        // refresh application data
+        if (typeof fetchApplicationData === 'function') {
+          fetchApplicationData();
+        } else {
+          window.location.reload();
+        }
+      } else {
+        const e = await res.json();
+        toast.error(e.error || 'Failed to sign lease');
+      }
+    } catch (err) {
+      console.error('Sign error', err);
+      toast.error('Error signing lease');
+    } finally {
+      setSigning(false);
+    }
+  };
+
   const handleEditClick = () => {
     if (application) {
       setEditData({
@@ -439,6 +506,48 @@ const ApplicationView = () => {
             </div>
           </div>
         </div>
+
+    {showSignModal && (
+      <div className="fixed inset-0 bg-gray-800/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Sign Lease</h3>
+            <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowSignModal(false)}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Typed Signature Name</label>
+              <input
+                value={typedSignatureName}
+                onChange={(e) => setTypedSignatureName(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="First Last"
+              />
+
+              <label className="flex items-center mt-3 space-x-2">
+                <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} />
+                <span className="text-sm text-gray-700">I consent to use electronic records and signatures (ESIGN).</span>
+              </label>
+
+              <button
+                onClick={submitSignature}
+                disabled={signing}
+                className="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {signing ? 'Signing...' : 'Sign and Submit'}
+              </button>
+            </div>
+
+            <div className="border rounded-md p-3 bg-gray-50 overflow-auto max-h-80">
+              <pre className="whitespace-pre-wrap text-xs text-gray-800">{leasePreview}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Application Information */}
@@ -741,6 +850,15 @@ const ApplicationView = () => {
                             <Download className="w-4 h-4 mr-2" />
                             Download Lease
                           </button>
+                          {!application?.leaseSigned && (
+                            <button
+                              onClick={openSignModal}
+                              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Sign Lease
+                            </button>
+                          )}
                           {application?.leaseSigned && (
                             <div className="flex items-center text-green-600">
                               <CheckCircle className="w-4 h-4 mr-2" />

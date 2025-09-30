@@ -3,6 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { jsPDF } = require('jspdf');
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+const crypto = require('crypto');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
@@ -587,8 +589,6 @@ NO LIFEGUARDS ON DUTY
 **LOBBY AND COMMON AMENITIES HOURS**
 DAILY: 7:00 AM to 11:00 PM
 
-**NOTE: OWNERS AND AGENTS ARE RESPONSIBLE FOR RENTERS AND GUESTS TO ABIDE BY THESE RULES.**
-
 IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS RENTAL AGREEMENT THE DAY
 AND YEAR FIRST ABOVE WRITTEN.
 
@@ -609,6 +609,150 @@ Phone: ${application.phone}
 Email: ${application.userId ? application.userId.email : 'N/A'}`;
 }
 
+// ---- In-house E-signing: Preview ----
+function sha256(content) {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function wrapText(text, maxCharsPerLine = 90) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    if ((line + ' ' + w).trim().length > maxCharsPerLine) {
+      lines.push(line.trim());
+      line = w;
+    } else {
+      line = (line + ' ' + w).trim();
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// Preview lease text and hash
+router.get('/preview/:applicationId', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const application = await Application.findById(applicationId).populate('userId', 'email');
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+    if (req.user.role !== 'admin' && application.userId && application.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
+    const leaseTextHash = sha256(leaseText);
+    res.json({ success: true, leaseText, leaseTextHash });
+  } catch (err) {
+    console.error('Lease preview error:', err);
+    res.status(500).json({ error: 'Server error generating preview' });
+  }
+});
+
+// ---- In-house E-signing: Sign and Generate PDF ----
+router.post('/sign/:applicationId', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { typedName = '', signatureImageBase64 = '', consent } = req.body;
+    if (!consent) return res.status(400).json({ error: 'Consent is required' });
+
+    const application = await Application.findById(applicationId).populate('userId', 'email');
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+    if (req.user.role !== 'admin' && application.userId && application.userId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    if (!application.leaseGenerated) {
+      return res.status(400).json({ error: 'Lease has not been generated yet' });
+    }
+
+    const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
+    const leaseTextHash = sha256(leaseText);
+
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const margin = 50;
+    const pageWidth = 612;
+    const pageHeight = 792;
+    const fontSize = 11;
+    const lineHeight = fontSize + 4;
+    let y = pageHeight - margin;
+    let page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+    function drawLine(text) {
+      if (y < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+      page.drawText(text, { x: margin, y: y, size: fontSize, font, color: rgb(0, 0, 0) });
+      y -= lineHeight;
+    }
+
+    const lines = [];
+    leaseText.split('\n').forEach(par => {
+      if (par.trim().length === 0) lines.push('');
+      else wrapText(par, 95).forEach(l => lines.push(l));
+    });
+    lines.forEach(drawLine);
+
+    y -= 10;
+    drawLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
+    drawLine('Signed at (UTC): ' + new Date().toISOString());
+    drawLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
+    drawLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
+    drawLine('Document Hash (SHA-256): ' + leaseTextHash);
+
+    if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
+      const base64Data = signatureImageBase64.split(',')[1];
+      const bytes = Buffer.from(base64Data, 'base64');
+      let img;
+      if (signatureImageBase64.includes('image/png')) img = await pdfDoc.embedPng(bytes);
+      else img = await pdfDoc.embedJpg(bytes);
+      const imgWidth = 200;
+      const imgHeight = (img.height / img.width) * imgWidth;
+      if (y - imgHeight < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+      page.drawImage(img, { x: margin, y: y - imgHeight, width: imgWidth, height: imgHeight });
+      y -= imgHeight + lineHeight;
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const base64 = Buffer.from(pdfBytes).toString('base64');
+
+    application.leaseSigned = true;
+    application.leaseSignedAt = new Date();
+    application.signedLeaseFile = {
+      filename: `lease_${application._id}.pdf`,
+      originalName: `lease_${application._id}.pdf`,
+      path: '',
+      mimetype: 'application/pdf',
+      size: pdfBytes.length,
+      uploadedAt: new Date(),
+      content: base64
+    };
+    application.leaseSignature = {
+      typedName,
+      method: signatureImageBase64 ? 'draw' : 'type',
+      signedAt: application.leaseSignedAt
+    };
+    application.leaseAudit = {
+      leaseTextHash: 'sha256:' + leaseTextHash,
+      signedByUserId: req.user._id,
+      signedName: typedName || `${application.firstName} ${application.lastName}`,
+      consent: !!consent,
+      ip: req.headers['x-forwarded-for']?.split(',')[0] || req.ip,
+      userAgent: req.headers['user-agent'] || 'n/a',
+      signedAt: application.leaseSignedAt,
+      version: 'v1'
+    };
+    await application.save();
+
+    res.json({ success: true, downloadUrl: `/api/lease/view-signed/${application._id}` });
+  } catch (err) {
+    console.error('Lease sign error:', err);
+    res.status(500).json({ error: 'Server error signing lease' });
+  }
+});
 // Upload signed lease
 router.post('/upload-signed', auth, upload.single('signedLease'), async (req, res) => {
   try {
