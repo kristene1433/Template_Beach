@@ -651,9 +651,14 @@ router.get('/preview/:applicationId', auth, async (req, res) => {
 // ---- In-house E-signing: Sign and Generate PDF ----
 router.post('/sign/:applicationId', auth, async (req, res) => {
   try {
+    console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
     const { typedName = '', signatureImageBase64 = '', consent } = req.body;
-    if (!consent) return res.status(400).json({ error: 'Consent is required' });
+    console.log('[lease:sign] appId=', applicationId, 'user=', req.user?._id?.toString());
+    if (!consent) {
+      console.warn('[lease:sign] missing consent');
+      return res.status(400).json({ error: 'Consent is required' });
+    }
 
     const application = await Application.findById(applicationId).populate('userId', 'email');
     if (!application) return res.status(404).json({ error: 'Application not found' });
@@ -667,8 +672,14 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
     const leaseTextHash = sha256(leaseText);
 
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    let pdfDoc, font;
+    try {
+      pdfDoc = await PDFDocument.create();
+      font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    } catch (e) {
+      console.error('[lease:sign] pdf-lib init error:', e);
+      return res.status(500).json({ error: 'PDF engine initialization failed' });
+    }
     const margin = 50;
     const pageWidth = 612;
     const pageHeight = 792;
@@ -716,7 +727,13 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       y -= imgHeight + lineHeight;
     }
 
-    const pdfBytes = await pdfDoc.save();
+    let pdfBytes;
+    try {
+      pdfBytes = await pdfDoc.save();
+    } catch (e) {
+      console.error('[lease:sign] pdf save error:', e);
+      return res.status(500).json({ error: 'Failed to generate PDF' });
+    }
     const base64 = Buffer.from(pdfBytes).toString('base64');
 
     application.leaseSigned = true;
@@ -746,6 +763,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       version: 'v1'
     };
     await application.save();
+    console.log('[lease:sign] lease signed and saved for application', applicationId);
 
     res.json({ success: true, downloadUrl: `/api/lease/view-signed/${application._id}` });
   } catch (err) {
