@@ -818,9 +818,15 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
           const base64 = signatureImageBase64.split(',')[1];
           const bytes = Buffer.from(base64, 'base64');
           const img = signatureImageBase64.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
-          const h = (img.height / img.width) * sigBoxWidth;
-          const sigY = row1Y - (sigBoxHeight - h) / 2;
-          page.drawImage(img, { x: sigX, y: sigY, width: sigBoxWidth, height: h });
+          const padding = 4;
+          const maxWidth = sigBoxWidth - padding * 2;
+          const maxHeight = sigBoxHeight - padding * 2;
+          const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+          const drawWidth = img.width * scale;
+          const drawHeight = img.height * scale;
+          const sigY = row1Y - sigBoxHeight + (sigBoxHeight - drawHeight) / 2;
+          const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
+          page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
         } else {
           const sigText = typedName || `${application.firstName} ${application.lastName}`;
           page.drawText(sigText, { x: sigX + 5, y: row1Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
@@ -853,9 +859,15 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
             const base64 = signatureImageBase64_2.split(',')[1];
             const bytes = Buffer.from(base64, 'base64');
             const img = signatureImageBase64_2.includes('image/png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
-            const h = (img.height / img.width) * sigBoxWidth;
-            const sigY = row2Y - (sigBoxHeight - h) / 2;
-            page.drawImage(img, { x: sigX, y: sigY, width: sigBoxWidth, height: h });
+            const padding = 4;
+            const maxWidth = sigBoxWidth - padding * 2;
+            const maxHeight = sigBoxHeight - padding * 2;
+            const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+            const drawWidth = img.width * scale;
+            const drawHeight = img.height * scale;
+            const sigY = row2Y - sigBoxHeight + (sigBoxHeight - drawHeight) / 2;
+            const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
+            page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
           } else if (typedName2) {
             page.drawText(typedName2, { x: sigX + 5, y: row2Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
           }
@@ -1127,3 +1139,4 @@ router.get('/view-signed', auth, async (req, res) => {
 });
 
 module.exports = router;
+
