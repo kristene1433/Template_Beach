@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -45,6 +45,11 @@ const ApplicationView = () => {
   const [typedSignatureName, setTypedSignatureName] = useState('');
   const [consentChecked, setConsentChecked] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [signMode, setSignMode] = useState('type'); // 'type' | 'draw'
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+  const drawingRef = useRef(false);
+  const [hasDrawing, setHasDrawing] = useState(false);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -366,6 +371,26 @@ const ApplicationView = () => {
         const e = await res.json();
         setLeasePreview(e.error || 'Failed to load preview');
       }
+      // Prepare canvas after modal opens
+      setTimeout(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const parent = canvas.parentElement;
+        if (parent) {
+          canvas.width = parent.clientWidth;
+          canvas.height = 180;
+        } else {
+          canvas.width = 520;
+          canvas.height = 180;
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#111827'; // gray-900
+        ctxRef.current = ctx;
+        setHasDrawing(false);
+      }, 0);
     } catch (err) {
       console.error('Preview error', err);
       setLeasePreview('Error loading preview');
@@ -379,13 +404,17 @@ const ApplicationView = () => {
         return;
       }
       setSigning(true);
+      let signatureImageBase64 = '';
+      if (signMode === 'draw' && hasDrawing && canvasRef.current) {
+        signatureImageBase64 = canvasRef.current.toDataURL('image/png');
+      }
       const res = await fetch(`/api/lease/sign/${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ typedName: typedSignatureName, signatureImageBase64: '', consent: true })
+        body: JSON.stringify({ typedName: typedSignatureName, signatureImageBase64, consent: true })
       });
       if (res.ok) {
         toast.success('Lease signed successfully');
@@ -406,6 +435,35 @@ const ApplicationView = () => {
     } finally {
       setSigning(false);
     }
+  };
+
+  // Canvas drawing handlers
+  const startDraw = (e) => {
+    drawingRef.current = true;
+    setHasDrawing(true);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctxRef.current.beginPath();
+    ctxRef.current.moveTo(x, y);
+  };
+  const drawMove = (e) => {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctxRef.current.lineTo(x, y);
+    ctxRef.current.stroke();
+  };
+  const endDraw = () => {
+    drawingRef.current = false;
+  };
+  const clearCanvas = () => {
+    const c = canvasRef.current;
+    if (!c || !ctxRef.current) return;
+    ctxRef.current.clearRect(0, 0, c.width, c.height);
+    setHasDrawing(false);
   };
 
   const handleEditClick = () => {
@@ -519,13 +577,44 @@ const ApplicationView = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Typed Signature Name</label>
-              <input
-                value={typedSignatureName}
-                onChange={(e) => setTypedSignatureName(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="First Last"
-              />
+              <div className="mb-3">
+                <div className="inline-flex rounded-md shadow-sm" role="group">
+                  <button onClick={() => setSignMode('type')} className={`px-3 py-1 text-sm border ${signMode==='type' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}>Type</button>
+                  <button onClick={() => setSignMode('draw')} className={`px-3 py-1 text-sm border -ml-px ${signMode==='draw' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}>Draw</button>
+                </div>
+              </div>
+
+              {signMode === 'type' ? (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Typed Signature Name</label>
+                  <input
+                    value={typedSignatureName}
+                    onChange={(e) => setTypedSignatureName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="First Last"
+                  />
+                </>
+              ) : (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Draw Your Signature</label>
+                  <div className="border rounded-md bg-white">
+                    <canvas
+                      ref={canvasRef}
+                      onMouseDown={startDraw}
+                      onMouseMove={drawMove}
+                      onMouseUp={endDraw}
+                      onMouseLeave={endDraw}
+                      onTouchStart={startDraw}
+                      onTouchMove={drawMove}
+                      onTouchEnd={endDraw}
+                      className="w-full h-44"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <button onClick={clearCanvas} className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Clear</button>
+                  </div>
+                </>
+              )}
 
               <label className="flex items-center mt-3 space-x-2">
                 <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} />
