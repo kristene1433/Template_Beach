@@ -773,34 +773,42 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     const nameX = margin;
     const sigX = margin + 180;
     const paras = leaseText.split('\n');
-    let skip = 0;
+    let suppressOldNameLines = false;
     for (const par of paras) {
-      if (skip > 0) { skip--; continue; }
       const t = par.trim();
       if (t.startsWith('Renters:')) {
         drawLine('Renters:');
         // Ensure space
         const rows = 1 + (application.secondApplicantFirstName && application.secondApplicantLastName ? 1 : 0);
-        const needed = rows * 34 + 6;
+        const needed = rows * 42 + 6;
         if (y - needed < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
         // Primary row
         const row1Y = y;
         page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y, size: 12, font, color: rgb(0,0,0) });
-        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y);
+        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y, 120);
         else drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, row1Y);
-        y -= 34;
+        y -= 42;
         // Co-applicant row
         if (application.secondApplicantFirstName && application.secondApplicantLastName) {
           const row2Y = y;
           page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y, size: 12, font, color: rgb(0,0,0) });
-          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y);
+          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y, 120);
           else if (typedName2) drawTyped(page, typedName2, sigX, row2Y);
-          y -= 34;
-          skip = 2; // skip the two printed lines following "Renters:"
-        } else {
-          skip = 1; // skip just the primary printed line
+          y -= 42;
         }
+        // Begin skipping old printed name lines until we reach the agent line
+        suppressOldNameLines = true;
         continue;
+      }
+      if (suppressOldNameLines) {
+        if (t.startsWith('Jay Pommrehn for Palm Run, LLC:')) {
+          // stop skipping and render this line next
+          suppressOldNameLines = false;
+          // ensure a comfortable gap before the agent section
+          if (y - lineHeight < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+          drawLine('Jay Pommrehn for Palm Run, LLC:');
+        }
+        continue; // skip everything while suppressing
       }
       const wrapped = t.length === 0 ? [''] : wrapText(par, 95);
       wrapped.forEach(drawLine);
