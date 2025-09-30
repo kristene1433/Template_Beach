@@ -604,7 +604,7 @@ AND YEAR FIRST ABOVE WRITTEN.
 Renters:
 ${application.firstName} ${application.lastName}_______________ DATED: ____________________
 
-${application.secondApplicantFirstName && application.secondApplicantLastName ? `(Renter 2) ${application.secondApplicantFirstName} ${application.secondApplicantLastName}_______________ DATED: ____________________\n` : ''}
+${application.secondApplicantFirstName && application.secondApplicantLastName ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}_______________ DATED: ____________________\n` : ''}
 
 Jay Pommrehn for Palm Run, LLC:
 _________________________ DATED: ____________________
@@ -749,13 +749,13 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
 
     y -= 10;
     drawLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
+    if (typedName2) {
+      drawLine('Signed electronically by (Co-Applicant): ' + typedName2);
+    }
     drawLine('Signed at (UTC): ' + new Date().toISOString());
     drawLine('IP Address: ' + (req.headers['x-forwarded-for']?.split(',')[0] || req.ip));
     drawLine('User Agent: ' + (req.headers['user-agent'] || 'n/a'));
     drawLine('Document Hash (SHA-256): ' + leaseTextHash);
-    if (typedName2) {
-      drawLine('Signed electronically by (Co-Applicant): ' + typedName2);
-    }
 
     const signedDate = new Date().toLocaleDateString('en-US');
     if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) {
