@@ -780,21 +780,21 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         drawLine('Renters:');
         // Ensure space
         const rows = 1 + (application.secondApplicantFirstName && application.secondApplicantLastName ? 1 : 0);
-        const needed = rows * 42 + 6;
+        const needed = rows * 60 + 6;
         if (y - needed < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
         // Primary row
         const row1Y = y;
         page.drawText(`${application.firstName} ${application.lastName}`, { x: nameX, y: row1Y, size: 12, font, color: rgb(0,0,0) });
-        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y, 120);
+        if (signatureImageBase64 && signatureImageBase64.startsWith('data:image')) await drawImageSig(page, signatureImageBase64, sigX, row1Y, 100);
         else drawTyped(page, typedName || `${application.firstName} ${application.lastName}`, sigX, row1Y);
-        y -= 42;
+        y -= 60;
         // Co-applicant row
         if (application.secondApplicantFirstName && application.secondApplicantLastName) {
           const row2Y = y;
           page.drawText(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`, { x: nameX, y: row2Y, size: 12, font, color: rgb(0,0,0) });
-          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y, 120);
+          if (signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image')) await drawImageSig(page, signatureImageBase64_2, sigX, row2Y, 100);
           else if (typedName2) drawTyped(page, typedName2, sigX, row2Y);
-          y -= 42;
+          y -= 60;
         }
         // Begin skipping old printed name lines until we reach the agent line
         suppressOldNameLines = true;
@@ -814,10 +814,10 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       wrapped.forEach(drawLine);
     }
 
-    // Add audit info on a separate page at the end
-    page = pdfDoc.addPage([pageWidth, pageHeight]);
-    y = pageHeight - margin - 20;
-    function auditLine(t){ page.drawText(t, { x: margin, y, size: 11, font, color: rgb(0,0,0) }); y -= 16; }
+    // Append audit info directly below the generated timestamp section
+    if (y - 96 < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+    y -= 10;
+    function auditLine(t){ if (y < margin) { page = pdfDoc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; } page.drawText(t, { x: margin, y, size: 11, font, color: rgb(0,0,0) }); y -= 16; }
     auditLine('Signed electronically by: ' + (typedName || (application.firstName + ' ' + application.lastName)));
     if (typedName2) auditLine('Signed electronically by (Co-Applicant): ' + typedName2);
     auditLine('Signed at (UTC): ' + new Date().toISOString());
