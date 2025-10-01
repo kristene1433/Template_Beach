@@ -42,8 +42,11 @@ const ApplicationView = () => {
   const [showSignModal, setShowSignModal] = useState(false);
   const [leasePreview, setLeasePreview] = useState('');
   // const [leasePreviewHash, setLeasePreviewHash] = useState(''); // currently unused
+  const [typedSignatureName, setTypedSignatureName] = useState('');
+  const [typedSignatureName2, setTypedSignatureName2] = useState('');
   const [consentChecked, setConsentChecked] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [signMode, setSignMode] = useState('type');
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const drawingRef = useRef(false);
@@ -131,10 +134,10 @@ const ApplicationView = () => {
 
   // Initialize signature canvas when modal opens and Draw mode is active
   useEffect(() => {
-    if (showSignModal) {
+    if (showSignModal && signMode === 'draw') {
       initCanvas();
     }
-  }, [showSignModal, initCanvas]);
+  }, [showSignModal, signMode, initCanvas]);
 
   // Check if user is authenticated
   if (!user) {
@@ -390,6 +393,11 @@ const ApplicationView = () => {
 
   const openSignModal = async () => {
     try {
+      setTypedSignatureName('');
+      setTypedSignatureName2('');
+      setHasDrawing(false);
+      setHasDrawing2(false);
+      setSignMode('type');
       setShowSignModal(true);
       setLeasePreview('Loading preview...');
       // setLeasePreviewHash('');
@@ -405,7 +413,7 @@ const ApplicationView = () => {
         setLeasePreview(e.error || 'Failed to load preview');
       }
       // Prepare canvas after modal opens
-      setTimeout(() => { initCanvas(); }, 0);
+      setTimeout(() => { if (signMode === 'draw') initCanvas(); }, 0);
     } catch (err) {
       console.error('Preview error', err);
       setLeasePreview('Error loading preview');
@@ -418,20 +426,33 @@ const ApplicationView = () => {
         toast.error('Please provide consent to sign electronically.');
         return;
       }
-      if (!canvasRef.current || !hasDrawing) {
-        toast.error('Please draw your signature before submitting.');
-        return;
-      }
 
-      let signatureImageBase64 = canvasRef.current.toDataURL('image/png');
+      let signatureImageBase64 = '';
       let signatureImageBase64_2 = '';
 
-      if (application?.secondApplicantFirstName && application?.secondApplicantLastName) {
-        if (!canvasRef2.current || !hasDrawing2) {
-          toast.error('Co-applicant must draw their signature before submitting.');
+      if (signMode === 'draw') {
+        if (!canvasRef.current || !hasDrawing) {
+          toast.error('Please draw your signature before submitting.');
           return;
         }
-        signatureImageBase64_2 = canvasRef2.current.toDataURL('image/png');
+        signatureImageBase64 = canvasRef.current.toDataURL('image/png');
+
+        if (application?.secondApplicantFirstName && application?.secondApplicantLastName) {
+          if (!canvasRef2.current || !hasDrawing2) {
+            toast.error('Co-applicant must draw their signature before submitting.');
+            return;
+          }
+          signatureImageBase64_2 = canvasRef2.current.toDataURL('image/png');
+        }
+      } else {
+        if (!typedSignatureName.trim()) {
+          toast.error('Please type your full name to sign.');
+          return;
+        }
+        if (application?.secondApplicantFirstName && application?.secondApplicantLastName && !typedSignatureName2.trim()) {
+          toast.error('Co-applicant must type their full name to sign.');
+          return;
+        }
       }
 
       setSigning(true);
@@ -441,7 +462,13 @@ const ApplicationView = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ signatureImageBase64, signatureImageBase64_2, consent: true })
+        body: JSON.stringify({
+          typedName: typedSignatureName.trim(),
+          typedName2: typedSignatureName2.trim(),
+          signatureImageBase64,
+          signatureImageBase64_2,
+          consent: true
+        })
       });
       if (res.ok) {
         toast.success('Lease signed successfully');
@@ -607,55 +634,103 @@ const ApplicationView = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm text-gray-600 mb-3">Use your mouse or finger to sign in the box below.</p>
-
-              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Applicant Signature</label>
-              <div className="border rounded-md bg-white">
-                <canvas
-                  ref={canvasRef}
-                  onMouseDown={startDraw}
-                  onMouseMove={drawMove}
-                  onMouseUp={endDraw}
-                  onMouseLeave={endDraw}
-                  onTouchStart={startDraw}
-                  onTouchMove={drawMove}
-                  onTouchEnd={endDraw}
-                  className="w-full h-44"
-                />
+              <div className="mb-3">
+                <div className="inline-flex rounded-md shadow-sm" role="group">
+                  <button
+                    type="button"
+                    onClick={() => setSignMode('type')}
+                    className={`px-3 py-1 text-sm border ${signMode === 'type' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                  >
+                    Type
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSignMode('draw');
+                      setTimeout(() => initCanvas(), 0);
+                    }}
+                    className={`px-3 py-1 text-sm border -ml-px ${signMode === 'draw' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                  >
+                    Draw
+                  </button>
+                </div>
               </div>
-              <div className="mt-2">
-                <button onClick={clearCanvas} className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Clear</button>
-              </div>
 
-              {application?.secondApplicantFirstName && application?.secondApplicantLastName && (
+              {signMode === 'type' ? (
                 <>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">Co-applicant Signature</label>
+                  <p className="text-sm text-gray-600 mb-3">Type your full legal name exactly as it should appear on the lease.</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Applicant Typed Signature</label>
+                  <input
+                    value={typedSignatureName}
+                    onChange={(e) => setTypedSignatureName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="First Last"
+                  />
+                  {application?.secondApplicantFirstName && application?.secondApplicantLastName && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">Co-applicant Typed Signature</label>
+                      <input
+                        value={typedSignatureName2}
+                        onChange={(e) => setTypedSignatureName2(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="First Last"
+                      />
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 mb-3">Use your mouse or finger to sign in the box below.</p>
+
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Applicant Signature</label>
                   <div className="border rounded-md bg-white">
                     <canvas
-                      ref={canvasRef2}
-                      onMouseDown={(e) => { drawingRef2.current = true; setHasDrawing2(true); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x, y); }}
-                      onMouseMove={(e) => { if (!drawingRef2.current) return; e.preventDefault(); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.lineTo(x, y); ctxRef2.current.stroke(); }}
-                      onMouseUp={() => { drawingRef2.current = false; }}
-                      onMouseLeave={() => { drawingRef2.current = false; }}
-                      onTouchStart={(e) => { drawingRef2.current = true; setHasDrawing2(true); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x, y); }}
-                      onTouchMove={(e) => { if (!drawingRef2.current) return; e.preventDefault(); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.lineTo(x, y); ctxRef2.current.stroke(); }}
-                      onTouchEnd={() => { drawingRef2.current = false; }}
+                      ref={canvasRef}
+                      onMouseDown={startDraw}
+                      onMouseMove={drawMove}
+                      onMouseUp={endDraw}
+                      onMouseLeave={endDraw}
+                      onTouchStart={startDraw}
+                      onTouchMove={drawMove}
+                      onTouchEnd={endDraw}
                       className="w-full h-44"
                     />
                   </div>
                   <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        const canvas = canvasRef2.current;
-                        if (!canvas || !ctxRef2.current) return;
-                        ctxRef2.current.clearRect(0, 0, canvas.width, canvas.height);
-                        setHasDrawing2(false);
-                      }}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                      Clear
-                    </button>
+                    <button onClick={clearCanvas} className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Clear</button>
                   </div>
+
+                  {application?.secondApplicantFirstName && application?.secondApplicantLastName && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">Co-applicant Signature</label>
+                      <div className="border rounded-md bg-white">
+                        <canvas
+                          ref={canvasRef2}
+                          onMouseDown={(e) => { drawingRef2.current = true; setHasDrawing2(true); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x, y); }}
+                          onMouseMove={(e) => { if (!drawingRef2.current) return; e.preventDefault(); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.lineTo(x, y); ctxRef2.current.stroke(); }}
+                          onMouseUp={() => { drawingRef2.current = false; }}
+                          onMouseLeave={() => { drawingRef2.current = false; }}
+                          onTouchStart={(e) => { drawingRef2.current = true; setHasDrawing2(true); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.beginPath(); ctxRef2.current.moveTo(x, y); }}
+                          onTouchMove={(e) => { if (!drawingRef2.current) return; e.preventDefault(); const rect = canvasRef2.current.getBoundingClientRect(); const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left; const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top; ctxRef2.current.lineTo(x, y); ctxRef2.current.stroke(); }}
+                          onTouchEnd={() => { drawingRef2.current = false; }}
+                          className="w-full h-44"
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <button
+                          onClick={() => {
+                            const canvas = canvasRef2.current;
+                            if (!canvas || !ctxRef2.current) return;
+                            ctxRef2.current.clearRect(0, 0, canvas.width, canvas.height);
+                            setHasDrawing2(false);
+                          }}
+                          className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 

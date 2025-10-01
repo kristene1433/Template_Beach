@@ -665,7 +665,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
   try {
     console.log('[lease:sign] incoming request');
     const { applicationId } = req.params;
-    const { signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
+    const { typedName = '', typedName2 = '', signatureImageBase64 = '', signatureImageBase64_2 = '', consent } = req.body;
     console.log('[lease:sign] context', {
       applicationId,
       userAuthenticated: !!req.user?._id
@@ -686,12 +686,18 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
 
     const requiresCoApplicant = !!(application.secondApplicantFirstName && application.secondApplicantLastName);
 
-    if (!signatureImageBase64 || !signatureImageBase64.startsWith('data:image')) {
-      return res.status(400).json({ error: 'A drawn signature is required to sign the lease.' });
+    const trimmedTypedName = (typedName || '').trim();
+    const trimmedTypedName2 = (typedName2 || '').trim();
+
+    const hasPrimaryDrawing = signatureImageBase64 && signatureImageBase64.startsWith('data:image');
+    const hasCoDrawing = signatureImageBase64_2 && signatureImageBase64_2.startsWith('data:image');
+
+    if (!hasPrimaryDrawing && !trimmedTypedName) {
+      return res.status(400).json({ error: 'Please provide a typed or drawn signature.' });
     }
 
-    if (requiresCoApplicant && (!signatureImageBase64_2 || !signatureImageBase64_2.startsWith('data:image'))) {
-      return res.status(400).json({ error: 'Co-applicant must draw their signature to sign the lease.' });
+    if (requiresCoApplicant && !hasCoDrawing && !trimmedTypedName2) {
+      return res.status(400).json({ error: 'Co-applicant must provide a typed or drawn signature.' });
     }
 
     const leaseText = generateLeaseAgreement(application, application.leaseStartDate, application.leaseEndDate, application.rentalAmount);
@@ -724,9 +730,9 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
         .join(' ');
     }
 
-    const primaryDisplayName = titleCase(`${application.firstName} ${application.lastName}`.trim());
+    const primaryDisplayName = trimmedTypedName || titleCase(`${application.firstName} ${application.lastName}`.trim());
     const coDisplayName = requiresCoApplicant
-      ? titleCase(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`.trim())
+      ? (trimmedTypedName2 || titleCase(`${application.secondApplicantFirstName} ${application.secondApplicantLastName}`.trim()))
       : '';
 
     function drawLine(text) {
@@ -737,6 +743,29 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
       page.drawText(text, { x: margin, y: y, size: fontSize, font, color: rgb(0, 0, 0) });
       y -= lineHeight;
     }
+
+    const drawTypedSignature = (p, text, boxX, boxY, boxWidth, boxHeight) => {
+      if (!text) return;
+      const scriptFont = fontItalic || font;
+      const maxSize = 22;
+      const textWidth = scriptFont.widthOfTextAtSize(text, maxSize);
+      const scale = textWidth > boxWidth - 10 ? (boxWidth - 10) / textWidth : 1;
+      const size = Math.max(14, maxSize * scale);
+      const baseline = boxY + (boxHeight / 2) - size / 3;
+      p.drawText(text, {
+        x: boxX + 5,
+        y: baseline,
+        size,
+        font: scriptFont,
+        color: rgb(0.1, 0.1, 0.1)
+      });
+      p.drawLine({
+        start: { x: boxX + 4, y: boxY + 6 },
+        end: { x: boxX + boxWidth - 4, y: boxY + 4 },
+        thickness: 0.6,
+        color: rgb(0.3, 0.3, 0.3)
+      });
+    };
 
     // Re-flow the lease text, injecting the signature block inline
     const signedDate = new Date().toLocaleDateString('en-US');
@@ -788,9 +817,9 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
           const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
           page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
         } else {
-          page.drawText(primaryDisplayName, { x: sigX + 5, y: row1Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+          drawTypedSignature(page, primaryDisplayName, sigX, row1Y - sigBoxHeight, sigBoxWidth, sigBoxHeight);
         }
-        
+
         // Date
         page.drawText(`DATED: ${signedDate}`, { x: sigX + sigBoxWidth + 12, y: row1Y - (sigBoxHeight / 2) + 4, size: 12, font, color: rgb(0,0,0) });
         
@@ -828,7 +857,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
             const sigXPos = sigX + (sigBoxWidth - drawWidth) / 2;
             page.drawImage(img, { x: sigXPos, y: sigY, width: drawWidth, height: drawHeight });
           } else if (coDisplayName) {
-            page.drawText(coDisplayName, { x: sigX + 5, y: row2Y - 25, size: 10, font: fontItalic, color: rgb(0,0,0) });
+            drawTypedSignature(page, coDisplayName, sigX, row2Y - sigBoxHeight, sigBoxWidth, sigBoxHeight);
           }
           
           // Date
@@ -888,7 +917,7 @@ router.post('/sign/:applicationId', auth, async (req, res) => {
     };
     application.leaseSignature = {
       typedName: primaryDisplayName,
-      method: 'draw',
+      method: hasPrimaryDrawing ? 'draw' : 'type',
       signedAt: application.leaseSignedAt
     };
     application.leaseAudit = {
