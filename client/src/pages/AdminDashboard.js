@@ -63,6 +63,16 @@ const AdminDashboard = () => {
   const [availabilityCurrentMonth, setAvailabilityCurrentMonth] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState([]);
   const [availabilityMode, setAvailabilityMode] = useState('view'); // 'view', 'select', 'bulk'
+  const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
+  const [manualPaymentData, setManualPaymentData] = useState({
+    applicationId: '',
+    amount: '',
+    paymentType: 'rent',
+    paymentDate: new Date().toISOString().split('T')[0],
+    checkNumber: '',
+    notes: ''
+  });
+  const [savingManualPayment, setSavingManualPayment] = useState(false);
 
   const loadAvailability = useCallback(async () => {
     try {
@@ -155,6 +165,63 @@ const AdminDashboard = () => {
     logout();
     navigate('/admin/login');
     toast.success('Logged out successfully');
+  };
+
+  const handleManualPaymentSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!manualPaymentData.applicationId || !manualPaymentData.amount) {
+      toast.error('Please select an application and enter an amount');
+      return;
+    }
+
+    setSavingManualPayment(true);
+    
+    try {
+      const response = await fetch('/api/payment/admin/manual-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(manualPaymentData)
+      });
+
+      if (response.ok) {
+        toast.success('Check payment recorded successfully');
+        setShowManualPaymentModal(false);
+        setManualPaymentData({
+          applicationId: '',
+          amount: '',
+          paymentType: 'rent',
+          paymentDate: new Date().toISOString().split('T')[0],
+          checkNumber: '',
+          notes: ''
+        });
+        // Refresh applications to show updated payment info
+        loadApplications();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to record payment');
+      }
+    } catch (error) {
+      console.error('Error recording manual payment:', error);
+      toast.error('Failed to record payment');
+    } finally {
+      setSavingManualPayment(false);
+    }
+  };
+
+  const openManualPaymentModal = (application) => {
+    setManualPaymentData({
+      applicationId: application._id,
+      amount: '',
+      paymentType: 'rent',
+      paymentDate: new Date().toISOString().split('T')[0],
+      checkNumber: '',
+      notes: ''
+    });
+    setShowManualPaymentModal(true);
   };
 
   const updateApplicationStatus = async (applicationId, newStatus) => {
@@ -1221,6 +1288,83 @@ const AdminDashboard = () => {
 
 
 
+        {/* Management Sections */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Property Management</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Manage Rates Section */}
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium rounded-lg overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+              <div className="flex items-center">
+                <DollarSign className="h-6 w-6 text-blue-600 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">Manage Rates</h3>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Configure rental rates and pricing periods</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Current Rates</h4>
+                    <p className="text-sm text-gray-500">{rates.length} rate periods configured</p>
+                  </div>
+                  <button
+                    onClick={() => setShowRatesModal(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Manage Rates
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Set up seasonal pricing, minimum stays, and special rates for different periods.
+                </div>
+                <div className="pt-2">
+                  <button
+                    onClick={() => setShowManualPaymentModal(true)}
+                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 border border-green-300 rounded-md hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <CreditCard className="h-3 w-3 mr-1" />
+                    Quick Add Check
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Manage Availability Section */}
+          <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium rounded-lg overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+              <div className="flex items-center">
+                <Calendar className="h-6 w-6 text-green-600 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">Manage Availability</h3>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Control when the property is available for rent</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Property Calendar</h4>
+                    <p className="text-sm text-gray-500">Mark dates as available or unavailable</p>
+                  </div>
+                  <button
+                    onClick={() => setShowAvailabilityModal(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Manage Availability
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Block out maintenance periods, personal use, or other unavailable dates.
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+
         {/* Applications List */}
         <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
@@ -1282,25 +1426,18 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <button
-                          onClick={() => setShowRatesModal(true)}
-                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                          <span className="hidden sm:inline">Manage Rates</span>
-                        </button>
-                        <button
-                          onClick={() => setShowAvailabilityModal(true)}
-                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                          <span className="hidden sm:inline">Manage Availability</span>
-                        </button>
-                        <button
                           onClick={() => handleViewApplication(application)}
                           className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
                           <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                           <span className="hidden sm:inline">View</span>
+                        </button>
+                        <button
+                          onClick={() => openManualPaymentModal(application)}
+                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <CreditCard className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                          <span className="hidden sm:inline">Add Check</span>
                         </button>
                         {application.documents && application.documents.length > 0 && (
                           <button
@@ -2826,6 +2963,135 @@ const AdminDashboard = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Payment Modal */}
+      {showManualPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Add Check Payment</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {manualPaymentData.applicationId 
+                  ? 'Record a manual check payment for this tenant' 
+                  : 'Record a manual check payment for any tenant'
+                }
+              </p>
+            </div>
+            
+            <form onSubmit={handleManualPaymentSubmit} className="p-6 space-y-4">
+              {!manualPaymentData.applicationId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Application
+                  </label>
+                  <select
+                    value={manualPaymentData.applicationId}
+                    onChange={(e) => setManualPaymentData(prev => ({ ...prev, applicationId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Choose an application...</option>
+                    {applications.map((app) => (
+                      <option key={app._id} value={app._id}>
+                        {app.userId?.firstName} {app.userId?.lastName} - {app.propertyAddress}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Type
+                </label>
+                <select
+                  value={manualPaymentData.paymentType}
+                  onChange={(e) => setManualPaymentData(prev => ({ ...prev, paymentType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="rent">Rent</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="late_fee">Late Fee</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={manualPaymentData.amount}
+                  onChange={(e) => setManualPaymentData(prev => ({ ...prev, amount: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Date
+                </label>
+                <input
+                  type="date"
+                  value={manualPaymentData.paymentDate}
+                  onChange={(e) => setManualPaymentData(prev => ({ ...prev, paymentDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Check Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={manualPaymentData.checkNumber}
+                  onChange={(e) => setManualPaymentData(prev => ({ ...prev, checkNumber: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., 1234"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={manualPaymentData.notes}
+                  onChange={(e) => setManualPaymentData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Additional notes about this payment..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowManualPaymentModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingManualPayment}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingManualPayment ? 'Recording...' : 'Record Payment'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
