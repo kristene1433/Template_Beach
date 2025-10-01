@@ -1191,4 +1191,47 @@ router.get('/transfer-history/:applicationId', auth, async (req, res) => {
   }
 });
 
+// Admin: Remove payment
+router.delete('/admin/remove/:paymentId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { paymentId } = req.params;
+
+    if (!paymentId) {
+      return res.status(400).json({ error: 'Payment ID is required' });
+    }
+
+    // Find the payment
+    const payment = await Payment.findById(paymentId);
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    // Only allow removal of manual payments (check payments) for safety
+    if (payment.paymentMethod !== 'check') {
+      return res.status(400).json({ error: 'Only check payments can be removed' });
+    }
+
+    // Remove the payment
+    await Payment.findByIdAndDelete(paymentId);
+
+    // Update the associated application
+    if (payment.applicationId) {
+      const application = await Application.findById(payment.applicationId);
+      if (application) {
+        application.lastUpdated = new Date();
+        await application.save();
+      }
+    }
+
+    res.json({ success: true, message: 'Payment removed successfully' });
+  } catch (error) {
+    console.error('Error removing payment:', error);
+    res.status(500).json({ error: 'Server error removing payment' });
+  }
+});
+
 module.exports = { router, webhookRouter };
