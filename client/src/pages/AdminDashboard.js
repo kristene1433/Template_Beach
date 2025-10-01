@@ -1357,37 +1357,42 @@ const AdminDashboard = () => {
 
       {/* Application Detail Modal */}
       {selectedApplication && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Application Details
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => refreshSelectedApplication(selectedApplication._id)}
-                    className="text-gray-400 hover:text-gray-600 p-1"
-                    title="Refresh data"
-                  >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setSelectedApplication(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <XCircle className="h-6 w-6" />
-                  </button>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-8">
+          <div className="relative w-full max-w-6xl h-[90vh] bg-white border border-slate-200 shadow-[0_20px_60px_rgba(15,23,42,0.25)] rounded-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">Application Details</h3>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Submitted {formatDate(selectedApplication.submittedAt || selectedApplication.createdAt)}
+                </p>
               </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => refreshSelectedApplication(selectedApplication._id)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  title="Refresh data"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedApplication(null)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  title="Close"
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex-1 overflow-y-auto bg-slate-50">
+              <div className="px-6 py-6 space-y-6">
+                <div className="space-y-6">
                 {/* Personal Information */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-md font-medium text-gray-900 border-b pb-2">
+                <div className="space-y-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">
                       Personal Information
                     </h4>
                     {!isEditingApplication ? (
@@ -1708,8 +1713,8 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Quick Lookups */}
-                <div className="space-y-2">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2">
+                <div className="space-y-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm lg:sticky lg:top-6">
+                  <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">
                     Quick Lookups
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1755,8 +1760,8 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Application Status */}
-                <div className="space-y-4">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2">
+                <div className="space-y-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">
                     Application Status
                   </h4>
                   <div className="space-y-3">
@@ -1818,8 +1823,8 @@ const AdminDashboard = () => {
 
               {/* Lease Information */}
               {(selectedApplication.leaseStartDate || selectedApplication.leaseEndDate || selectedApplication.rentalAmount) && (
-                <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4">
                     Lease Information
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1864,8 +1869,8 @@ const AdminDashboard = () => {
 
               {/* Documents Section */}
               {selectedApplication.documents && selectedApplication.documents.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4">
                     Uploaded Documents ({selectedApplication.documents.length})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1905,7 +1910,7 @@ const AdminDashboard = () => {
 
               {/* Signed Lease Notification */}
               {selectedApplication.signedLeaseFile && (
-                <div className="mt-6">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0">
@@ -1944,8 +1949,8 @@ const AdminDashboard = () => {
               )}
 
               {/* Payment Information */}
-              <div className="mt-6">
-                <h4 className="text-md font-medium text-gray-900 border-b pb-2 mb-4 flex items-center">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 flex items-center">
                   <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
                   Payment Information
                 </h4>
@@ -2065,7 +2070,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-wrap justify-end gap-3">
                 {selectedApplication.documents && selectedApplication.documents.length > 0 && (
                   <button
                     onClick={() => reviewDocuments(selectedApplication)}

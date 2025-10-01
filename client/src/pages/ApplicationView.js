@@ -740,14 +740,6 @@ const ApplicationView = () => {
                     </>
                   )}
 
-                  <div className="mt-4 border border-dashed border-gray-300 rounded-lg bg-gray-50 h-32 flex items-center justify-center px-6">
-                    <span
-                      className={`text-5xl text-gray-900 ${typedSignatureName ? 'opacity-100' : 'opacity-40'}`}
-                      style={{ fontFamily: '"Great Vibes", "Lucida Handwriting", cursive' }}
-                    >
-                      {typedSignatureName || 'Sample Signature'}
-                    </span>
-                  </div>
                 </>
               ) : (
                 <>
