@@ -1062,7 +1062,7 @@ const AdminDashboard = () => {
           <div className="absolute inset-0 bg-black/40" />
         </div>
         <div className="relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+          <div className="w-full px-4 sm:px-6 lg:px-10 py-4 md:py-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
               <div className="flex items-center">
                 <div className="mr-3">
@@ -1100,7 +1100,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="bg-gradient-to-br from-blue-50 to-cyan-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 -mt-2 md:mt-0">
+        <div className="w-full px-4 sm:px-6 lg:px-10 py-4 md:py-8 -mt-2 md:mt-0">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/90 backdrop-blur-md border border-white/30 overflow-hidden shadow-medium rounded-lg">
@@ -1219,7 +1219,31 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-
+        {/* Quick Actions */}
+        <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium rounded-lg mb-6">
+          <div className="p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Property Controls</h3>
+              <p className="text-xs text-gray-500">Manage global rates and availability across all properties.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setShowRatesModal(true)}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Manage Rates
+              </button>
+              <button
+                onClick={() => setShowAvailabilityModal(true)}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Manage Availability
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Applications List */}
         <div className="bg-white/90 backdrop-blur-md border border-white/30 shadow-medium overflow-hidden sm:rounded-md">
@@ -1281,20 +1305,6 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() => setShowRatesModal(true)}
-                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <DollarSign className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                          <span className="hidden sm:inline">Manage Rates</span>
-                        </button>
-                        <button
-                          onClick={() => setShowAvailabilityModal(true)}
-                          className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                          <span className="hidden sm:inline">Manage Availability</span>
-                        </button>
                         <button
                           onClick={() => handleViewApplication(application)}
                           className="inline-flex items-center px-2 py-1 md:px-3 md:py-2 border border-gray-300 shadow-sm text-xs md:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

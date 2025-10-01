@@ -420,6 +420,59 @@ const ApplicationView = () => {
     }
   };
 
+  const createTypedSignatureImage = async (name) => {
+    const text = name?.trim();
+    if (!text) return '';
+
+    const width = 600;
+    const height = 200;
+    const dpr = window.devicePixelRatio || 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const baseFontSize = 72;
+    try {
+      if (document?.fonts?.load) {
+        await document.fonts.load(`${baseFontSize}px "Great Vibes"`);
+      }
+    } catch (e) {
+      console.warn('Font load warning:', e);
+    }
+
+    let fontSize = baseFontSize;
+    ctx.font = `${fontSize}px "Great Vibes", "Lucida Handwriting", cursive`;
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    const maxWidth = width - 60;
+    let metrics = ctx.measureText(text);
+    if (metrics.width > maxWidth) {
+      fontSize = Math.max(42, (maxWidth / metrics.width) * fontSize);
+      ctx.font = `${fontSize}px "Great Vibes", "Lucida Handwriting", cursive`;
+      metrics = ctx.measureText(text);
+    }
+
+    const textX = (width - metrics.width) / 2;
+    const baseline = height / 2;
+    ctx.fillStyle = '#111827';
+    ctx.fillText(text, textX, baseline);
+
+    ctx.strokeStyle = '#4b5563';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(textX, baseline + fontSize * 0.25);
+    ctx.lineTo(textX + metrics.width, baseline + fontSize * 0.18);
+    ctx.stroke();
+
+    return canvas.toDataURL('image/png');
+  };
+
   const submitSignature = async () => {
     try {
       if (!consentChecked) {
@@ -452,6 +505,11 @@ const ApplicationView = () => {
         if (application?.secondApplicantFirstName && application?.secondApplicantLastName && !typedSignatureName2.trim()) {
           toast.error('Co-applicant must type their full name to sign.');
           return;
+        }
+
+        signatureImageBase64 = await createTypedSignatureImage(typedSignatureName);
+        if (application?.secondApplicantFirstName && application?.secondApplicantLastName) {
+          signatureImageBase64_2 = await createTypedSignatureImage(typedSignatureName2);
         }
       }
 
@@ -638,7 +696,11 @@ const ApplicationView = () => {
                 <div className="inline-flex rounded-md shadow-sm" role="group">
                   <button
                     type="button"
-                    onClick={() => setSignMode('type')}
+                    onClick={() => {
+                      setSignMode('type');
+                      setHasDrawing(false);
+                      setHasDrawing2(false);
+                    }}
                     className={`px-3 py-1 text-sm border ${signMode === 'type' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
                   >
                     Type
@@ -677,6 +739,15 @@ const ApplicationView = () => {
                       />
                     </>
                   )}
+
+                  <div className="mt-4 border border-dashed border-gray-300 rounded-lg bg-gray-50 h-32 flex items-center justify-center px-6">
+                    <span
+                      className={`text-5xl text-gray-900 ${typedSignatureName ? 'opacity-100' : 'opacity-40'}`}
+                      style={{ fontFamily: '"Great Vibes", "Lucida Handwriting", cursive' }}
+                    >
+                      {typedSignatureName || 'Sample Signature'}
+                    </span>
+                  </div>
                 </>
               ) : (
                 <>
