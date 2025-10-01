@@ -945,6 +945,74 @@ router.post('/transfer-deposit', auth, async (req, res) => {
   }
 });
 
+// Admin: Record manual payment (e.g., check)
+router.post('/admin/manual-payment', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const {
+      applicationId,
+      amount,
+      paymentType = 'rent',
+      paymentDate,
+      checkNumber = '',
+      notes = ''
+    } = req.body;
+
+    if (!applicationId || amount === undefined) {
+      return res.status(400).json({ error: 'Application ID and amount are required' });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number' });
+    }
+
+    const application = await Application.findById(applicationId).populate('userId', 'email');
+    if (!application || !application.userId) {
+      return res.status(404).json({ error: 'Application or associated user not found' });
+    }
+
+    const cents = Math.round(parsedAmount * 100);
+    const allowedTypes = ['deposit', 'rent', 'late_fee', 'other'];
+    const normalizedType = allowedTypes.includes(paymentType) ? paymentType : 'other';
+
+    const manualPayment = new Payment({
+      userId: application.userId._id,
+      applicationId: application._id,
+      stripePaymentIntentId: `manual_${Date.now()}_${Math.round(Math.random() * 1e9)}`,
+      stripeCustomerId: `manual_${application.userId._id}`,
+      amount: cents,
+      creditCardFee: 0,
+      totalAmount: cents,
+      currency: 'usd',
+      paymentType: normalizedType,
+      description: notes?.trim() || `${normalizedType === 'deposit' ? 'Deposit' : normalizedType === 'rent' ? 'Rent' : 'Manual'} payment recorded by admin`,
+      status: 'succeeded',
+      paymentMethod: 'check',
+      paidAt: paymentDate ? new Date(paymentDate) : new Date(),
+      metadata: {
+        notes: `Manual check${checkNumber ? ` #${checkNumber}` : ''}${notes ? ` - ${notes}` : ''}`.trim()
+      }
+    });
+
+    await manualPayment.save();
+
+    application.lastUpdated = new Date();
+    if (normalizedType === 'deposit') {
+      application.paymentReceived = true;
+    }
+    await application.save();
+
+    res.json({ success: true, payment: manualPayment });
+  } catch (error) {
+    console.error('Admin manual payment error:', error);
+    res.status(500).json({ error: 'Server error recording manual payment' });
+  }
+});
+
 // Admin: Transfer amount from one application to another
 router.post('/admin/transfer-amount', auth, async (req, res) => {
   try {

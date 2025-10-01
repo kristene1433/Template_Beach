@@ -48,6 +48,16 @@ const AdminDashboard = () => {
   const [isEditingApplication, setIsEditingApplication] = useState(false);
   const [editApplicationData, setEditApplicationData] = useState({});
   const [savingApplication, setSavingApplication] = useState(false);
+  const createManualPaymentDefaults = () => ({
+    amount: '',
+    paymentType: 'rent',
+    paymentDate: new Date().toISOString().split('T')[0],
+    checkNumber: '',
+    notes: ''
+  });
+  const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
+  const [manualPaymentData, setManualPaymentData] = useState(createManualPaymentDefaults);
+  const [savingManualPayment, setSavingManualPayment] = useState(false);
   const [rates, setRates] = useState([]);
   const [showRatesModal, setShowRatesModal] = useState(false);
   const [showAddRateModal, setShowAddRateModal] = useState(false);
@@ -611,6 +621,71 @@ const AdminDashboard = () => {
       toast.error('Failed to load payment history');
     } finally {
       setLoadingPayments(false);
+    }
+  };
+
+  const openManualPaymentModal = () => {
+    const defaultType = selectedApplication && !selectedApplication.paymentReceived ? 'deposit' : 'rent';
+    setManualPaymentData({
+      ...createManualPaymentDefaults(),
+      paymentType: defaultType
+    });
+    setShowManualPaymentModal(true);
+  };
+
+  const closeManualPaymentModal = () => {
+    setShowManualPaymentModal(false);
+    setSavingManualPayment(false);
+    setManualPaymentData(createManualPaymentDefaults());
+  };
+
+  const handleManualPaymentChange = (field, value) => {
+    setManualPaymentData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleManualPaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedApplication) return;
+
+    const amountValue = parseFloat(manualPaymentData.amount);
+    if (Number.isNaN(amountValue) || amountValue <= 0) {
+      toast.error('Please enter a valid amount greater than zero');
+      return;
+    }
+
+    setSavingManualPayment(true);
+    try {
+      const response = await fetch('/api/payment/admin/manual-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          applicationId: selectedApplication._id,
+          amount: amountValue,
+          paymentType: manualPaymentData.paymentType,
+          paymentDate: manualPaymentData.paymentDate,
+          checkNumber: manualPaymentData.checkNumber,
+          notes: manualPaymentData.notes
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Manual payment recorded');
+        closeManualPaymentModal();
+        await fetchApplicationPayments(selectedApplication._id, selectedApplication);
+        await refreshSelectedApplication(selectedApplication._id);
+        await loadApplications();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to record payment');
+      }
+    } catch (error) {
+      console.error('Manual payment error:', error);
+      toast.error('Error recording payment');
+    } finally {
+      setSavingManualPayment(false);
     }
   };
 
@@ -1388,7 +1463,6 @@ const AdminDashboard = () => {
 
             <div className="flex-1 overflow-y-auto bg-slate-50">
               <div className="px-6 py-6 space-y-6">
-                <div className="space-y-6">
                 {/* Personal Information */}
                 <div className="space-y-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <div className="flex items-center justify-between">
@@ -1818,7 +1892,6 @@ const AdminDashboard = () => {
                       </button>
                     </div>
                   </div>
-                </div>
               </div>
 
               {/* Lease Information */}
@@ -1950,11 +2023,20 @@ const AdminDashboard = () => {
 
               {/* Payment Information */}
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <h4 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
-                  Payment Information
-                </h4>
-                
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-3 mb-4">
+                  <h4 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    Payment Information
+                  </h4>
+                  <button
+                    onClick={openManualPaymentModal}
+                    className="inline-flex items-center px-3 py-2 border border-blue-200 shadow-sm text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-300"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Record Check Payment
+                  </button>
+                </div>
+
                 {loadingPayments ? (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
@@ -2110,6 +2192,104 @@ const AdminDashboard = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showManualPaymentModal && selectedApplication && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-medium text-gray-900">Record Check Payment</h3>
+                <button
+                  onClick={closeManualPaymentModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleManualPaymentSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={manualPaymentData.amount}
+                    onChange={(e) => handleManualPaymentChange('amount', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter amount"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Type</label>
+                  <select
+                    value={manualPaymentData.paymentType}
+                    onChange={(e) => handleManualPaymentChange('paymentType', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="rent">Rent</option>
+                    <option value="deposit">Deposit</option>
+                    <option value="late_fee">Late Fee</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                  <input
+                    type="date"
+                    value={manualPaymentData.paymentDate}
+                    onChange={(e) => handleManualPaymentChange('paymentDate', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Check Number (optional)</label>
+                  <input
+                    type="text"
+                    value={manualPaymentData.checkNumber}
+                    onChange={(e) => handleManualPaymentChange('checkNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 1025"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                  <textarea
+                    value={manualPaymentData.notes}
+                    onChange={(e) => handleManualPaymentChange('notes', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Add any helpful details for this payment"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={closeManualPaymentModal}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    disabled={savingManualPayment}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    disabled={savingManualPayment}
+                  >
+                    {savingManualPayment ? 'Saving...' : 'Save Payment'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
