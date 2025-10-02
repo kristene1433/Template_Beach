@@ -1,8 +1,41 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/leases';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'lease-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF, JPEG, and PNG files are allowed'));
+    }
+  }
+});
 
 // Get user's applications
 router.get('/', auth, async (req, res) => {
@@ -549,6 +582,88 @@ router.delete('/admin/:applicationId', auth, async (req, res) => {
   }
 });
 
+// Admin: Upload signed lease file
+router.post('/admin/upload-lease', auth, upload.single('leaseFile'), async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
 
+    const { applicationId } = req.body;
+    
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID is required' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Find the application
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Update application with signed lease file info
+    application.signedLeaseFile = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      uploadedAt: new Date()
+    };
+
+    application.lastUpdated = new Date();
+    await application.save();
+
+    res.json({
+      success: true,
+      message: 'Signed lease uploaded successfully',
+      signedLeaseFile: application.signedLeaseFile
+    });
+  } catch (error) {
+    console.error('Lease upload error:', error);
+    
+    // Clean up uploaded file if there was an error
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error cleaning up uploaded file:', unlinkError);
+      }
+    }
+    
+    res.status(500).json({ error: 'Server error uploading lease file' });
+  }
+});
+
+// Serve uploaded lease files
+router.get('/admin/lease-file/:filename', auth, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, '../uploads/leases', filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Set appropriate headers
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Type', 'application/pdf');
+    
+    // Send the file
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Error serving lease file:', error);
+    res.status(500).json({ error: 'Server error serving file' });
+  }
+});
 
 module.exports = router;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Circle, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 
-const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApplicationUpdate }) => {
+const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApplicationUpdate, compact = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [applicationPayments, setApplicationPayments] = useState([]);
   const [currentApplication, setCurrentApplication] = useState(application);
@@ -116,6 +116,26 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
   const completedSteps = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;
   const progressPercentage = (completedSteps / totalSteps) * 100;
+
+  // Compact mode for dashboard cards
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-600 font-medium">
+          {completedSteps}/{totalSteps}
+        </span>
+        <div className="flex-1 bg-gray-200 rounded-full h-1.5 min-w-16">
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-green-500 h-1.5 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
+        <span className="text-xs text-gray-500 font-medium">
+          {Math.round(progressPercentage)}%
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30 max-w-md">
