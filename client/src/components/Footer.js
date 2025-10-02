@@ -11,9 +11,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Palm Run LLC</h3>
+            <h3 className="text-lg font-semibold mb-2 text-blue-400">🌴 Palm Run</h3>
             <p className="text-gray-400 text-sm mb-4">
-              Your trusted partner for Gulf Shores beachfront living. 
+              Beachfront Condo Rental • Indian Shores, FL
+            </p>
+            <p className="text-gray-400 text-sm mb-4">
+              Your trusted partner for beachfront living. 
               Experience luxury, comfort, and stunning ocean views.
             </p>
           </div>
@@ -76,7 +79,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-gray-400 text-sm">
-              © {currentYear} Palm Run LLC. All rights reserved.
+              © {currentYear} Palm Run. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors duration-200">

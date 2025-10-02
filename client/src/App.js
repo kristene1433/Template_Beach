@@ -25,6 +25,7 @@ import Lease from './pages/Lease';
 
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminApplicationDetails from './pages/AdminApplicationDetails';
 import AdminPaymentHistory from './pages/AdminPaymentHistory';
 import ContactForm from './components/ContactForm';
 import Privacy from './pages/Privacy';
@@ -160,6 +161,14 @@ const AppRoutes = () => {
         element={
           <AdminProtectedRoute>
             <AdminDashboard />
+          </AdminProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/application/:id" 
+        element={
+          <AdminProtectedRoute>
+            <AdminApplicationDetails />
           </AdminProtectedRoute>
         } 
       />

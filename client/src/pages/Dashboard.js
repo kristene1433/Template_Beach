@@ -5,7 +5,6 @@ import {
   FileText, 
   Plus,
   ArrowRight,
-  RefreshCw,
   Calendar,
   Clock,
   CheckCircle,
@@ -18,7 +17,6 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -36,14 +34,9 @@ const Dashboard = () => {
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchDashboardData();
-  };
 
   useEffect(() => {
     // Check if we're returning from a payment success page
@@ -173,15 +166,6 @@ const Dashboard = () => {
                   Manage your rental applications and bookings
                 </p>
               </div>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-all duration-200 disabled:opacity-50 w-full sm:w-auto"
-                title="Refresh data"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span className="text-sm font-medium">Refresh</span>
-              </button>
             </div>
           </div>
         </div>

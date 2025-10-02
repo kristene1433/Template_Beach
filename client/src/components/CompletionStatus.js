@@ -138,13 +138,13 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30 max-w-md">
+    <div className="bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-white/30 max-w-md overflow-hidden">
       {/* Dropdown Header */}
       <div 
         className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900">Booking Progress</h3>
           <div className="flex items-center space-x-2">
             <div className="text-xs text-gray-600">
@@ -161,7 +161,7 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
             </span>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
           <div className={`text-xs font-medium ${
             application?.status === 'completed' ? 'text-green-600' :
             application?.status === 'approved' ? 'text-blue-600' :
@@ -171,9 +171,9 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
             {application?.status?.charAt(0).toUpperCase() + application?.status?.slice(1) || 'Unknown'}
           </div>
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
           )}
         </div>
       </div>
