@@ -74,15 +74,18 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
-app.use(cors({
-  origin: (origin, cb) => {
-    const allow = [process.env.CLIENT_URL].filter(Boolean);
-    if (process.env.NODE_ENV !== 'production') allow.push('http://localhost:3000');
-    if (!origin || allow.includes(origin)) return cb(null, true);
-    return cb(new Error('CORS not allowed'));
-  },
-  credentials: true
-}));
+if (process.env.NODE_ENV === 'production') {
+  app.use(cors({
+    origin: [process.env.CLIENT_URL].filter(Boolean),
+    credentials: true
+  }));
+} else {
+  // In development, allow all origins
+  app.use(cors({
+    origin: true,
+    credentials: true
+  }));
+}
 
 // Mount Stripe webhook BEFORE JSON body parsing so raw body is available
 app.use('/api/payment/webhook', paymentRoutes.webhookRouter);
@@ -124,9 +127,26 @@ app.use('/api/availability', require('./routes/availability'));
 // Payment routes (JSON parsed)
 app.use('/api/payment', paymentRoutes.router);
 
+// Serve static files from the React app build directory
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Palm Run LLC API is running' });
+});
+
+// Video test endpoint
+app.get('/api/video-test', (req, res) => {
+  const videoPath = path.join(__dirname, '../client/public/videos/beach-video.mp4');
+  const exists = fs.existsSync(videoPath);
+  res.json({ 
+    videoExists: exists, 
+    videoPath: videoPath,
+    buildPath: path.join(__dirname, '../client/build/videos/beach-video.mp4'),
+    buildExists: fs.existsSync(path.join(__dirname, '../client/build/videos/beach-video.mp4'))
+  });
 });
 
 // Serve static files from the React build
@@ -144,7 +164,7 @@ if (process.env.NODE_ENV === 'production') {
     }
   }));
   // Also serve public assets (images/videos) without hitting the rate limiter
-  // Ensure correct Content-Type headers for images
+  // Ensure correct Content-Type headers for images and videos
   app.use('/images', express.static(path.join(__dirname, '../client/public/images'), {
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
@@ -154,16 +174,28 @@ if (process.env.NODE_ENV === 'production') {
       } else if (filePath.endsWith('.webp')) {
         res.setHeader('Content-Type', 'image/webp');
       }
+    }
+  }));
+  
+  // Serve videos with proper MIME type
+  app.use('/videos', express.static(path.join(__dirname, '../client/public/videos'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+      } else if (filePath.endsWith('.webm')) {
+        res.setHeader('Content-Type', 'video/webm');
+      } else if (filePath.endsWith('.ogg')) {
+        res.setHeader('Content-Type', 'video/ogg');
+      }
       // Cache images for 1 year; cache busting via query string when needed
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
   }));
-  app.use('/videos', express.static(path.join(__dirname, '../client/public/videos'), {
-    setHeaders: (res) => {
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
-      res.setHeader('Accept-Ranges', 'bytes');
-    }
-  }));
+  
+  // Catch-all handler: send back React's index.html file for any non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
 }
 
 // Error handling middleware

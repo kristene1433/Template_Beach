@@ -61,6 +61,7 @@ router.post('/register', async (req, res) => {
 // User login
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
     const { email, password } = req.body;
 
     // Find user by email
@@ -106,6 +107,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Error details:', { message: error.message, code: error.code, stack: error.stack });
     res.status(500).json({ error: 'Server error during login' });
   }
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import AdminNavbar from '../components/AdminNavbar';
+import {
   Users, 
   DollarSign, 
   CheckCircle, 
@@ -32,18 +33,18 @@ const AdminDashboard = () => {
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/applications', {
+      const response = await fetch('/api/application/admin/all', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch applications');
       }
       
-      const data = await response.json();
-      setApplications(data);
+        const data = await response.json();
+      setApplications(data.applications || data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -97,38 +98,19 @@ const AdminDashboard = () => {
   const handleSelectAll = () => {
     if (selectedApplications.length === filteredApplications.length) {
       setSelectedApplications([]);
-    } else {
+      } else {
       setSelectedApplications(filteredApplications.map(app => app._id));
     }
   };
 
-  // Handle bulk actions
+  // Handle bulk actions (disabled - no bulk endpoint available)
   const handleBulkAction = async () => {
     if (!bulkAction || selectedApplications.length === 0) return;
 
-    try {
-      const response = await fetch('/api/applications/bulk', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          applicationIds: selectedApplications,
-          action: bulkAction
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to perform bulk action');
-      }
-
-      await fetchApplications();
-      setSelectedApplications([]);
-      setBulkAction('');
-    } catch (err) {
-      setError(err.message);
-    }
+    // Bulk operations not implemented yet
+    setError('Bulk operations are not available yet');
+    setSelectedApplications([]);
+    setBulkAction('');
   };
 
   // Handle application deletion
@@ -138,7 +120,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch(`/api/applications/${applicationId}`, {
+      const response = await fetch(`/api/application/admin/${applicationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -212,7 +194,7 @@ const AdminDashboard = () => {
   }
 
   if (error) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-600" />
@@ -224,32 +206,33 @@ const AdminDashboard = () => {
             Try Again
           </button>
         </div>
-      </div>
+                </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminNavbar />
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
+                <div>
               <h1 className="text-2xl font-bold text-gray-900">Application Management</h1>
               <p className="text-gray-600">Manage rental applications and bookings</p>
-            </div>
+                </div>
             <div className="flex items-center space-x-4">
-              <button
+                <button
                 onClick={fetchApplications}
                 className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
+                >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
-              </button>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
@@ -257,28 +240,28 @@ const AdminDashboard = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search */}
             <div className="flex-1 max-w-md">
-              <div className="relative">
+                <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
+                  <input
+                    type="text"
                   placeholder="Search applications..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Filters */}
-            <div className="flex items-center space-x-4">
-              <button
+                      <div className="flex items-center space-x-4">
+                        <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
+                        >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
                 {showFilters ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
-              </button>
+                        </button>
 
               <select
                 value={sortBy}
@@ -291,20 +274,20 @@ const AdminDashboard = () => {
                 <option value="totalAmount">Sort by Amount</option>
               </select>
 
-              <button
+                      <button
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 className="p-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+                        </button>
+                    </div>
+                  </div>
 
           {/* Filter Options */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+                        <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
                     value={statusFilter}
@@ -317,23 +300,23 @@ const AdminDashboard = () => {
                     <option value="rejected">Rejected</option>
                     <option value="completed">Completed</option>
                   </select>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
+                      </div>
+                    )}
+                  </div>
 
         {/* Bulk Actions */}
         {selectedApplications.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
                 <span className="text-sm text-blue-700">
                   {selectedApplications.length} application{selectedApplications.length !== 1 ? 's' : ''} selected
-                </span>
-              </div>
+                          </span>
+                        </div>
               <div className="flex items-center space-x-2">
-                <select
+                  <select
                   value={bulkAction}
                   onChange={(e) => setBulkAction(e.target.value)}
                   className="px-3 py-1 border border-blue-300 rounded text-sm"
@@ -342,31 +325,31 @@ const AdminDashboard = () => {
                   <option value="approve">Approve</option>
                   <option value="reject">Reject</option>
                   <option value="delete">Delete</option>
-                </select>
-                <button
+                  </select>
+                  <button
                   onClick={handleBulkAction}
                   disabled={!bulkAction}
                   className="px-4 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Apply
-                </button>
-                <button
+                  </button>
+                  <button
                   onClick={() => setSelectedApplications([])}
                   className="px-4 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
-                >
+                  >
                   Cancel
-                </button>
-              </div>
+                  </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Applications List */}
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
@@ -375,31 +358,31 @@ const AdminDashboard = () => {
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Application
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Dates
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                 {filteredApplications.map((application) => (
                   <tr key={application._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <input
+                    <input
                         type="checkbox"
                         checked={selectedApplications.includes(application._id)}
                         onChange={() => handleSelectApplication(application._id)}
@@ -407,17 +390,17 @@ const AdminDashboard = () => {
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div>
+                  <div>
                         <div className="text-sm font-medium text-gray-900">
                           {application.firstName} {application.lastName}
-                        </div>
+                  </div>
                         <div className="text-sm text-gray-500">
                           #{application.applicationNumber}
-                        </div>
+                </div>
                         <div className="text-xs text-gray-400">
                           {formatDate(application.createdAt)}
-                        </div>
-                      </div>
+                  </div>
+                  </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">{application.email}</div>
@@ -426,15 +409,15 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
                         {formatDate(application.checkIn)} - {formatDate(application.checkOut)}
-                      </div>
+                </div>
                       <div className="text-xs text-gray-500">
                         {application.guests} guest{application.guests !== 1 ? 's' : ''}
-                      </div>
+                </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {formatCurrency(application.totalAmount || 0)}
-                      </div>
+                </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
@@ -443,29 +426,29 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
+                <div className="flex items-center space-x-2">
+                  <button
                           onClick={() => handleViewApplication(application)}
                           className="text-blue-600 hover:text-blue-900 p-1"
                           title="View Details"
                         >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button
+                  </button>
+                  <button
                           onClick={() => handleDeleteApplication(application._id)}
                           className="text-red-600 hover:text-red-900 p-1"
                           title="Delete Application"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                  </button>
+                </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
+                    </div>
+                    
           {filteredApplications.length === 0 && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -476,9 +459,9 @@ const AdminDashboard = () => {
                   : 'No applications have been submitted yet.'
                 }
               </p>
-            </div>
-          )}
-        </div>
+                </div>
+              )}
+              </div>
 
         {/* Summary Stats */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -491,8 +474,8 @@ const AdminDashboard = () => {
                 <p className="text-sm font-medium text-gray-500">Total Applications</p>
                 <p className="text-2xl font-semibold text-gray-900">{applications.length}</p>
               </div>
-            </div>
-          </div>
+              </div>
+              </div>
 
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-center">
@@ -504,23 +487,23 @@ const AdminDashboard = () => {
                 <p className="text-2xl font-semibold text-gray-900">
                   {applications.filter(app => app.status === 'pending').length}
                 </p>
-              </div>
-            </div>
           </div>
-
+        </div>
+            </div>
+            
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
+                </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Approved</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {applications.filter(app => app.status === 'approved').length}
-                </p>
-              </div>
-            </div>
-          </div>
+                            </p>
+                          </div>
+                        </div>
+                        </div>
 
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-center">
@@ -532,9 +515,9 @@ const AdminDashboard = () => {
                 <p className="text-2xl font-semibold text-gray-900">
                   {formatCurrency(applications.reduce((sum, app) => sum + (app.totalAmount || 0), 0))}
                 </p>
-              </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

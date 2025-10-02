@@ -12,7 +12,11 @@ const createAdmin = async () => {
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: 'admin@palmrunllc.com' });
     if (existingAdmin) {
-      console.log('Admin user already exists');
+      console.log('Admin user already exists. Resetting password...');
+      existingAdmin.password = 'admin123'; // This will be hashed by the pre-save hook
+      existingAdmin.isActive = true;
+      await existingAdmin.save();
+      console.log('Admin password reset successfully!');
       process.exit(0);
     }
 

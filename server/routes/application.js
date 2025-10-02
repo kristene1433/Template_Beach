@@ -7,23 +7,9 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/leases';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'lease-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for file uploads (memory storage for Heroku compatibility)
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -605,16 +591,29 @@ router.post('/admin/upload-lease', auth, upload.single('leaseFile'), async (req,
       return res.status(404).json({ error: 'Application not found' });
     }
 
+    // Save file information to the application (storing file content in database for Heroku compatibility)
+    const fileContent = req.file.buffer ? req.file.buffer.toString('base64') : null;
+    
+    if (!fileContent) {
+      console.error('No file buffer content available');
+      return res.status(500).json({ error: 'File content could not be processed' });
+    }
+
     // Update application with signed lease file info
     application.signedLeaseFile = {
-      filename: req.file.filename,
+      filename: `lease_${application._id}.pdf`,
       originalName: req.file.originalname,
-      path: req.file.path,
-      size: req.file.size,
       mimetype: req.file.mimetype,
-      uploadedAt: new Date()
+      size: req.file.size,
+      uploadedAt: new Date(),
+      uploadedBy: 'admin',
+      // Store file content as base64 for Heroku compatibility
+      content: fileContent
     };
 
+    // Mark lease as signed
+    application.leaseSigned = true;
+    application.leaseSignedAt = new Date();
     application.lastUpdated = new Date();
     await application.save();
 
@@ -625,16 +624,6 @@ router.post('/admin/upload-lease', auth, upload.single('leaseFile'), async (req,
     });
   } catch (error) {
     console.error('Lease upload error:', error);
-    
-    // Clean up uploaded file if there was an error
-    if (req.file && req.file.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error('Error cleaning up uploaded file:', unlinkError);
-      }
-    }
-    
     res.status(500).json({ error: 'Server error uploading lease file' });
   }
 });
@@ -663,6 +652,46 @@ router.get('/admin/lease-file/:filename', auth, (req, res) => {
   } catch (error) {
     console.error('Error serving lease file:', error);
     res.status(500).json({ error: 'Server error serving file' });
+  }
+});
+
+// Admin endpoint to remove lease
+router.delete('/admin/remove-lease/:applicationId', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    if (!applicationId) {
+      return res.status(400).json({ error: 'Application ID is required' });
+    }
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    // Clear the lease data
+    application.signedLeaseFile = null;
+    application.leaseSigned = false;
+    application.leaseSignedAt = null;
+    application.lastUpdated = new Date();
+
+    await application.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Lease removed successfully',
+      application: {
+        _id: application._id,
+        leaseSigned: application.leaseSigned,
+        signedLeaseFile: application.signedLeaseFile
+      }
+    });
+  } catch (error) {
+    console.error('Error removing lease:', error);
+    res.status(500).json({ error: 'Server error removing lease' });
   }
 });
 

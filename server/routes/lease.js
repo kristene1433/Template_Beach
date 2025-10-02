@@ -979,6 +979,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
       mimetype: req.file.mimetype,
       size: req.file.size,
       uploadedAt: new Date(),
+      uploadedBy: 'user',
       // Store file content as base64 for Heroku compatibility
       content: fileContent
     };
@@ -1009,7 +1010,7 @@ router.post('/upload-signed', auth, upload.single('signedLease'), async (req, re
 router.get('/view-signed/:applicationId', auth, async (req, res) => {
   try {
     const { applicationId } = req.params;
-    // Debug logging removed for security
+    console.log('View signed lease request:', { applicationId, userRole: req.user.role });
     
     // Validate applicationId
     if (!applicationId || !require('mongoose').Types.ObjectId.isValid(applicationId)) {
@@ -1036,6 +1037,12 @@ router.get('/view-signed/:applicationId', auth, async (req, res) => {
       console.log('Application not found for ID:', applicationId);
       return res.status(404).json({ error: 'Application not found' });
     }
+    
+    console.log('Application found:', { 
+      id: application._id, 
+      hasSignedLeaseFile: !!application.signedLeaseFile,
+      leaseSigned: application.leaseSigned 
+    });
     
     if (!application.signedLeaseFile) {
       console.log('No signed lease file found for application:', applicationId);

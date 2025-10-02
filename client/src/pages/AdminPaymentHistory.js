@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Calendar, CreditCard, CheckCircle, XCircle, Clock, User, DollarSign } from 'lucide-react';
+import AdminNavbar from '../components/AdminNavbar';
+import { ArrowLeft, Calendar, CreditCard, CheckCircle, XCircle, Clock, User } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -113,8 +114,10 @@ const AdminPaymentHistory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
+      <AdminNavbar />
+      <div className="py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -266,6 +269,7 @@ const AdminPaymentHistory = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

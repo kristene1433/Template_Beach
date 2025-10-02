@@ -67,8 +67,19 @@ const Gallery = () => {
       {/* Hero */}
       <section className="relative pt-16">
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-64 md:h-56 object-cover" poster="/images/image1.jpg" autoPlay muted loop playsInline>
+          <video 
+            className="w-full h-64 md:h-56 object-cover" 
+            poster="/images/image1.jpg" 
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+            onError={(e) => console.error('Video failed to load:', e)}
+            onLoadStart={() => console.log('Video loading started')}
+            onCanPlay={() => console.log('Video can play')}
+          >
             <source src="/videos/beach-video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
           </video>
           <div className="absolute inset-0 bg-black/40" />
         </div>

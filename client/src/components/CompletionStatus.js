@@ -161,12 +161,12 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
             </span>
           </div>
         </div>
-        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-          <div className={`text-xs font-medium ${
-            application?.status === 'completed' ? 'text-green-600' :
-            application?.status === 'approved' ? 'text-blue-600' :
-            application?.status === 'pending' ? 'text-yellow-600' :
-            'text-red-600'
+        <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
+          <div className={`text-xs font-medium px-2 py-1 rounded ${
+            application?.status === 'completed' ? 'text-green-600 bg-green-50' :
+            application?.status === 'approved' ? 'text-blue-600 bg-blue-50' :
+            application?.status === 'pending' ? 'text-yellow-600 bg-yellow-50' :
+            'text-red-600 bg-red-50'
           }`}>
             {application?.status?.charAt(0).toUpperCase() + application?.status?.slice(1) || 'Unknown'}
           </div>

@@ -706,6 +706,12 @@ router.get('/admin/history/:userId', auth, async (req, res) => {
       .populate('applicationId', 'firstName lastName requestedStartDate requestedEndDate')
       .sort({ createdAt: -1 });
 
+    console.log('Admin payment history query:', {
+      query,
+      foundPayments: payments.length,
+      paymentIds: payments.map(p => p._id)
+    });
+
     res.json({ payments });
   } catch (error) {
     console.error('Admin tenant payment history fetch error:', error);
@@ -999,6 +1005,13 @@ router.post('/admin/manual-payment', auth, async (req, res) => {
     });
 
     await manualPayment.save();
+    console.log('Manual payment saved:', {
+      id: manualPayment._id,
+      userId: manualPayment.userId,
+      applicationId: manualPayment.applicationId,
+      amount: manualPayment.amount,
+      paymentType: manualPayment.paymentType
+    });
 
     application.lastUpdated = new Date();
     if (normalizedType === 'deposit') {

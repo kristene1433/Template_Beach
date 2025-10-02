@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import AdminNavbar from '../components/AdminNavbar';
 import {
   ArrowLeft, Edit3, Save, X, RefreshCw, CheckCircle, XCircle,
   Calendar, FileText, Upload, Download, Trash2, Plus, CreditCard,
@@ -34,27 +35,36 @@ const AdminApplicationDetails = () => {
   const fetchApplicationData = useCallback(async () => {
     try {
       setLoading(true);
-      const [applicationRes, paymentsRes] = await Promise.all([
-        fetch(`/api/application/admin/${id}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        }),
-        fetch(`/api/payment/history?applicationId=${id}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
-      ]);
+      
+      // First fetch the application to get the userId
+      const applicationRes = await fetch(`/api/application/admin/${id}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
 
       if (applicationRes.ok) {
         const data = await applicationRes.json();
         setApplication(data.application);
+        
+        // Now fetch payments using the application's userId
+        if (data.application?.userId) {
+          // Extract the actual userId string (in case it's populated)
+          const userId = typeof data.application.userId === 'string' 
+            ? data.application.userId 
+            : data.application.userId._id || data.application.userId.id;
+            
+          const paymentsRes = await fetch(`/api/payment/admin/history/${userId}?applicationId=${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
+          
+          if (paymentsRes.ok) {
+            const paymentsData = await paymentsRes.json();
+            setPayments(paymentsData.payments || []);
+          }
+        }
       } else {
         toast.error('Application not found');
         navigate('/admin/dashboard');
         return;
-      }
-
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json();
-        setPayments(paymentsData.payments || []);
       }
     } catch (error) {
       console.error('Error loading application data:', error);
@@ -182,10 +192,10 @@ const AdminApplicationDetails = () => {
       setUploadingLease(true);
       
       const formData = new FormData();
-      formData.append('signedLease', leaseFile);
+      formData.append('leaseFile', leaseFile);
       formData.append('applicationId', id);
 
-      const response = await fetch('/api/lease/upload-signed', {
+      const response = await fetch('/api/application/admin/upload-lease', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -212,6 +222,101 @@ const AdminApplicationDetails = () => {
     }
   };
 
+  const handleViewLease = async () => {
+    console.log('View lease clicked:', { 
+      applicationId: id, 
+      leaseSigned: application?.leaseSigned,
+      hasSignedLeaseFile: !!application?.signedLeaseFile 
+    });
+    
+    if (application?.leaseSigned) {
+      try {
+        const token = localStorage.getItem('token');
+        console.log('Fetching lease with token:', token ? 'present' : 'missing');
+        
+        const response = await fetch(`/api/lease/view-signed/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log('Lease fetch response:', { 
+          ok: response.ok, 
+          status: response.status, 
+          statusText: response.statusText 
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          console.log('Lease blob created:', { size: blob.size, type: blob.type });
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        } else {
+          const errorText = await response.text();
+          console.error('Lease fetch error:', errorText);
+          toast.error('Failed to load lease document');
+        }
+      } catch (error) {
+        console.error('Error viewing lease:', error);
+        toast.error('Error loading lease document');
+      }
+    } else {
+      toast.error('No signed lease available to view');
+    }
+  };
+
+  const handleDeleteLease = async () => {
+    if (!window.confirm('Are you sure you want to delete this lease? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/application/admin/remove-lease/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Lease deleted successfully!');
+        await fetchApplicationData();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete lease');
+      }
+    } catch (error) {
+      console.error('Error deleting lease:', error);
+      toast.error('Error deleting lease');
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (!window.confirm('Are you sure you want to delete this payment? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/payment/admin/remove/${paymentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Payment deleted successfully!');
+        await fetchApplicationData();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete payment');
+      }
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast.error('Error deleting payment');
+    }
+  };
+
   const handleManualPayment = async () => {
     if (!manualPaymentData.amount || !manualPaymentData.paymentType) {
       toast.error('Please fill in all required fields');
@@ -221,7 +326,7 @@ const AdminApplicationDetails = () => {
     try {
       setSavingManualPayment(true);
       
-      const response = await fetch('/api/payment/admin/manual', {
+      const response = await fetch('/api/payment/admin/manual-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -357,6 +462,7 @@ const AdminApplicationDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminNavbar />
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -669,13 +775,22 @@ const AdminApplicationDetails = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(payment.amount)}
-                      </p>
-                      <p className={`text-xs px-2 py-1 rounded-full ${getStatusColor(payment.status)}`}>
-                        {payment.status}
-                      </p>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(payment.amount)}
+                        </p>
+                        <p className={`text-xs px-2 py-1 rounded-full ${getStatusColor(payment.status)}`}>
+                          {payment.status}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeletePayment(payment._id)}
+                        className="flex items-center p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete payment"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -778,50 +893,131 @@ const AdminApplicationDetails = () => {
                     </div>
                   </div>
 
-                  {/* Side by Side Lease Upload Sections */}
+                  {/* Side by Side Lease Status Sections */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Upload Signed Lease */}
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Upload Signed Lease</h4>
+                    {/* Admin Upload Physical Lease */}
+                    <div className={`border rounded-lg p-4 ${application.leaseSigned && application.signedLeaseFile?.uploadedBy === 'admin' ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                      <h4 className={`text-sm font-medium mb-2 ${application.leaseSigned && application.signedLeaseFile?.uploadedBy === 'admin' ? 'text-green-900' : 'text-gray-900'}`}>
+                        Admin Upload Physical Lease
+                      </h4>
                       <p className="text-xs text-gray-600 mb-3">Upload the physically signed agreement that was mailed by the tenant.</p>
-                      <input
-                        id="lease-upload-input"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => setLeaseFile(e.target.files[0])}
-                        className="block w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-2"
-                      />
-                      <p className="text-xs text-gray-500 mb-3">PDF, JPEG, PNG (max 10MB)</p>
-                      <button
-                        onClick={handleLeaseUpload}
-                        disabled={!leaseFile || uploadingLease}
-                        className="w-full flex items-center justify-center px-3 py-2 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50"
-                      >
-                        <Upload className="w-3 h-3 mr-1" />
-                        {uploadingLease ? 'Uploading...' : 'Upload Lease'}
-                      </button>
-                    </div>
-
-                    {/* Signed Lease Uploaded */}
-                    {application.leaseSigned && (
-                      <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                        <h4 className="text-sm font-medium text-green-900 mb-2">Signed Lease Uploaded!</h4>
-                        <p className="text-xs text-green-700 mb-3">The tenant has uploaded their signed lease agreement.</p>
-                        <div className="space-y-2">
-                          <p className="text-xs text-green-600">
-                            File: lease_{application._id}.pdf
+                      
+                      {application.leaseSigned && application.signedLeaseFile?.uploadedBy === 'admin' ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-xs font-medium text-green-900">
+                              {application.signedLeaseFile?.uploadedBy === 'admin' ? 'Physical Lease Uploaded!' : 'Lease Available!'}
+                            </h5>
+                            <button
+                              onClick={handleDeleteLease}
+                              className="flex items-center p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Delete lease"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-green-700">
+                            {application.signedLeaseFile?.originalName 
+                              ? `File: ${application.signedLeaseFile.originalName}`
+                              : `File: lease_${application._id}.pdf`
+                            }
                           </p>
                           <p className="text-xs text-green-600">
-                            Uploaded: {formatDate(application.leaseSignedAt)}
+                            {application.signedLeaseFile?.uploadedBy === 'admin' ? 'Uploaded:' : 'Available:'} {formatDate(application.leaseSignedAt)}
                           </p>
-                          <button className="w-full flex items-center justify-center px-3 py-2 text-xs text-green-700 bg-green-100 hover:bg-green-200 rounded-lg">
-                            <Download className="w-3 h-3 mr-1" />
-                            View Signed Lease
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <input
+                            id="lease-upload-input"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => setLeaseFile(e.target.files[0])}
+                            className="block w-full text-xs text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-2"
+                          />
+                          <p className="text-xs text-gray-500">PDF, JPEG, PNG (max 10MB)</p>
+                          <button
+                            onClick={handleLeaseUpload}
+                            disabled={!leaseFile || uploadingLease}
+                            className="w-full flex items-center justify-center px-3 py-2 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50"
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            {uploadingLease ? 'Uploading...' : 'Upload Physical Lease'}
                           </button>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
+
+                    {/* User Signed Lease */}
+                    <div className={`border rounded-lg p-4 ${application.leaseSigned && (application.signedLeaseFile?.uploadedBy === 'user' || !application.signedLeaseFile?.uploadedBy) ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                      <h4 className={`text-sm font-medium mb-2 ${application.leaseSigned && (application.signedLeaseFile?.uploadedBy === 'user' || !application.signedLeaseFile?.uploadedBy) ? 'text-green-900' : 'text-gray-900'}`}>
+                        User Signed Lease
+                      </h4>
+                      <p className="text-xs text-gray-600 mb-3">Lease signed by tenant through their account.</p>
+                      
+                      {application.leaseSigned && (application.signedLeaseFile?.uploadedBy === 'user' || !application.signedLeaseFile?.uploadedBy) ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-xs font-medium text-green-900">
+                              {application.signedLeaseFile?.uploadedBy === 'user' ? 'Lease Signed by User!' : 'Lease Available!'}
+                            </h5>
+                            <button
+                              onClick={handleDeleteLease}
+                              className="flex items-center p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Delete lease"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-green-700">
+                            {application.signedLeaseFile?.originalName 
+                              ? `File: ${application.signedLeaseFile.originalName}`
+                              : `File: lease_${application._id}.pdf`
+                            }
+                          </p>
+                          <p className="text-xs text-green-600">
+                            {application.signedLeaseFile?.uploadedBy === 'user' ? 'Signed:' : 'Available:'} {formatDate(application.leaseSignedAt)}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <AlertCircle className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No lease signed by user yet</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Lease Management Actions */}
+                  {application.leaseSigned && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Lease Management</h4>
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={handleViewLease}
+                          className="flex items-center px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          View Lease
+                        </button>
+                        <button 
+                          onClick={handleViewLease}
+                          className="flex items-center px-4 py-2 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Lease
+                        </button>
+                        <button 
+                          onClick={handleDeleteLease}
+                          className="flex items-center px-4 py-2 text-sm text-red-700 bg-red-100 hover:bg-red-200 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Lease
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               ) : (
                 <div className="text-center py-4">
