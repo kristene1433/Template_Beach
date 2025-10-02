@@ -267,18 +267,18 @@ const Application = () => {
         </div>
       </section>
 
-      <div className="py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="card bg-white/90 backdrop-blur-md border-white/30">
-          <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="card bg-white/90 backdrop-blur-md border-white/30 p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information Section */}
             <div className="form-section">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <User className="h-4 w-4 mr-2 text-blue-600" />
                 Personal Information
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label htmlFor="firstName" className="form-label">
                     First Name *
@@ -321,16 +321,16 @@ const Application = () => {
               </div>
 
               {/* Second Applicant Section */}
-              <div className="mt-8">
-                <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <div className="mt-6">
+                <h4 className="text-base font-medium text-gray-900 mb-3 flex items-center">
                   <Users className="h-4 w-4 mr-2 text-blue-600" />
                   Second Applicant (Optional)
                 </h4>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-xs text-gray-600 mb-3">
                   If you're applying with a spouse or co-applicant, please provide their information below.
                 </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-group">
                     <label htmlFor="secondApplicantFirstName" className="form-label">
                       First Name
@@ -396,7 +396,7 @@ const Application = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label htmlFor="requestedStartDate" className="form-label">
                     Desired Lease Start Date *
@@ -439,8 +439,8 @@ const Application = () => {
 
             {/* Current Address Section */}
             <div className="form-section">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-blue-600" />
                 Current Address
               </h3>
               
@@ -464,7 +464,7 @@ const Application = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="form-group">
                   <label htmlFor="address.city" className="form-label">
                     City *
@@ -579,9 +579,9 @@ const Application = () => {
 
             {/* Additional Guests Section */}
             <div className="form-section">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-blue-600" />
                   Additional Guests
                 </h3>
                 <button
@@ -599,8 +599,8 @@ const Application = () => {
               )}
 
               {formData.additionalGuests.map((guest, index) => (
-                <div key={guest.id} className="border border-gray-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div key={guest.id} className="border border-gray-200 rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-gray-900">Guest {index + 1}</h4>
                     <button
                       type="button"
@@ -611,7 +611,7 @@ const Application = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <div className="form-group">
                       <label className="form-label">First Name</label>
                       <input
@@ -658,11 +658,11 @@ const Application = () => {
             </div>
 
             {/* Form Buttons */}
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="btn-secondary"
+                className="btn-secondary text-sm px-4 py-2"
               >
                 Cancel
               </button>
@@ -670,7 +670,7 @@ const Application = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn-primary flex items-center"
+                className="btn-primary flex items-center text-sm px-4 py-2"
               >
                 {isLoading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

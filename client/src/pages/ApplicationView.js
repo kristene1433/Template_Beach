@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Mail,
   Calendar,
-  DollarSign,
   CheckCircle,
   Download,
   Upload,
@@ -657,21 +656,21 @@ const ApplicationView = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
-      <div className="pt-16 min-h-screen py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-16 min-h-screen py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Application Details</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
+              <p className="text-gray-600 text-sm">
                 View your rental application information
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="btn-secondary flex items-center"
+                className="btn-secondary flex items-center text-sm px-3 py-2"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
@@ -819,15 +818,15 @@ const ApplicationView = () => {
       </div>
     )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {/* Left Panel - Application Information */}
-          <div className="lg:col-span-2">
-            <div className="card">
+          <div className="xl:col-span-3">
+            <div className="card p-4">
               {/* Personal Information Section */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <User className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <User className="h-4 w-4 mr-2 text-blue-600" />
                     Personal Information
                   </h3>
                   {!isEditing ? (
@@ -860,11 +859,11 @@ const ApplicationView = () => {
                   )}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="flex items-start space-x-3">
-                    <User className="w-5 h-5 text-gray-400 mt-1" />
+                    <User className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">Name</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</p>
                       {isEditing ? (
                         <div className="flex space-x-2 mt-1">
                           <input
@@ -883,15 +882,15 @@ const ApplicationView = () => {
                           />
                         </div>
                       ) : (
-                        <p className="text-gray-600">{application.firstName} {application.lastName}</p>
+                        <p className="text-sm font-medium text-gray-900">{application.firstName} {application.lastName}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-start space-x-3">
-                    <Users className="w-5 h-5 text-gray-400 mt-1" />
+                    <Users className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">Co-Applicant</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Co-Applicant</p>
                       {isEditing ? (
                         <div className="flex space-x-2 mt-1">
                           <input
@@ -910,7 +909,7 @@ const ApplicationView = () => {
                           />
                         </div>
                       ) : (
-                        <p className="text-gray-600">
+                        <p className="text-sm font-medium text-gray-900">
                           {application.secondApplicantFirstName && application.secondApplicantLastName 
                             ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}`
                             : 'Not provided'
@@ -921,18 +920,18 @@ const ApplicationView = () => {
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-gray-400" />
+                    <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Email</p>
-                      <p className="text-gray-600">{user.email}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</p>
+                      <p className="text-sm font-medium text-gray-900">{user.email}</p>
                       <p className="text-xs text-gray-500">Email cannot be changed</p>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-gray-400" />
+                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Phone</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</p>
                       {isEditing ? (
                         <input
                           type="tel"
@@ -942,15 +941,15 @@ const ApplicationView = () => {
                           placeholder="Phone Number"
                         />
                       ) : (
-                        <p className="text-gray-600">{application.phone}</p>
+                        <p className="text-sm font-medium text-gray-900">{application.phone}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-start space-x-3 md:col-span-2">
-                    <MapPin className="w-5 h-5 text-gray-400 mt-1" />
+                  <div className="flex items-start space-x-3 lg:col-span-3">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Address</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Address</p>
                       {isEditing ? (
                         <div className="space-y-2">
                           <input
@@ -985,7 +984,7 @@ const ApplicationView = () => {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-gray-600">
+                        <p className="text-sm font-medium text-gray-900">
                           {application.address?.street}, {application.address?.city}, {application.address?.state} {application.address?.zipCode}
                         </p>
                       )}
@@ -993,10 +992,10 @@ const ApplicationView = () => {
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-gray-400" />
+                    <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div>
-                                              <p className="text-sm font-medium text-gray-900">Requested Dates</p>
-                      <p className="text-gray-600">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Requested Dates</p>
+                      <p className="text-sm font-medium text-gray-900">
                                   {application.requestedStartDate && application.requestedEndDate 
               ? `${new Date(application.requestedStartDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(application.requestedEndDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
               : 'Not specified'
@@ -1009,41 +1008,30 @@ const ApplicationView = () => {
 
               {/* Additional Guests Section */}
               {application.additionalGuests && application.additionalGuests.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-blue-600" />
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Users className="h-4 w-4 mr-2 text-blue-600" />
                     Additional Guests
                   </h3>
 
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {application.additionalGuests.map((guest, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-4">Guest {index + 1}</h4>
+                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Guest {index + 1}</h4>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div className="flex items-center space-x-3">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">First Name</p>
-                              <p className="text-gray-600">{guest.firstName}</p>
-                            </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-500">Name:</span>
+                            <span className="text-sm font-medium text-gray-900">{guest.firstName} {guest.lastName}</span>
                           </div>
-
-                          <div className="flex items-center space-x-3">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">Last Name</p>
-                              <p className="text-gray-600">{guest.lastName}</p>
-                            </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-500">Age:</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              guest.isAdult ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {guest.isAdult ? 'Adult (18+)' : 'Minor'}
+                            </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            guest.isAdult ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {guest.isAdult ? 'Adult (18+)' : 'Minor'}
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -1052,17 +1040,17 @@ const ApplicationView = () => {
               )}
 
               {/* Lease Agreement Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                  <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Building2 className="h-4 w-4 mr-2 text-blue-600" />
                   Lease Agreement
                 </h3>
                 
-                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900">Lease Status</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="text-base font-medium text-gray-900">Lease Status</h4>
+                      <p className="text-xs text-gray-600">
                         {application?.leaseGenerated 
                           ? 'Lease has been generated by admin' 
                           : 'Waiting for admin to generate lease'
@@ -1071,43 +1059,31 @@ const ApplicationView = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       {application?.leaseGenerated ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500" />
                       ) : (
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        <AlertCircle className="w-4 h-4 text-yellow-500" />
                       )}
                     </div>
                   </div>
 
                   {application?.leaseGenerated && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center space-x-3">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">Start Date</p>
-                            <p className="text-gray-600">{formatDate(application.leaseStartDate)}</p>
-                          </div>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="text-center">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</p>
+                          <p className="text-sm font-medium text-gray-900">{formatDate(application.leaseStartDate)}</p>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">End Date</p>
-                            <p className="text-gray-600">{formatDate(application.leaseEndDate)}</p>
-                          </div>
+                        <div className="text-center">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">End Date</p>
+                          <p className="text-sm font-medium text-gray-900">{formatDate(application.leaseEndDate)}</p>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
-                            <p className="text-gray-600">{formatCurrency(application.rentalAmount * 100)}</p>
-                          </div>
+                        <div className="text-center">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly Rent</p>
+                          <p className="text-sm font-medium text-gray-900">{formatCurrency(application.rentalAmount * 100)}</p>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">Security Deposit</p>
-                            <p className="text-gray-600">{formatCurrency(application.depositAmount * 100)}</p>
-                          </div>
+                        <div className="text-center">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Security Deposit</p>
+                          <p className="text-sm font-medium text-gray-900">{formatCurrency(application.depositAmount * 100)}</p>
                         </div>
                       </div>
 
@@ -1182,17 +1158,17 @@ const ApplicationView = () => {
               </div>
 
               {/* Payment Section */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2 text-blue-600" />
                   Payments
                 </h3>
                 
-                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900">Payment Summary</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="text-base font-medium text-gray-900">Payment Summary</h4>
+                      <p className="text-xs text-gray-600">
                         {payments.length > 0 
                           ? `${payments.length} payment(s) for this application`
                           : 'No payments made yet'
@@ -1201,7 +1177,7 @@ const ApplicationView = () => {
                     </div>
                     <button
                       onClick={handleMakePayment}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
                       Make Payment
@@ -1332,35 +1308,35 @@ const ApplicationView = () => {
           </div>
 
           {/* Right Panel - Application Status */}
-          <div className="lg:col-span-1">
-            <div className="card">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
+          <div className="xl:col-span-1">
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2 text-blue-600" />
                 Application Status
               </h3>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Status:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
                     {getStatusText(application.status)}
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Submitted</p>
-                    <p className="text-gray-600">{formatDate(application.submittedAt)}</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Submitted</p>
+                    <p className="text-sm font-medium text-gray-900">{formatDate(application.submittedAt)}</p>
                   </div>
                 </div>
 
 
 
                 {application.notes && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Admin Notes:</h4>
-                    <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <div className="pt-3 border-t border-gray-200">
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Admin Notes:</h4>
+                    <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded-lg border border-blue-200">
                       {application.notes}
                     </p>
                   </div>
@@ -1369,9 +1345,9 @@ const ApplicationView = () => {
             </div>
 
             {/* Progress Bar */}
-            <div className="card mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="card mt-4 p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2 text-blue-600" />
                 Application Progress
               </h3>
               <CompletionStatus 
@@ -1385,11 +1361,11 @@ const ApplicationView = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="card mt-6">
-              <div className="space-y-3">
+            <div className="card mt-4 p-4">
+              <div className="space-y-2">
                 <button
                   onClick={() => navigate('/application')}
-                  className="w-full btn-primary flex items-center justify-center"
+                  className="w-full btn-primary flex items-center justify-center text-sm py-2"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   New Application
