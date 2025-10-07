@@ -153,25 +153,27 @@ const Dashboard = () => {
           <video className="w-full h-32 sm:h-40 md:h-48 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
         </div>
         <div className="relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex-1">
-                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight">
-                  Welcome back, {user?.firstName || user?.email || 'Guest'}!
-                </h1>
-                <p className="text-sm sm:text-base text-gray-200 mt-1 md:mt-2">
-                  Manage your rental applications and bookings
-                </p>
+                <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-white/10">
+                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+                    Welcome back, {user?.firstName || user?.email || 'Guest'}!
+                  </h1>
+                  <p className="text-sm sm:text-base text-gray-100 mt-1 md:mt-2 drop-shadow-md">
+                    Manage your rental applications and bookings
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="min-h-screen py-6 md:py-8 bg-gradient-to-br from-blue-50 to-cyan-50 -mt-1">
+      <div className="min-h-screen py-6 md:py-8 bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Applications Section */}

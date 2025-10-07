@@ -855,6 +855,7 @@ router.get('/admin/revenue-summary', auth, async (req, res) => {
       ...dateFilter
     })
     .populate('applicationId', 'firstName lastName applicationNumber')
+    .populate('userId', 'firstName lastName email')
     .sort({ paidAt: -1 });
 
     // Calculate revenue metrics

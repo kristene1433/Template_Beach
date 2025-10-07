@@ -375,14 +375,28 @@ const AdminRevenueDashboard = () => {
                     {revenueData.payments.map((payment) => (
                       <tr key={payment._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {payment.applicationId 
-                              ? `${payment.applicationId.firstName} ${payment.applicationId.lastName}`
-                              : 'N/A'
-                            }
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {payment.applicationId?.applicationNumber || 'No Application'}
+                          <div className="flex items-center">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {payment.applicationId 
+                                  ? `${payment.applicationId.firstName} ${payment.applicationId.lastName}`
+                                  : payment.userId 
+                                    ? `${payment.userId.firstName} ${payment.userId.lastName}`
+                                    : 'Unknown Customer'
+                                }
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {payment.applicationId?.applicationNumber || 
+                                 (payment.userId ? payment.userId.email : `Payment ID: ${payment._id.slice(-8)}`)}
+                              </div>
+                            </div>
+                            {!payment.applicationId && (
+                              <div className="ml-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800" title="No application linked to this payment">
+                                  Unlinked
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -395,7 +409,7 @@ const AdminRevenueDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {payment.paidAt 
-                            ? new Date(payment.paidAt).toLocaleDateString()
+                            ? new Date(payment.paidAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                             : 'N/A'
                           }
                         </td>

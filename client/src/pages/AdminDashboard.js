@@ -187,9 +187,36 @@ const AdminDashboard = () => {
     }
   };
 
-  // Format date
+  // Format date (handles YYYY-MM-DD strings without timezone issues)
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'Invalid Date';
+    
+    // If it's already a Date instance
+    if (dateString instanceof Date) {
+      if (isNaN(dateString.getTime())) return 'Invalid Date';
+      return dateString.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // For YYYY-MM-DD strings, parse manually to avoid timezone issues
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // Fallback for other date formats
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -203,6 +230,27 @@ const AdminDashboard = () => {
       style: 'currency',
       currency: 'USD'
     }).format(value);
+  };
+
+  // Format phone number with dashes
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return 'Not provided';
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format as XXX-XXX-XXXX for 10-digit numbers
+    if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+    
+    // Format as +X-XXX-XXX-XXXX for 11-digit numbers starting with 1
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return cleaned.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1-$2-$3-$4');
+    }
+    
+    // Return original if it doesn't match expected formats
+    return phone;
   };
 
   if (loading) {
@@ -418,14 +466,17 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">{application.email}</div>
-                      <div className="text-sm text-gray-500">{application.phone}</div>
+                      <div className="text-sm text-gray-500">{formatPhoneNumber(application.phone)}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {formatDate(application.checkIn)} - {formatDate(application.checkOut)}
+                        {application.requestedStartDate && application.requestedEndDate
+                          ? `${formatDate(application.requestedStartDate)} - ${formatDate(application.requestedEndDate)}`
+                          : 'Dates not set'
+                        }
                 </div>
                       <div className="text-xs text-gray-500">
-                        {application.guests} guest{application.guests !== 1 ? 's' : ''}
+                        {application.additionalGuests?.length || 0} guest{(application.additionalGuests?.length || 0) !== 1 ? 's' : ''}
                 </div>
                     </td>
                     <td className="px-6 py-4">

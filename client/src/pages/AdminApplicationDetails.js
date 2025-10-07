@@ -122,6 +122,11 @@ const AdminApplicationDetails = () => {
           state: application.address?.state || '',
           zipCode: application.address?.zipCode || ''
         },
+        requestedStartDate: application.requestedStartDate || '',
+        requestedEndDate: application.requestedEndDate || '',
+        rentalAmount: application.rentalAmount || '',
+        depositAmount: application.depositAmount || '',
+        additionalGuestsCount: application.additionalGuests?.length || 0,
         notes: application.notes || ''
       });
       setIsEditing(true);
@@ -390,6 +395,21 @@ const AdminApplicationDetails = () => {
 
   const formatDate = (value) => {
     if (!value) return 'Not set';
+
+    // If it's already a Date instance
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return 'Invalid Date';
+      return value.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    // For YYYY-MM-DD strings, parse manually to avoid timezone issues
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    // Fallback for other date formats
     const d = new Date(value);
     if (isNaN(d.getTime())) return 'Invalid Date';
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -400,6 +420,27 @@ const AdminApplicationDetails = () => {
       style: 'currency',
       currency: 'USD'
     }).format(amount / 100);
+  };
+
+  // Format phone number with dashes
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return 'Not provided';
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format as XXX-XXX-XXXX for 10-digit numbers
+    if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+    
+    // Format as +X-XXX-XXX-XXXX for 11-digit numbers starting with 1
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return cleaned.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1-$2-$3-$4');
+    }
+    
+    // Return original if it doesn't match expected formats
+    return phone;
   };
 
   const getStatusColor = (status) => {
@@ -616,7 +657,7 @@ const AdminApplicationDetails = () => {
                       placeholder="Phone Number"
                     />
                   ) : (
-                    <p className="text-sm font-medium text-gray-900 mt-1">{application.phone}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">{formatPhoneNumber(application.phone)}</p>
                   )}
                 </div>
 
@@ -664,26 +705,72 @@ const AdminApplicationDetails = () => {
 
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Requested Dates</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
-                    {application.requestedStartDate && application.requestedEndDate 
-                      ? `${formatDate(application.requestedStartDate)} - ${formatDate(application.requestedEndDate)}`
-                      : 'Not specified'
-                    }
-                  </p>
+                  {isEditing ? (
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <input
+                        type="date"
+                        value={editData.requestedStartDate || ''}
+                        onChange={(e) => handleInputChange('requestedStartDate', e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Start Date"
+                      />
+                      <input
+                        type="date"
+                        value={editData.requestedEndDate || ''}
+                        onChange={(e) => handleInputChange('requestedEndDate', e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="End Date"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {application.requestedStartDate && application.requestedEndDate 
+                        ? `${formatDate(application.requestedStartDate)} - ${formatDate(application.requestedEndDate)}`
+                        : 'Not specified'
+                      }
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly Rent</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
-                    {application.rentalAmount ? formatCurrency(application.rentalAmount * 100) : 'Not set'}
-                  </p>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editData.rentalAmount || ''}
+                      onChange={(e) => handleInputChange('rentalAmount', parseFloat(e.target.value) || '')}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {application.rentalAmount ? formatCurrency(application.rentalAmount * 100) : 'Not set'}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Additional Guests</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
-                    {application.additionalGuests?.length || 0}
-                  </p>
+                  {isEditing ? (
+                    <div className="mt-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={editData.additionalGuestsCount || (application.additionalGuests?.length || 0)}
+                        onChange={(e) => handleInputChange('additionalGuestsCount', parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Number of additional guests (0-10)</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {application.additionalGuests?.length || 0}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -885,11 +972,35 @@ const AdminApplicationDetails = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Monthly Rent</label>
-                      <p className="text-sm font-medium text-gray-900 mt-1">{formatCurrency(application.rentalAmount * 100)}</p>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editData.rentalAmount || ''}
+                          onChange={(e) => handleInputChange('rentalAmount', parseFloat(e.target.value) || '')}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium text-gray-900 mt-1">{formatCurrency(application.rentalAmount * 100)}</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Security Deposit</label>
-                      <p className="text-sm font-medium text-gray-900 mt-1">{formatCurrency(application.depositAmount * 100)}</p>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editData.depositAmount || ''}
+                          onChange={(e) => handleInputChange('depositAmount', parseFloat(e.target.value) || '')}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium text-gray-900 mt-1">{formatCurrency(application.depositAmount * 100)}</p>
+                      )}
                     </div>
                   </div>
 

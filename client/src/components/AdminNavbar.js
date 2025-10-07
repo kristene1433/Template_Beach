@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Home, LogOut, BarChart3 } from 'lucide-react';
+import { Menu, X, Home, LogOut, BarChart3, Settings } from 'lucide-react';
+import AdminPasswordChange from './AdminPasswordChange';
 
 const AdminNavbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -80,6 +82,14 @@ const AdminNavbar = () => {
                   Welcome, {user.firstName || user.email}
                 </span>
                 <button
+                  onClick={() => setShowPasswordChange(true)}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  title="Change Password"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </button>
+                <button
                   onClick={handleLogout}
                   className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                 >
@@ -142,6 +152,16 @@ const AdminNavbar = () => {
                     Welcome, {user.firstName || user.email}
                   </div>
                   <button
+                    onClick={() => {
+                      setShowPasswordChange(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-3 w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Change Password</span>
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="flex items-center space-x-3 w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                   >
@@ -164,6 +184,11 @@ const AdminNavbar = () => {
           </div>
         )}
       </div>
+      
+      {/* Password Change Modal */}
+      {showPasswordChange && (
+        <AdminPasswordChange onClose={() => setShowPasswordChange(false)} />
+      )}
     </nav>
   );
 };
