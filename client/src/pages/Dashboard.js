@@ -8,15 +8,18 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Settings
 } from 'lucide-react';
 import axios from 'axios';
 import CompletionStatus from '../components/CompletionStatus';
+import TenantSettings from '../components/TenantSettings';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -159,14 +162,24 @@ const Dashboard = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex-1">
-                <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-white/10">
-                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+                <div className="p-4 sm:p-6">
+                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight drop-shadow-2xl">
                     Welcome back, {user?.firstName || user?.email || 'Guest'}!
                   </h1>
-                  <p className="text-sm sm:text-base text-gray-100 mt-1 md:mt-2 drop-shadow-md">
+                  <p className="text-sm sm:text-base text-gray-100 mt-1 md:mt-2 drop-shadow-lg">
                     Manage your rental applications and bookings
                   </p>
                 </div>
+              </div>
+              <div className="flex-shrink-0">
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors border border-white/20"
+                  title="Account Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Settings</span>
+                </button>
               </div>
             </div>
           </div>
@@ -296,6 +309,11 @@ const Dashboard = () => {
 
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <TenantSettings onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 };

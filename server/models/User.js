@@ -70,6 +70,28 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordExpires: {
     type: Date
+  },
+  notificationSettings: {
+    emailNotifications: {
+      type: Boolean,
+      default: true
+    },
+    smsNotifications: {
+      type: Boolean,
+      default: false
+    },
+    applicationUpdates: {
+      type: Boolean,
+      default: true
+    },
+    paymentReminders: {
+      type: Boolean,
+      default: true
+    },
+    leaseReminders: {
+      type: Boolean,
+      default: true
+    }
   }
 }, {
   timestamps: true

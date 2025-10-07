@@ -346,4 +346,138 @@ router.post('/admin/change-password', auth, async (req, res) => {
   }
 });
 
+// User: Change password (requires current password verification)
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ error: 'All password fields are required' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ error: 'New passwords do not match' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({ error: 'New password must be different from current password' });
+    }
+
+    // Get the user
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('User change password error:', error);
+    res.status(500).json({ error: 'Server error changing password' });
+  }
+});
+
+// User: Update profile
+router.put('/update-profile', auth, async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone } = req.body;
+
+    // Validate input
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ error: 'First name, last name, and email are required' });
+    }
+
+    // Check if email is already taken by another user
+    const existingUser = await User.findOne({ 
+      email: email.toLowerCase(),
+      _id: { $ne: req.user._id }
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email is already taken by another user' });
+    }
+
+    // Update user profile
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.firstName = firstName.trim();
+    user.lastName = lastName.trim();
+    user.email = email.toLowerCase().trim();
+    user.phone = phone ? phone.trim() : '';
+
+    await user.save();
+
+    res.json({ 
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('User profile update error:', error);
+    res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
+// User: Update notification settings
+router.put('/notification-settings', auth, async (req, res) => {
+  try {
+    const { 
+      emailNotifications, 
+      smsNotifications, 
+      applicationUpdates, 
+      paymentReminders, 
+      leaseReminders 
+    } = req.body;
+
+    // Update user notification settings
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize notificationSettings if it doesn't exist
+    if (!user.notificationSettings) {
+      user.notificationSettings = {};
+    }
+
+    user.notificationSettings.emailNotifications = emailNotifications === true;
+    user.notificationSettings.smsNotifications = smsNotifications === true;
+    user.notificationSettings.applicationUpdates = applicationUpdates === true;
+    user.notificationSettings.paymentReminders = paymentReminders === true;
+    user.notificationSettings.leaseReminders = leaseReminders === true;
+
+    await user.save();
+
+    res.json({ 
+      message: 'Notification settings updated successfully',
+      notificationSettings: user.notificationSettings
+    });
+  } catch (error) {
+    console.error('User notification settings update error:', error);
+    res.status(500).json({ error: 'Server error updating notification settings' });
+  }
+});
+
 module.exports = router;

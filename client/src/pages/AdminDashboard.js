@@ -430,7 +430,7 @@ const AdminDashboard = () => {
                     Dates
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
+                    Monthly Rent
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
@@ -481,8 +481,16 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(application.totalAmount || 0)}
+                        {application.rentalAmount 
+                          ? formatCurrency(application.rentalAmount * 100, true)
+                          : '$0.00'
+                        }
                 </div>
+                      {application.rentalAmount && (
+                        <div className="text-xs text-gray-500">
+                          Monthly rent
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
