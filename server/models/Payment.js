@@ -140,9 +140,11 @@ const paymentSchema = new mongoose.Schema({
 // Indexes for efficient queries
 paymentSchema.index({ userId: 1, status: 1 });
 paymentSchema.index({ applicationId: 1, status: 1 });
-paymentSchema.index({ stripePaymentIntentId: 1 });
+paymentSchema.index({ status: 1, paidAt: 1 }); // For revenue calculations
+paymentSchema.index({ paymentType: 1, status: 1 }); // For revenue by type
+paymentSchema.index({ paidAt: 1, status: 1 }); // For monthly/yearly reports
+paymentSchema.index({ stripePaymentIntentId: 1 }); // Unique index for webhook processing
 paymentSchema.index({ createdAt: -1 });
-paymentSchema.index({ paymentType: 1, status: 1 });
 paymentSchema.index({ isDepositTransfer: 1 });
 paymentSchema.index({ transferredFromApplicationId: 1 });
 paymentSchema.index({ transferredToApplicationId: 1 });

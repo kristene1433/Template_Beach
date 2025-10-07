@@ -161,15 +161,10 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
             </span>
           </div>
         </div>
-        <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-          <div className={`text-xs font-medium px-2 py-1 rounded ${
-            application?.status === 'completed' ? 'text-green-600 bg-green-50' :
-            application?.status === 'approved' ? 'text-blue-600 bg-blue-50' :
-            application?.status === 'pending' ? 'text-yellow-600 bg-yellow-50' :
-            'text-red-600 bg-red-50'
-          }`}>
-            {application?.status?.charAt(0).toUpperCase() + application?.status?.slice(1) || 'Unknown'}
-          </div>
+        
+        {/* Move status badge below the bar to avoid overlap */}
+        
+        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
           ) : (
@@ -181,6 +176,17 @@ const CompletionStatus = ({ application, leaseStatus, recentPayments = [], onApp
       {/* Dropdown Content */}
       {isExpanded && (
         <div className="border-t border-gray-200 p-3 space-y-3">
+          {/* Status badge placed under the compact progress row */}
+          <div>
+            <div className={`inline-block text-xs font-medium px-2 py-1 rounded ${
+              application?.status === 'completed' ? 'text-green-600 bg-green-50' :
+              application?.status === 'approved' ? 'text-blue-600 bg-blue-50' :
+              application?.status === 'pending' ? 'text-yellow-600 bg-yellow-50' :
+              'text-red-600 bg-red-50'
+            }`}>
+              {application?.status?.charAt(0).toUpperCase() + application?.status?.slice(1) || 'Unknown'}
+            </div>
+          </div>
           {/* Detailed Progress Bar */}
           <div>
             <div className="w-full bg-gray-200 rounded-full h-1.5">

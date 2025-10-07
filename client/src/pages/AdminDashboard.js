@@ -28,6 +28,25 @@ const AdminDashboard = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedApplications, setSelectedApplications] = useState([]);
   const [bulkAction, setBulkAction] = useState('');
+  const [revenueData, setRevenueData] = useState(null);
+
+  // Fetch revenue data
+  const fetchRevenueData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/payment/admin/revenue-summary', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRevenueData(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch revenue data:', err);
+    }
+  }, []);
 
   // Fetch applications
   const fetchApplications = useCallback(async () => {
@@ -45,12 +64,15 @@ const AdminDashboard = () => {
       
         const data = await response.json();
       setApplications(data.applications || data);
+      
+      // Also fetch revenue data
+      await fetchRevenueData();
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchRevenueData]);
 
   useEffect(() => {
     fetchApplications();
@@ -174,12 +196,13 @@ const AdminDashboard = () => {
     });
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
+  // Format currency (handles both application amounts and payment amounts in cents)
+  const formatCurrency = (amount, isPaymentAmount = false) => {
+    const value = isPaymentAmount ? amount / 100 : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(value);
   };
 
   if (loading) {
@@ -221,15 +244,6 @@ const AdminDashboard = () => {
               <h1 className="text-2xl font-bold text-gray-900">Application Management</h1>
               <p className="text-gray-600">Manage rental applications and bookings</p>
                 </div>
-            <div className="flex items-center space-x-4">
-                <button
-                onClick={fetchApplications}
-                className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -513,8 +527,17 @@ const AdminDashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Revenue</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {formatCurrency(applications.reduce((sum, app) => sum + (app.totalAmount || 0), 0))}
+                  {revenueData 
+                    ? formatCurrency(revenueData.summary.totalRevenue, true) 
+                    : formatCurrency(0)
+                  }
                 </p>
+                {revenueData && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Net: {formatCurrency(revenueData.summary.netRevenue, true)} 
+                    ({revenueData.summary.paymentCount} payments)
+                  </p>
+                )}
             </div>
           </div>
         </div>

@@ -825,6 +825,91 @@ router.get('/admin/available-deposits', auth, async (req, res) => {
   }
 });
 
+// Admin: Get revenue summary
+router.get('/admin/revenue-summary', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { period = 'all', year, month } = req.query;
+
+    // Build date filter based on period
+    let dateFilter = {};
+    if (period === 'year' && year) {
+      dateFilter.paidAt = {
+        $gte: new Date(`${year}-01-01`),
+        $lt: new Date(`${parseInt(year) + 1}-01-01`)
+      };
+    } else if (period === 'month' && year && month) {
+      dateFilter.paidAt = {
+        $gte: new Date(`${year}-${month}-01`),
+        $lt: new Date(`${year}-${parseInt(month) + 1}-01`)
+      };
+    }
+
+    // Get all successful payments
+    const payments = await Payment.find({
+      status: 'succeeded',
+      ...dateFilter
+    })
+    .populate('applicationId', 'firstName lastName applicationNumber')
+    .sort({ paidAt: -1 });
+
+    // Calculate revenue metrics
+    const totalRevenue = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const netRevenue = payments.reduce((sum, payment) => sum + (payment.amount - (payment.creditCardFee || 0)), 0);
+    const totalFees = payments.reduce((sum, payment) => sum + (payment.creditCardFee || 0), 0);
+
+    // Revenue by payment type
+    const revenueByType = payments.reduce((acc, payment) => {
+      const type = payment.paymentType;
+      if (!acc[type]) {
+        acc[type] = { count: 0, amount: 0 };
+      }
+      acc[type].count += 1;
+      acc[type].amount += payment.amount;
+      return acc;
+    }, {});
+
+    // Monthly revenue breakdown (last 12 months)
+    const monthlyRevenue = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyRevenue[monthKey] = 0;
+    }
+
+    payments.forEach(payment => {
+      if (payment.paidAt) {
+        const date = new Date(payment.paidAt);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (monthlyRevenue.hasOwnProperty(monthKey)) {
+          monthlyRevenue[monthKey] += payment.amount;
+        }
+      }
+    });
+
+    res.json({
+      summary: {
+        totalRevenue,
+        netRevenue,
+        totalFees,
+        paymentCount: payments.length,
+        averagePayment: payments.length > 0 ? totalRevenue / payments.length : 0
+      },
+      revenueByType,
+      monthlyRevenue,
+      payments: payments.slice(0, 50) // Return recent payments for detailed view
+    });
+  } catch (error) {
+    console.error('Revenue summary fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching revenue summary' });
+  }
+});
+
 // Admin: Get all user applications for transfer destination selection
 router.get('/admin/user-applications', auth, async (req, res) => {
   try {
