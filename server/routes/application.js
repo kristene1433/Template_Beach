@@ -139,6 +139,49 @@ router.put('/:id/payment-status', auth, async (req, res) => {
   }
 });
 
+// Admin: Get all applications
+router.get('/admin/all', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const applications = await Application.find()
+      .populate('userId', 'firstName lastName email phone')
+      .sort({ createdAt: -1 });
+
+    res.json({ applications });
+  } catch (error) {
+    console.error('Admin applications fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching applications' });
+  }
+});
+
+// Admin: Get single application by ID
+router.get('/admin/:applicationId', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { applicationId } = req.params;
+    
+    const application = await Application.findById(applicationId)
+      .populate('userId', 'firstName lastName email phone');
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json({ application });
+  } catch (error) {
+    console.error('Admin single application fetch error:', error);
+    res.status(500).json({ error: 'Server error fetching application' });
+  }
+});
+
 // Get specific application by ID
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -361,47 +404,6 @@ router.delete('/documents/:documentId', auth, async (req, res) => {
   }
 });
 
-// Admin: Get all applications
-router.get('/admin/all', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const applications = await Application.find()
-      .populate('userId', 'firstName lastName email phone')
-      .sort({ createdAt: -1 });
-
-    res.json({ applications });
-  } catch (error) {
-    console.error('Admin applications fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching applications' });
-  }
-});
-
-// Admin: Get single application by ID
-router.get('/admin/:applicationId', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { applicationId } = req.params;
-    const application = await Application.findById(applicationId)
-      .populate('userId', 'firstName lastName email phone');
-
-    if (!application) {
-      return res.status(404).json({ error: 'Application not found' });
-    }
-
-    res.json({ application });
-  } catch (error) {
-    console.error('Admin single application fetch error:', error);
-    res.status(500).json({ error: 'Server error fetching application' });
-  }
-});
 
 // Admin: Update application status
 router.put('/admin/:applicationId/status', auth, async (req, res) => {
@@ -508,6 +510,12 @@ router.put('/admin/:applicationId/edit', auth, async (req, res) => {
       'notes'
     ];
 
+    // Handle email update separately since it's in the User model
+    let emailUpdate = null;
+    if (updates.email) {
+      emailUpdate = updates.email;
+    }
+
     // Update allowed fields only
     Object.keys(updates).forEach(key => {
       if (allowedFields.includes(key)) {
@@ -521,6 +529,24 @@ router.put('/admin/:applicationId/edit', auth, async (req, res) => {
         }
       }
     });
+
+    // Update user email if provided
+    if (emailUpdate) {
+      const user = await User.findById(application.userId);
+      if (user) {
+        // Check if email is already taken by another user
+        const existingUser = await User.findOne({ 
+          email: emailUpdate.toLowerCase(),
+          _id: { $ne: user._id }
+        });
+        if (existingUser) {
+          return res.status(400).json({ error: 'Email is already taken by another user' });
+        }
+        
+        user.email = emailUpdate.toLowerCase().trim();
+        await user.save();
+      }
+    }
 
     // Add audit trail
     application.lastUpdated = new Date();

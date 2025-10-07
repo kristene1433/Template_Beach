@@ -253,6 +253,16 @@ const AdminDashboard = () => {
     return phone;
   };
 
+  // Calculate total guest count (main applicant + second applicant + additional guests)
+  const getTotalGuestCount = (application) => {
+    let totalGuests = 1; // Main applicant
+    if (application.secondApplicantFirstName || application.secondApplicantLastName) {
+      totalGuests += 1; // Second applicant
+    }
+    totalGuests += application.additionalGuests?.length || 0; // Additional guests
+    return totalGuests;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -476,7 +486,7 @@ const AdminDashboard = () => {
                         }
                 </div>
                       <div className="text-xs text-gray-500">
-                        {application.additionalGuests?.length || 0} guest{(application.additionalGuests?.length || 0) !== 1 ? 's' : ''}
+                        {getTotalGuestCount(application)} guest{getTotalGuestCount(application) !== 1 ? 's' : ''}
                 </div>
                     </td>
                     <td className="px-6 py-4">

@@ -5,7 +5,7 @@ import AdminNavbar from '../components/AdminNavbar';
 import {
   ArrowLeft, Edit3, Save, X, RefreshCw, CheckCircle, XCircle,
   Calendar, FileText, Upload, Download, Trash2, Plus, CreditCard,
-  User, AlertCircle
+  User, AlertCircle, ArrowRightLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,6 +31,15 @@ const AdminApplicationDetails = () => {
     notes: ''
   });
   const [savingManualPayment, setSavingManualPayment] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferData, setTransferData] = useState({
+    toApplicationId: '',
+    amount: '',
+    notes: ''
+  });
+  const [availableApplications, setAvailableApplications] = useState([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [savingTransfer, setSavingTransfer] = useState(false);
 
   const fetchApplicationData = useCallback(async () => {
     try {
@@ -113,6 +122,7 @@ const AdminApplicationDetails = () => {
       setEditData({
         firstName: application.firstName || '',
         lastName: application.lastName || '',
+        email: application.userId?.email || '',
         secondApplicantFirstName: application.secondApplicantFirstName || '',
         secondApplicantLastName: application.secondApplicantLastName || '',
         phone: application.phone || '',
@@ -126,7 +136,7 @@ const AdminApplicationDetails = () => {
         requestedEndDate: application.requestedEndDate || '',
         rentalAmount: application.rentalAmount || '',
         depositAmount: application.depositAmount || '',
-        additionalGuestsCount: application.additionalGuests?.length || 0,
+        additionalGuests: application.additionalGuests ? [...application.additionalGuests] : [],
         notes: application.notes || ''
       });
       setIsEditing(true);
@@ -156,11 +166,114 @@ const AdminApplicationDetails = () => {
     }
   };
 
+  // Guest management functions
+  const addGuest = () => {
+    setEditData(prev => ({
+      ...prev,
+      additionalGuests: [...(prev.additionalGuests || []), {
+        firstName: '',
+        lastName: '',
+        isAdult: true
+      }]
+    }));
+  };
+
+  const removeGuest = (index) => {
+    setEditData(prev => ({
+      ...prev,
+      additionalGuests: prev.additionalGuests.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateGuest = (index, field, value) => {
+    setEditData(prev => ({
+      ...prev,
+      additionalGuests: prev.additionalGuests.map((guest, i) => 
+        i === index ? { ...guest, [field]: value } : guest
+      )
+    }));
+  };
+
+  // Transfer functionality
+  const fetchAvailableApplications = async () => {
+    if (!application?.userId?._id) return;
+    
+    try {
+      setLoadingApplications(true);
+      const response = await fetch(`/api/payment/admin/available-deposits?userId=${application.userId._id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out the current application and only show applications with available balance
+        const filtered = data.applications.filter(app => 
+          app.applicationId._id !== id && app.totalBalance > 0
+        );
+        setAvailableApplications(filtered);
+      } else {
+        toast.error('Failed to fetch available applications');
+      }
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      toast.error('Error fetching applications');
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!transferData.toApplicationId || !transferData.amount) {
+      toast.error('Please select destination application and enter amount');
+      return;
+    }
+
+    try {
+      setSavingTransfer(true);
+      const response = await fetch('/api/payment/admin/transfer-amount', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          fromApplicationId: id,
+          toApplicationId: transferData.toApplicationId,
+          depositAmount: Math.round(parseFloat(transferData.amount) * 100), // Convert to cents
+          transferNotes: transferData.notes
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Transfer completed successfully!');
+        setShowTransferModal(false);
+        setTransferData({ toApplicationId: '', amount: '', notes: '' });
+        await fetchApplicationData(); // Refresh data
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Transfer failed');
+      }
+    } catch (error) {
+      console.error('Transfer error:', error);
+      toast.error('Error processing transfer');
+    } finally {
+      setSavingTransfer(false);
+    }
+  };
+
+  const openTransferModal = () => {
+    setTransferData({ toApplicationId: '', amount: '', notes: '' });
+    setShowTransferModal(true);
+    fetchAvailableApplications();
+  };
+
   const handleSaveEdit = async () => {
     try {
       setSaving(true);
       
-      const response = await fetch(`/api/application/admin/${id}`, {
+      const response = await fetch(`/api/application/admin/${id}/edit`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -502,54 +615,57 @@ const AdminApplicationDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <AdminNavbar />
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b backdrop-blur-sm bg-white/95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/admin/dashboard')}
-                className="flex items-center text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Dashboard
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
-                <p className="text-sm text-gray-600">
-                  {application.firstName} {application.lastName} • {application.status?.charAt(0).toUpperCase() + application.status?.slice(1)}
-                </p>
+          <div className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 group"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-1 transition-transform duration-200" />
+                  Back to Dashboard
+                </button>
+                <div className="h-6 w-px bg-gray-300"></div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
+                  <p className="text-sm text-gray-600">
+                    {application.firstName} {application.lastName} • <span className="font-medium capitalize text-blue-600">{application.status}</span>
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={fetchApplicationData}
-                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </button>
-              <button
-                onClick={deleteApplication}
-                className="flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 border border-red-300 rounded-lg hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={fetchApplicationData}
+                  className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </button>
+                <button
+                  onClick={deleteApplication}
+                  className="flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 border border-red-300 rounded-lg hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Left Column - Main Information */}
           <div className="xl:col-span-2 space-y-6">
             {/* Personal Information */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <User className="h-5 w-5 mr-2 text-blue-600" />
@@ -585,66 +701,87 @@ const AdminApplicationDetails = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
-                  {isEditing ? (
-                    <div className="flex space-x-2 mt-1">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Main Applicant */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Main Applicant</h4>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={editData.firstName || ''}
+                          onChange={(e) => handleInputChange('firstName', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="First Name"
+                        />
+                        <input
+                          type="text"
+                          value={editData.lastName || ''}
+                          onChange={(e) => handleInputChange('lastName', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900 mt-1">
+                        {application.firstName} {application.lastName}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                    {isEditing ? (
                       <input
-                        type="text"
-                        value={editData.firstName || ''}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="First Name"
+                        type="email"
+                        value={editData.email || ''}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                        placeholder="Email address"
                       />
-                      <input
-                        type="text"
-                        value={editData.lastName || ''}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Last Name"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 mt-1">
-                      {application.firstName} {application.lastName}
-                    </p>
-                  )}
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900 mt-1">{application.userId?.email || 'N/A'}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Co-Applicant</label>
-                  {isEditing ? (
-                    <div className="flex space-x-2 mt-1">
-                      <input
-                        type="text"
-                        value={editData.secondApplicantFirstName || ''}
-                        onChange={(e) => handleInputChange('secondApplicantFirstName', e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="First Name"
-                      />
-                      <input
-                        type="text"
-                        value={editData.secondApplicantLastName || ''}
-                        onChange={(e) => handleInputChange('secondApplicantLastName', e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Last Name"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 mt-1">
-                      {application.secondApplicantFirstName && application.secondApplicantLastName 
-                        ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}`
-                        : 'Not provided'
-                      }
-                    </p>
-                  )}
+                {/* Co-Applicant */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Co-Applicant</h4>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={editData.secondApplicantFirstName || ''}
+                          onChange={(e) => handleInputChange('secondApplicantFirstName', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="First Name"
+                        />
+                        <input
+                          type="text"
+                          value={editData.secondApplicantLastName || ''}
+                          onChange={(e) => handleInputChange('secondApplicantLastName', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900 mt-1">
+                        {application.secondApplicantFirstName && application.secondApplicantLastName
+                          ? `${application.secondApplicantFirstName} ${application.secondApplicantLastName}`
+                          : 'Not provided'
+                        }
+                      </p>
+                    )}
+                  </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{application.user?.email || 'N/A'}</p>
-                </div>
+              {/* Additional fields in a separate row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
 
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</label>
@@ -752,25 +889,27 @@ const AdminApplicationDetails = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Additional Guests</label>
-                  {isEditing ? (
-                    <div className="mt-1">
-                      <input
-                        type="number"
-                        min="0"
-                        max="10"
-                        value={editData.additionalGuestsCount || (application.additionalGuests?.length || 0)}
-                        onChange={(e) => handleInputChange('additionalGuestsCount', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Number of additional guests (0-10)</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 mt-1">
-                      {application.additionalGuests?.length || 0}
-                    </p>
-                  )}
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Guests</label>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {(() => {
+                      let totalGuests = 1; // Main applicant
+                      if (application.secondApplicantFirstName || application.secondApplicantLastName) {
+                        totalGuests += 1; // Second applicant
+                      }
+                      totalGuests += application.additionalGuests?.length || 0; // Additional guests
+                      return totalGuests;
+                    })()} guest{(() => {
+                      let totalGuests = 1; // Main applicant
+                      if (application.secondApplicantFirstName || application.secondApplicantLastName) {
+                        totalGuests += 1; // Second applicant
+                      }
+                      totalGuests += application.additionalGuests?.length || 0; // Additional guests
+                      return totalGuests !== 1 ? 's' : '';
+                    })()}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    (1 main applicant{application.secondApplicantFirstName || application.secondApplicantLastName ? ' + 1 co-applicant' : ''}{application.additionalGuests?.length ? ` + ${application.additionalGuests.length} additional` : ''})
+                  </p>
                 </div>
               </div>
 
@@ -797,8 +936,113 @@ const AdminApplicationDetails = () => {
               )}
             </div>
 
+            {/* Additional Guests Section */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <User className="h-5 w-5 mr-2 text-blue-600" />
+                Additional Guests
+              </h3>
+
+
+              {/* Additional Guests Section */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-gray-900">
+                    Additional Guests ({(isEditing ? editData.additionalGuests : application.additionalGuests)?.length || 0})
+                  </h4>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={addGuest}
+                      className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Guest
+                    </button>
+                  )}
+                </div>
+
+                {(isEditing ? editData.additionalGuests : application.additionalGuests) && (isEditing ? editData.additionalGuests : application.additionalGuests).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(isEditing ? editData.additionalGuests : application.additionalGuests).map((guest, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="text-sm font-medium text-gray-900">Guest {index + 1}</h5>
+                          <div className="flex items-center space-x-2">
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => removeGuest(index)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              guest.isAdult ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {guest.isAdult ? 'Adult (18+)' : 'Minor'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={guest.firstName}
+                                  onChange={(e) => updateGuest(index, 'firstName', e.target.value)}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                                  placeholder="First Name"
+                                />
+                              ) : (
+                                <p className="text-sm font-medium text-gray-900 mt-1">{guest.firstName}</p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={guest.lastName}
+                                  onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                                  placeholder="Last Name"
+                                />
+                              ) : (
+                                <p className="text-sm font-medium text-gray-900 mt-1">{guest.lastName}</p>
+                              )}
+                            </div>
+                          </div>
+                          {isEditing && (
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Age Category</label>
+                              <select
+                                value={guest.isAdult ? 'adult' : 'minor'}
+                                onChange={(e) => updateGuest(index, 'isAdult', e.target.value === 'adult')}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 mt-1"
+                              >
+                                <option value="adult">Adult (18+)</option>
+                                <option value="minor">Minor</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <p className="text-sm text-gray-500">No additional guests provided</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Payment Information */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
                 Payment Information
@@ -839,13 +1083,22 @@ const AdminApplicationDetails = () => {
 
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-base font-medium text-gray-900">Recent Payments</h4>
-                <button
-                  onClick={() => setShowManualPaymentModal(true)}
-                  className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Payment
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={openTransferModal}
+                    className="flex items-center px-3 py-2 text-sm text-green-600 hover:text-green-700 border border-green-200 rounded-lg hover:bg-green-50"
+                  >
+                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    Transfer
+                  </button>
+                  <button
+                    onClick={() => setShowManualPaymentModal(true)}
+                    className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Payment
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -888,7 +1141,7 @@ const AdminApplicationDetails = () => {
           {/* Right Column - Status and Actions */}
           <div className="space-y-6">
             {/* Application Status */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
                 Application Status
@@ -950,7 +1203,7 @@ const AdminApplicationDetails = () => {
             </div>
 
             {/* Lease Information - Side by Side Layout */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <FileText className="h-5 w-5 mr-2 text-blue-600" />
                 Lease Information
@@ -1231,6 +1484,115 @@ const AdminApplicationDetails = () => {
                 >
                   {savingManualPayment ? 'Adding...' : 'Add Payment'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Transfer Amount</h3>
+                <button
+                  onClick={() => setShowTransferModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    From Application
+                  </label>
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-sm font-medium text-gray-900">
+                      {application?.firstName} {application?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Application #{application?.applicationNumber || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    To Application
+                  </label>
+                  {loadingApplications ? (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <RefreshCw className="h-4 w-4 animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Loading applications...</p>
+                    </div>
+                  ) : (
+                    <select
+                      value={transferData.toApplicationId}
+                      onChange={(e) => setTransferData(prev => ({ ...prev, toApplicationId: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="">Select destination application</option>
+                      {availableApplications.map((app) => (
+                        <option key={app.applicationId._id} value={app.applicationId._id}>
+                          {app.applicationId.firstName} {app.applicationId.lastName} - 
+                          App #{app.applicationId.applicationNumber} 
+                          (${(app.totalBalance / 100).toFixed(2)} available)
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {availableApplications.length === 0 && !loadingApplications && (
+                    <p className="text-sm text-gray-500 mt-1">No other applications with available balance found</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Amount ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={transferData.amount}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, amount: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transfer Notes (Optional)
+                  </label>
+                  <textarea
+                    value={transferData.notes}
+                    onChange={(e) => setTransferData(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    rows="3"
+                    placeholder="e.g., Annual lease renewal deposit transfer"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowTransferModal(false)}
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleTransfer}
+                    disabled={savingTransfer || !transferData.toApplicationId || !transferData.amount}
+                    className="px-4 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingTransfer ? 'Transferring...' : 'Transfer Amount'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
