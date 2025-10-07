@@ -8,18 +8,15 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle,
-  Settings
+  AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import CompletionStatus from '../components/CompletionStatus';
-import TenantSettings from '../components/TenantSettings';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -156,7 +153,7 @@ const Dashboard = () => {
           <video className="w-full h-32 sm:h-40 md:h-48 object-cover object-center" poster="/images/image1.jpg" autoPlay muted loop playsInline>
             <source src="/videos/beach-video.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-black/10" />
         </div>
         <div className="relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -170,16 +167,6 @@ const Dashboard = () => {
                     Manage your rental applications and bookings
                   </p>
                 </div>
-              </div>
-              <div className="flex-shrink-0">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors border border-white/20"
-                  title="Account Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Settings</span>
-                </button>
               </div>
             </div>
           </div>
@@ -309,11 +296,6 @@ const Dashboard = () => {
 
         </div>
       </div>
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <TenantSettings onClose={() => setShowSettings(false)} />
-      )}
     </div>
   );
 };

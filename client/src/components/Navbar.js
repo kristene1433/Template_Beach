@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Home, FileText, LogOut, Mail } from 'lucide-react';
+import { Menu, X, Home, FileText, LogOut, Mail, Settings } from 'lucide-react';
+import TenantPasswordChange from './TenantPasswordChange';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const handleLogout = async () => {
     const wasAdmin = user?.role === 'admin';
@@ -81,6 +83,14 @@ const Navbar = () => {
                   Welcome, {user.firstName}
                 </span>
                 <button
+                  onClick={() => setShowPasswordChange(true)}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  title="Change Password"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </button>
+                <button
                   onClick={handleLogout}
                   className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                 >
@@ -145,13 +155,25 @@ const Navbar = () => {
               })}
               
               {user && (
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setShowPasswordChange(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </>
               )}
             </div>
             
@@ -176,6 +198,11 @@ const Navbar = () => {
           </div>
         )}
       </div>
+      
+      {/* Password Change Modal */}
+      {showPasswordChange && (
+        <TenantPasswordChange onClose={() => setShowPasswordChange(false)} />
+      )}
     </nav>
   );
 };
