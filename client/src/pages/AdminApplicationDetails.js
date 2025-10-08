@@ -453,7 +453,7 @@ const AdminApplicationDetails = () => {
         body: JSON.stringify({
           ...manualPaymentData,
           applicationId: id,
-          amount: parseFloat(manualPaymentData.amount) * 100 // Convert to cents
+          amount: parseFloat(manualPaymentData.amount) // Backend will convert to cents
         })
       });
 
