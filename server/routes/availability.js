@@ -51,132 +51,58 @@ router.get('/admin/all', auth, adminAuth, async (req, res) => {
     
     let query = {};
     if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
+      query.startDate = { $lte: new Date(endDate) };
+      query.endDate = { $gte: new Date(startDate) };
     }
 
-    const availability = await Availability.find(query)
-      .sort({ date: 1 })
-      .populate('createdBy updatedBy', 'email');
+    const availabilityRanges = await AvailabilityRange.find(query)
+      .sort({ startDate: 1 })
+      .populate('createdBy', 'email');
+    
+    console.log('Found availability ranges:', availabilityRanges.length);
+    availabilityRanges.forEach(r => {
+      console.log(`Range: ${r.startDate.toISOString().split('T')[0]} to ${r.endDate.toISOString().split('T')[0]}, Available: ${r.isAvailable}`);
+    });
+    
+    // Convert ranges to individual dates for frontend compatibility
+    const availability = [];
+    const start = startDate ? new Date(startDate) : new Date();
+    const end = endDate ? new Date(endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    
+    // Normalize dates to start of day for comparison
+    const normalizeDate = (date) => {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
+    };
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const normalizedDate = normalizeDate(d);
+      const range = availabilityRanges.find(r => {
+        const rangeStart = normalizeDate(r.startDate);
+        const rangeEnd = normalizeDate(r.endDate);
+        return rangeStart <= normalizedDate && rangeEnd >= normalizedDate;
+      });
+      
+      const dateStr = d.toISOString().split('T')[0];
+      if (range) {
+        console.log(`Date ${dateStr}: Found range, Available: ${range.isAvailable}`);
+      } else {
+        console.log(`Date ${dateStr}: No range found, defaulting to available`);
+      }
+      
+      availability.push({
+        date: d.toISOString(),
+        isAvailable: range ? range.isAvailable : true,
+        reason: range ? range.reason : '',
+        createdBy: range ? range.createdBy : null
+      });
+    }
     
     res.json({ availability });
   } catch (error) {
     console.error('Error fetching availability:', error);
     res.status(500).json({ error: 'Failed to fetch availability' });
-  }
-});
-
-// Update availability for a specific date (admin only) - range-aware
-router.put('/admin/:date', auth, adminAuth, async (req, res) => {
-  try {
-
-    const { date } = req.params;
-    const { isAvailable, reason } = req.body;
-
-    console.log('Received date update request:', { date, isAvailable, reason });
-
-    if (typeof isAvailable !== 'boolean') {
-      return res.status(400).json({ error: 'isAvailable must be a boolean' });
-    }
-
-    // Try different date parsing methods
-    let targetDate;
-    
-    // First try direct parsing
-    targetDate = new Date(date);
-    
-    // If that fails, try parsing as YYYY-MM-DD format
-    if (isNaN(targetDate.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const [year, month, day] = date.split('-').map(Number);
-      targetDate = new Date(year, month - 1, day); // month is 0-indexed
-    }
-    
-    console.log('Parsed date:', targetDate, 'isValid:', !isNaN(targetDate.getTime()));
-    
-    if (isNaN(targetDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
-    }
-
-    // Normalize to UTC midnight
-    targetDate.setUTCHours(0, 0, 0, 0);
-
-    // Range update algorithm: find any overlapping ranges around the day
-    const dayStart = new Date(targetDate);
-    const dayEnd = new Date(targetDate);
-    
-    // Fetch overlapping ranges
-    const overlapping = await AvailabilityRange.find({
-      startDate: { $lte: dayEnd },
-      endDate: { $gte: dayStart }
-    }).sort({ startDate: 1 });
-
-    // Remove/adjust overlapping ranges
-    for (const r of overlapping) {
-      // If the range is exactly the day
-      if (r.startDate.getTime() === dayStart.getTime() && r.endDate.getTime() === dayStart.getTime()) {
-        r.isAvailable = isAvailable;
-        r.reason = reason || r.reason;
-        await r.save();
-      } else if (r.startDate.getTime() === dayStart.getTime() && r.endDate.getTime() > dayStart.getTime()) {
-        // Shrink from the start
-        r.startDate = new Date(dayStart.getTime() + 24*3600*1000);
-        await r.save();
-      } else if (r.endDate.getTime() === dayStart.getTime() && r.startDate.getTime() < dayStart.getTime()) {
-        // Shrink from the end
-        r.endDate = new Date(dayStart.getTime() - 24*3600*1000);
-        await r.save();
-      } else if (r.startDate.getTime() < dayStart.getTime() && r.endDate.getTime() > dayStart.getTime()) {
-        // Split into two ranges around the day
-        const left = new AvailabilityRange({
-          startDate: r.startDate,
-          endDate: new Date(dayStart.getTime() - 24*3600*1000),
-          isAvailable: r.isAvailable,
-          reason: r.reason,
-          createdBy: r.createdBy
-        });
-        const right = new AvailabilityRange({
-          startDate: new Date(dayStart.getTime() + 24*3600*1000),
-          endDate: r.endDate,
-          isAvailable: r.isAvailable,
-          reason: r.reason,
-          createdBy: r.createdBy
-        });
-        await r.deleteOne();
-        await left.save();
-        await right.save();
-      }
-    }
-
-    // Upsert the single-day range
-    await AvailabilityRange.updateOne(
-      { startDate: dayStart, endDate: dayStart },
-      { $set: { isAvailable, reason: reason || '', createdBy: req.user.id } },
-      { upsert: true }
-    );
-
-    // Attempt to merge adjacent ranges with the same state
-    const prev = await AvailabilityRange.findOne({ endDate: new Date(dayStart.getTime() - 24*3600*1000), isAvailable }).sort({ startDate: 1 });
-    const next = await AvailabilityRange.findOne({ startDate: new Date(dayStart.getTime() + 24*3600*1000), isAvailable }).sort({ startDate: 1 });
-    const current = await AvailabilityRange.findOne({ startDate: dayStart, endDate: dayStart, isAvailable });
-    if (current) {
-      if (prev) {
-        current.startDate = prev.startDate;
-        await prev.deleteOne();
-        await current.save();
-      }
-      if (next) {
-        current.endDate = next.endDate;
-        await next.deleteOne();
-        await current.save();
-      }
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating availability:', error);
-    res.status(500).json({ error: 'Failed to update availability' });
   }
 });
 
@@ -314,6 +240,119 @@ router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to update availability' });
   }
 });
+
+// Update availability for a specific date (admin only) - range-aware
+router.put('/admin/:date', auth, adminAuth, async (req, res) => {
+  try {
+
+    const { date } = req.params;
+    const { isAvailable, reason } = req.body;
+
+    console.log('Received date update request:', { date, isAvailable, reason });
+
+    if (typeof isAvailable !== 'boolean') {
+      return res.status(400).json({ error: 'isAvailable must be a boolean' });
+    }
+
+    // Try different date parsing methods
+    let targetDate;
+    
+    // First try direct parsing
+    targetDate = new Date(date);
+    
+    // If that fails, try parsing as YYYY-MM-DD format
+    if (isNaN(targetDate.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [year, month, day] = date.split('-').map(Number);
+      targetDate = new Date(year, month - 1, day); // month is 0-indexed
+    }
+    
+    console.log('Parsed date:', targetDate, 'isValid:', !isNaN(targetDate.getTime()));
+    
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // Normalize to UTC midnight
+    targetDate.setUTCHours(0, 0, 0, 0);
+
+    // Range update algorithm: find any overlapping ranges around the day
+    const dayStart = new Date(targetDate);
+    const dayEnd = new Date(targetDate);
+    
+    // Fetch overlapping ranges
+    const overlapping = await AvailabilityRange.find({
+      startDate: { $lte: dayEnd },
+      endDate: { $gte: dayStart }
+    }).sort({ startDate: 1 });
+
+    // Remove/adjust overlapping ranges
+    for (const r of overlapping) {
+      // If the range is exactly the day
+      if (r.startDate.getTime() === dayStart.getTime() && r.endDate.getTime() === dayStart.getTime()) {
+        r.isAvailable = isAvailable;
+        r.reason = reason || r.reason;
+        await r.save();
+      } else if (r.startDate.getTime() === dayStart.getTime() && r.endDate.getTime() > dayStart.getTime()) {
+        // Shrink from the start
+        r.startDate = new Date(dayStart.getTime() + 24*3600*1000);
+        await r.save();
+      } else if (r.endDate.getTime() === dayStart.getTime() && r.startDate.getTime() < dayStart.getTime()) {
+        // Shrink from the end
+        r.endDate = new Date(dayStart.getTime() - 24*3600*1000);
+        await r.save();
+      } else if (r.startDate.getTime() < dayStart.getTime() && r.endDate.getTime() > dayStart.getTime()) {
+        // Split into two ranges around the day
+        const left = new AvailabilityRange({
+          startDate: r.startDate,
+          endDate: new Date(dayStart.getTime() - 24*3600*1000),
+          isAvailable: r.isAvailable,
+          reason: r.reason,
+          createdBy: r.createdBy
+        });
+        const right = new AvailabilityRange({
+          startDate: new Date(dayStart.getTime() + 24*3600*1000),
+          endDate: r.endDate,
+          isAvailable: r.isAvailable,
+          reason: r.reason,
+          createdBy: r.createdBy
+        });
+        await r.deleteOne();
+        await left.save();
+        await right.save();
+      }
+    }
+
+    // Upsert the single-day range
+    await AvailabilityRange.updateOne(
+      { startDate: dayStart, endDate: dayStart },
+      { $set: { isAvailable, reason: reason || '', createdBy: req.user.id } },
+      { upsert: true }
+    );
+
+    // Attempt to merge adjacent ranges with the same state
+    const prev = await AvailabilityRange.findOne({ endDate: new Date(dayStart.getTime() - 24*3600*1000), isAvailable }).sort({ startDate: 1 });
+    const next = await AvailabilityRange.findOne({ startDate: new Date(dayStart.getTime() + 24*3600*1000), isAvailable }).sort({ startDate: 1 });
+    const current = await AvailabilityRange.findOne({ startDate: dayStart, endDate: dayStart, isAvailable });
+    if (current) {
+      if (prev) {
+        current.startDate = prev.startDate;
+        await prev.deleteOne();
+        await current.save();
+      }
+      if (next) {
+        current.endDate = next.endDate;
+        await next.deleteOne();
+        await current.save();
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating availability:', error);
+    res.status(500).json({ error: 'Failed to update availability' });
+  }
+});
+
 
 // Delete availability record (admin only)
 router.delete('/admin/:date', auth, adminAuth, async (req, res) => {

@@ -60,19 +60,19 @@ const images = [
   {
     key: 'pool',
     title: 'Pool Area',
-    src: `/images/pool.jpg?${VER}`,
+    src: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1600&auto=format&fit=crop',
     fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'dining',
     title: 'Dining Area',
-    src: `/images/dining.jpg?${VER}`,
+    src: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=1600&auto=format&fit=crop',
     fallback: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=1600&auto=format&fit=crop'
   },
   {
     key: 'appliance',
     title: 'Modern Appliances',
-    src: `/images/appliance.jpg?${VER}`,
+    src: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=1600&auto=format&fit=crop',
     fallback: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=1600&auto=format&fit=crop'
   }
 ];
@@ -124,6 +124,11 @@ const Gallery = () => {
                   width="1200"
                   height="800"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
+                  onError={(e) => {
+                    console.log(`Image failed to load: ${img.src}, falling back to: ${img.fallback}`);
+                    e.target.src = img.fallback;
+                  }}
+                  onLoad={() => console.log(`Image loaded successfully: ${img.src}`)}
                 />
                 <figcaption className="p-4 text-sm text-gray-700 font-medium">{img.title}</figcaption>
               </figure>
