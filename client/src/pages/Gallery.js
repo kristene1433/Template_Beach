@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navigation from '../components/Navigation';
 
-const VER = 'v=4';
+const VER = 'v=5';
 const images = [
   {
     key: 'patio',
@@ -77,6 +77,28 @@ const images = [
   }
 ];
 
+// Custom Image component with fallback handling
+const ImageWithFallback = ({ src, fallback, alt, ...props }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(fallback);
+    }
+  };
+
+  return (
+    <img
+      src={imgSrc}
+      alt={alt}
+      onError={handleError}
+      {...props}
+    />
+  );
+};
+
 const Gallery = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
@@ -115,8 +137,9 @@ const Gallery = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {images.map((img) => (
               <figure key={img.key} className="bg-white/90 backdrop-blur-md border border-white/30 rounded-xl shadow-medium overflow-hidden">
-                <img
+                <ImageWithFallback
                   src={img.src}
+                  fallback={img.fallback}
                   alt={img.title}
                   loading="eager"
                   fetchpriority="high"
@@ -124,11 +147,6 @@ const Gallery = () => {
                   width="1200"
                   height="800"
                   className="w-full h-60 object-cover hover:scale-[1.02] transition-transform duration-200"
-                  onError={(e) => {
-                    console.log(`Image failed to load: ${img.src}, falling back to: ${img.fallback}`);
-                    e.target.src = img.fallback;
-                  }}
-                  onLoad={() => console.log(`Image loaded successfully: ${img.src}`)}
                 />
                 <figcaption className="p-4 text-sm text-gray-700 font-medium">{img.title}</figcaption>
               </figure>

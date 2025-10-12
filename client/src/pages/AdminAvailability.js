@@ -28,7 +28,7 @@ const AdminAvailability = () => {
       const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
       const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 4, 0);
       
-      const response = await fetch(`/api/availability/admin/all?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
+      const response = await fetch(`http://localhost:5000/api/availability/admin/all?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -120,7 +120,7 @@ const AdminAvailability = () => {
     console.log('Updating date:', dateStr, 'to:', newAvailability);
     
     try {
-      const response = await fetch(`/api/availability/admin/${dateStr}`, {
+      const response = await fetch(`http://localhost:5000/api/availability/admin/${dateStr}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ const AdminAvailability = () => {
     console.log('Bulk updating dates:', selectedDates, 'to:', bulkAction);
 
     try {
-      const response = await fetch('/api/availability/admin/bulk', {
+      const response = await fetch('http://localhost:5000/api/availability/admin/bulk', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
