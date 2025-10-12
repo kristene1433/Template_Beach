@@ -28,6 +28,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminRevenueDashboard from './pages/AdminRevenueDashboard';
 import AdminApplicationDetails from './pages/AdminApplicationDetails';
 import AdminPaymentHistory from './pages/AdminPaymentHistory';
+import AdminRates from './pages/AdminRates';
+import AdminAvailability from './pages/AdminAvailability';
 import ContactForm from './components/ContactForm';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -186,6 +188,22 @@ const AppRoutes = () => {
         element={
           <AdminProtectedRoute>
             <AdminPaymentHistory />
+          </AdminProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/rates" 
+        element={
+          <AdminProtectedRoute>
+            <AdminRates />
+          </AdminProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/availability" 
+        element={
+          <AdminProtectedRoute>
+            <AdminAvailability />
           </AdminProtectedRoute>
         } 
       />

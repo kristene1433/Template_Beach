@@ -75,11 +75,26 @@ router.put('/admin/:date', auth, adminAuth, async (req, res) => {
     const { date } = req.params;
     const { isAvailable, reason } = req.body;
 
+    console.log('Received date update request:', { date, isAvailable, reason });
+
     if (typeof isAvailable !== 'boolean') {
       return res.status(400).json({ error: 'isAvailable must be a boolean' });
     }
 
-    const targetDate = new Date(date);
+    // Try different date parsing methods
+    let targetDate;
+    
+    // First try direct parsing
+    targetDate = new Date(date);
+    
+    // If that fails, try parsing as YYYY-MM-DD format
+    if (isNaN(targetDate.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [year, month, day] = date.split('-').map(Number);
+      targetDate = new Date(year, month - 1, day); // month is 0-indexed
+    }
+    
+    console.log('Parsed date:', targetDate, 'isValid:', !isNaN(targetDate.getTime()));
+    
     if (isNaN(targetDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
@@ -171,6 +186,8 @@ router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
 
     const { dates, isAvailable, reason } = req.body;
 
+    console.log('Received bulk update request:', { dates, isAvailable, reason });
+
     if (!Array.isArray(dates) || dates.length === 0) {
       return res.status(400).json({ error: 'Dates array is required' });
     }
@@ -181,8 +198,19 @@ router.put('/admin/bulk', auth, adminAuth, async (req, res) => {
 
     // Normalize all dates to the start of the day to ensure consistent matching
     const toStartOfDay = (d) => {
-      const parsed = new Date(d);
-      if (isNaN(parsed.getTime())) return null;
+      let parsed = new Date(d);
+      
+      // If direct parsing fails, try YYYY-MM-DD format
+      if (isNaN(parsed.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        const [year, month, day] = d.split('-').map(Number);
+        parsed = new Date(year, month - 1, day); // month is 0-indexed
+      }
+      
+      if (isNaN(parsed.getTime())) {
+        console.log('Failed to parse date:', d);
+        return null;
+      }
+      
       // Normalize to UTC midnight to avoid timezone drift
       parsed.setUTCHours(0, 0, 0, 0);
       return parsed;

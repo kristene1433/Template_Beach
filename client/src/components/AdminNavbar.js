@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, Home, LogOut, BarChart3, Settings } from 'lucide-react';
+import { Menu, X, Home, LogOut, BarChart3, Settings, DollarSign, Calendar } from 'lucide-react';
 import AdminPasswordChange from './AdminPasswordChange';
 
 const AdminNavbar = () => {
@@ -22,6 +22,8 @@ const AdminNavbar = () => {
   const adminNavLinks = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: Home },
     { path: '/admin/revenue', label: 'Revenue', icon: BarChart3 },
+    { path: '/admin/rates', label: 'Rates', icon: DollarSign },
+    { path: '/admin/availability', label: 'Availability', icon: Calendar },
   ];
 
   return (
