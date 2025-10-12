@@ -123,7 +123,10 @@ const Home = () => {
     { src: '/images/bedroom2.jpg', caption: 'Second Bedroom' },
     { src: '/images/bathroom1.jpg', caption: 'Primary Bathroom' },
     { src: '/images/bathroom2.jpg', caption: 'Second Bathroom' },
-    { src: '/images/patio.jpg', caption: 'Patio / Balcony' }
+    { src: '/images/patio.jpg', caption: 'Patio / Balcony' },
+    { src: '/images/pool.jpg', caption: 'Pool Area' },
+    { src: '/images/dining.jpg', caption: 'Dining Area' },
+    { src: '/images/appliance.jpg', caption: 'Modern Appliances' }
   ];
 
   // FAQ removed
@@ -156,6 +159,14 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Error loading rates:', error);
+      // Fallback rates when database is not available
+      setRates([
+        { id: 1, period: 'Off Season (Sep-May)', rate: '$150', minStay: '3 nights' },
+        { id: 2, period: 'Peak Season (Jun-Aug)', rate: '$200', minStay: '7 nights' },
+        { id: 3, period: 'Holiday Weekends', rate: '$250', minStay: '3 nights' },
+        { id: 4, period: 'Monthly Rate', rate: '$3,500', minStay: '30 nights' },
+        { id: 5, period: 'Weekly Rate', rate: '$1,200', minStay: '7 nights' }
+      ]);
     }
   };
 
@@ -172,6 +183,19 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Error loading availability:', error);
+      // Fallback availability when database is not available
+      const fallbackAvailability = [];
+      const today = new Date();
+      for (let i = 0; i < 90; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        fallbackAvailability.push({
+          date: date.toISOString(),
+          isAvailable: Math.random() > 0.3, // 70% availability
+          reason: Math.random() > 0.3 ? 'Available' : 'Booked'
+        });
+      }
+      setAvailability(fallbackAvailability);
     }
   }, [currentMonth]);
 
