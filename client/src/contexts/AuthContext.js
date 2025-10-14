@@ -42,6 +42,30 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const logout = useCallback(async ({ silent = false, reason } = {}) => {
+    clearInactivityTimers();
+    try {
+      if (token) {
+        await axios.post('/api/auth/logout');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+      delete axios.defaults.headers.common['Authorization'];
+
+      if (!silent) {
+        if (reason === 'idle') {
+          toast.error('You were signed out after 20 minutes of inactivity.');
+        } else {
+          toast.success('Logged out successfully');
+        }
+      }
+    }
+  }, [token, clearInactivityTimers]);
+
   // Set up axios defaults
   useEffect(() => {
     if (token) {
@@ -74,40 +98,6 @@ export const AuthProvider = ({ children }) => {
 
     checkAuth();
   }, [token]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (!token || !user) {
-      clearInactivityTimers();
-      setIsIdleWarningVisible(false);
-      setIdleSecondsRemaining(null);
-      return;
-    }
-
-    startInactivityTimers();
-
-    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
-    activityEvents.forEach(event => window.addEventListener(event, handleUserActivity));
-    window.addEventListener('focus', handleUserActivity);
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        handleUserActivity();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      activityEvents.forEach(event => window.removeEventListener(event, handleUserActivity));
-      window.removeEventListener('focus', handleUserActivity);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInactivityTimers();
-    };
-  }, [token, user, handleUserActivity, startInactivityTimers, clearInactivityTimers]);
 
   // Login function
   const login = async (email, password) => {
@@ -198,6 +188,40 @@ export const AuthProvider = ({ children }) => {
     startInactivityTimers();
   }, [logout, startInactivityTimers]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!token || !user) {
+      clearInactivityTimers();
+      setIsIdleWarningVisible(false);
+      setIdleSecondsRemaining(null);
+      return;
+    }
+
+    startInactivityTimers();
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(event => window.addEventListener(event, handleUserActivity));
+    window.addEventListener('focus', handleUserActivity);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleUserActivity();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      activityEvents.forEach(event => window.removeEventListener(event, handleUserActivity));
+      window.removeEventListener('focus', handleUserActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInactivityTimers();
+    };
+  }, [token, user, handleUserActivity, startInactivityTimers, clearInactivityTimers]);
+
   // Register function (email + password only)
   const register = async (firstName, lastName, email, password) => {
     try {
@@ -225,32 +249,6 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: message };
     }
   };
-
-  // Logout function
-  const logout = useCallback(async ({ silent = false, reason } = {}) => {
-    clearInactivityTimers();
-    try {
-      if (token) {
-        await axios.post('/api/auth/logout');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
-      delete axios.defaults.headers.common['Authorization'];
-
-      if (!silent) {
-        if (reason === 'idle') {
-          toast.error('You were signed out after 20 minutes of inactivity.');
-        } else {
-          toast.success('Logged out successfully');
-        }
-      }
-    }
-  }, [token, clearInactivityTimers]);
-
   // Update user profile
   const updateProfile = async (profileData) => {
     try {
