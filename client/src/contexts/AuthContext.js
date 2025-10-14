@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import SessionTimeoutModal from '../components/SessionTimeoutModal';
 
 const AuthContext = createContext();
+
+const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
+const WARNING_DURATION = 2 * 60 * 1000; // 2 minutes
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -16,6 +20,27 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [isIdleWarningVisible, setIsIdleWarningVisible] = useState(false);
+  const [idleSecondsRemaining, setIdleSecondsRemaining] = useState(null);
+
+  const warningTimeoutRef = useRef(null);
+  const logoutTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+
+  const clearInactivityTimers = useCallback(() => {
+    if (warningTimeoutRef.current) {
+      clearTimeout(warningTimeoutRef.current);
+      warningTimeoutRef.current = null;
+    }
+    if (logoutTimeoutRef.current) {
+      clearTimeout(logoutTimeoutRef.current);
+      logoutTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  }, []);
 
   // Set up axios defaults
   useEffect(() => {
@@ -50,6 +75,40 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!token || !user) {
+      clearInactivityTimers();
+      setIsIdleWarningVisible(false);
+      setIdleSecondsRemaining(null);
+      return;
+    }
+
+    startInactivityTimers();
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(event => window.addEventListener(event, handleUserActivity));
+    window.addEventListener('focus', handleUserActivity);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleUserActivity();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      activityEvents.forEach(event => window.removeEventListener(event, handleUserActivity));
+      window.removeEventListener('focus', handleUserActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInactivityTimers();
+    };
+  }, [token, user, handleUserActivity, startInactivityTimers, clearInactivityTimers]);
+
   // Login function
   const login = async (email, password) => {
     try {
@@ -77,6 +136,67 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: message };
     }
   };
+
+  const handleAutoLogout = useCallback(() => {
+    setIsIdleWarningVisible(false);
+    setIdleSecondsRemaining(null);
+    logout({ reason: 'idle' });
+  }, [logout]);
+
+  const startInactivityTimers = useCallback(() => {
+    if (!token || !user) {
+      clearInactivityTimers();
+      setIsIdleWarningVisible(false);
+      setIdleSecondsRemaining(null);
+      return;
+    }
+
+    clearInactivityTimers();
+
+    warningTimeoutRef.current = setTimeout(() => {
+      setIdleSecondsRemaining(Math.floor(WARNING_DURATION / 1000));
+      setIsIdleWarningVisible(true);
+
+      countdownIntervalRef.current = setInterval(() => {
+        setIdleSecondsRemaining(prev => {
+          const next = typeof prev === 'number' ? prev - 1 : Math.floor(WARNING_DURATION / 1000) - 1;
+          if (next <= 0) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            return 0;
+          }
+          return next;
+        });
+      }, 1000);
+    }, Math.max(INACTIVITY_TIMEOUT - WARNING_DURATION, 0));
+
+    logoutTimeoutRef.current = setTimeout(() => {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+      handleAutoLogout();
+    }, INACTIVITY_TIMEOUT);
+  }, [token, user, clearInactivityTimers, handleAutoLogout]);
+
+  const handleUserActivity = useCallback(() => {
+    if (!token || !user) {
+      return;
+    }
+    setIsIdleWarningVisible(false);
+    setIdleSecondsRemaining(null);
+    startInactivityTimers();
+  }, [token, user, startInactivityTimers]);
+
+  const handleStayLoggedIn = useCallback(async () => {
+    try {
+      await axios.get('/api/auth/verify');
+    } catch (error) {
+      logout({ reason: 'idle' });
+      return;
+    }
+    setIsIdleWarningVisible(false);
+    setIdleSecondsRemaining(null);
+    startInactivityTimers();
+  }, [logout, startInactivityTimers]);
 
   // Register function (email + password only)
   const register = async (firstName, lastName, email, password) => {
@@ -107,7 +227,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = async () => {
+  const logout = useCallback(async ({ silent = false, reason } = {}) => {
+    clearInactivityTimers();
     try {
       if (token) {
         await axios.post('/api/auth/logout');
@@ -118,9 +239,17 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('token');
       setToken(null);
       setUser(null);
-      toast.success('Logged out successfully');
+      delete axios.defaults.headers.common['Authorization'];
+
+      if (!silent) {
+        if (reason === 'idle') {
+          toast.error('You were signed out after 20 minutes of inactivity.');
+        } else {
+          toast.success('Logged out successfully');
+        }
+      }
     }
-  };
+  }, [token, clearInactivityTimers]);
 
   // Update user profile
   const updateProfile = async (profileData) => {
@@ -208,6 +337,13 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      {isIdleWarningVisible && (
+        <SessionTimeoutModal
+          secondsRemaining={Math.max(idleSecondsRemaining ?? Math.floor(WARNING_DURATION / 1000), 0)}
+          onStay={handleStayLoggedIn}
+          onLogout={() => logout()}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

@@ -124,9 +124,9 @@ const Home = () => {
     { src: '/images/bathroom1.jpg', caption: 'Primary Bathroom' },
     { src: '/images/bathroom2.jpg', caption: 'Second Bathroom' },
     { src: '/images/patio.jpg', caption: 'Patio / Balcony' },
-    { src: '/images/pool.jpg', caption: 'Pool Area' },
     { src: '/images/dining.jpg', caption: 'Dining Area' },
-    { src: '/images/appliance.jpg', caption: 'Modern Appliances' }
+    { src: '/images/appliance.jpg', caption: 'Modern Appliances' },
+    { src: '/images/pool.jpg', caption: 'Pool Area' }
   ];
 
   // FAQ removed

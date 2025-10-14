@@ -58,12 +58,6 @@ const images = [
     fallback: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1600&auto=format&fit=crop'
   },
   {
-    key: 'pool',
-    title: 'Pool Area',
-    src: `/images/pool.jpg?${VER}`,
-    fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1600&auto=format&fit=crop'
-  },
-  {
     key: 'dining',
     title: 'Dining Area',
     src: `/images/dining.jpg?${VER}`,
@@ -74,6 +68,12 @@ const images = [
     title: 'Modern Appliances',
     src: `/images/appliance.jpg?${VER}`,
     fallback: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?q=80&w=1600&auto=format&fit=crop'
+  },
+  {
+    key: 'pool',
+    title: 'Pool Area',
+    src: `/images/pool.jpg?${VER}`,
+    fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1600&auto=format&fit=crop'
   }
 ];
 
