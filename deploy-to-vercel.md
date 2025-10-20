@@ -30,7 +30,7 @@ In Vercel dashboard, go to Settings > Environment Variables:
 
 ```
 NODE_ENV=production
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/rental-property-template?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/rental-property-template?retryWrites=true&w=majority
 JWT_SECRET=your-super-secure-jwt-secret-key-for-production-use-only
 DEMO_MODE=true
 CLIENT_URL=https://your-app-name.vercel.app
