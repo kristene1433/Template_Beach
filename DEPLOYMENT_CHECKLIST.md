@@ -19,7 +19,7 @@
 - [ ] Project imported to Vercel
 - [ ] Environment variables configured:
   - [ ] `NODE_ENV=production`
-  - [ ] `MONGODB_URI=mongodb+srv://...`
+  - [ ] `MONGODB_URI=your_mongodb_connection_string`
   - [ ] `JWT_SECRET=your-secure-secret`
   - [ ] `DEMO_MODE=true`
   - [ ] `CLIENT_URL=https://your-app-name.vercel.app`
