@@ -154,6 +154,15 @@ const applicationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  leaseContent: {
+    type: String,
+    default: ''
+  },
+  leaseGeneratedAt: Date,
+  leaseGeneratedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   paymentReceived: {
     type: Boolean,
     default: false

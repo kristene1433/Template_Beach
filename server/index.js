@@ -123,6 +123,7 @@ app.use('/api/application', applicationRoutes);
 app.use('/api/lease', leaseRoutes);
 app.use('/api/rates', require('./routes/rates'));
 app.use('/api/availability', require('./routes/availability'));
+app.use('/api/setup', require('./routes/setup'));
 
 // Payment routes (JSON parsed)
 app.use('/api/payment', paymentRoutes.router);
@@ -134,7 +135,12 @@ if (process.env.NODE_ENV === 'production') {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Palm Run LLC API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Rental Property Template API is running',
+    environment: process.env.NODE_ENV,
+    demoMode: process.env.DEMO_MODE === 'true'
+  });
 });
 
 // Video test endpoint

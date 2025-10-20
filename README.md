@@ -1,13 +1,13 @@
-# Palm Run LLC - Rental Property Management Website
+# Rental Property Management Template
 
-A modern, full-stack web application for managing rental properties, tenant applications, and payments. Built with React, Node.js, MongoDB, and Stripe integration.
+A modern, full-stack web application template for managing rental properties, tenant applications, and payments. Built with React, Node.js, MongoDB, and demo payment integration. Perfect for demonstrations and as a starting point for property management applications.
 
 ## 🏠 Features
 
 ### For Tenants
 - **User Registration & Authentication**: Secure email/password-based accounts
 - **Rental Application System**: Comprehensive online application forms
-- **Payment Portal**: Secure Stripe integration for deposits and rent payments
+- **Payment Portal**: Demo payment system for deposits and rent payments
 - **Lease Management**: Auto-generated lease agreements from application data
 - **User Dashboard**: Real-time status updates and account management
 - **Document Management**: Upload and manage required documents
@@ -24,7 +24,7 @@ A modern, full-stack web application for managing rental properties, tenant appl
 - **Node.js** with Express.js framework
 - **MongoDB** with Mongoose ODM
 - **JWT** for authentication
-- **Stripe** for payment processing
+- **Demo Payment System** for demonstration purposes
 - **bcryptjs** for password hashing
 - **Helmet** for security headers
 
@@ -42,7 +42,20 @@ A modern, full-stack web application for managing rental properties, tenant appl
 - Rate limiting
 - CORS protection
 - Input validation and sanitization
-- Secure payment processing
+- Demo payment processing
+
+## 🎯 Demo Mode
+
+This template includes a **Demo Mode** that allows you to:
+
+- **Test all features** without real payment processing
+- **Pre-populated demo data** including sample applications and payments
+- **Demo login credentials** for easy testing
+- **Mock payment flow** that simulates real payment processing
+
+### Demo Login Credentials
+- **Tenant**: `demo@example.com` / `demo123`
+- **Admin**: `admin@example.com` / `admin123`
 
 ## 📋 Prerequisites
 
@@ -50,7 +63,6 @@ Before running this application, make sure you have:
 
 - **Node.js** (v16 or higher)
 - **MongoDB** (local installation or cloud service)
-- **Stripe Account** (for payment processing)
 - **Git** for version control
 
 ## 🚀 Installation & Setup
@@ -58,7 +70,7 @@ Before running this application, make sure you have:
 ### 1. Clone the Repository
 ```bash
 git clone <repository-url>
-cd palm-run-llc
+cd rental-property-template
 ```
 
 ### 2. Install Dependencies
@@ -81,14 +93,13 @@ PORT=5000
 NODE_ENV=development
 
 # MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/palm-run-llc
+MONGODB_URI=mongodb://localhost:27017/rental-property-template
 
 # JWT Secret
 JWT_SECRET=your-super-secret-jwt-key-here
 
-# Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
+# Demo Mode
+DEMO_MODE=true
 
 # Email Configuration (for notifications)
 EMAIL_HOST=smtp.gmail.com
@@ -103,11 +114,11 @@ CLIENT_URL=http://localhost:3000
 ### 4. Database Setup
 Make sure MongoDB is running and accessible. The application will automatically create the necessary collections.
 
-### 5. Stripe Setup
-1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Get your API keys from the Stripe dashboard
-3. Update the `.env` file with your Stripe keys
-4. Set up webhook endpoints (optional but recommended)
+### 5. Create Demo Data
+```bash
+# Create demo users, applications, and payments
+npm run create-demo-data
+```
 
 ### 6. Run the Application
 
@@ -199,15 +210,15 @@ client/src/
 - `POST /api/lease/sign` - Sign lease agreement
 - `GET /api/lease/status` - Get lease status
 
-## 💳 Payment Integration
+## 💳 Demo Payment System
 
-The application integrates with Stripe for secure payment processing:
+The application includes a demo payment system for demonstration purposes:
 
 - **Deposit Payments**: Configurable security deposit amounts
 - **Rent Payments**: Monthly rental payments
-- **Secure Processing**: PCI-compliant payment handling
+- **Demo Processing**: Simulated payment handling (no real money)
 - **Payment History**: Complete transaction records
-- **Receipt Generation**: Automatic receipt creation
+- **Receipt Generation**: Demo receipt creation
 
 ## 🎨 Customization
 
@@ -223,7 +234,7 @@ The application integrates with Stripe for secure payment processing:
 
 ### Features
 - Add new form fields to application forms
-- Extend payment options
+- Extend demo payment options
 - Implement additional admin features
 
 ## 🚀 Deployment
@@ -244,7 +255,7 @@ The application integrates with Stripe for secure payment processing:
 NODE_ENV=production
 MONGODB_URI=your_production_mongodb_uri
 JWT_SECRET=your_production_jwt_secret
-STRIPE_SECRET_KEY=your_production_stripe_secret_key
+DEMO_MODE=false
 CLIENT_URL=https://yourdomain.com
 ```
 
@@ -255,7 +266,7 @@ CLIENT_URL=https://yourdomain.com
 - Rate limiting prevents abuse
 - CORS is configured for security
 - Input validation on all forms
-- Secure payment processing through Stripe
+- Demo payment processing (no real money involved)
 
 ## 📊 Database Schema
 
@@ -274,7 +285,7 @@ CLIENT_URL=https://yourdomain.com
 - Document uploads
 
 ### Payment Model
-- Stripe integration details
+- Demo payment integration details
 - Payment amounts and types
 - Transaction status
 - Receipt information
@@ -294,14 +305,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🆘 Support
 
 For support and questions:
-- Email: support@palmrunllc.com
+- Email: support@yourcompany.com
 - Phone: (555) 123-4567
 - Business Hours: Monday-Friday 9AM-6PM
 
 ## 🔄 Updates & Maintenance
 
 - Regularly update dependencies for security patches
-- Monitor Stripe API changes
+- Monitor payment system changes
 - Keep MongoDB updated
 - Review and update security measures
 
@@ -317,4 +328,4 @@ For support and questions:
 
 ---
 
-**Palm Run LLC** - Professional Property Management Solutions
+**Rental Property Management Template** - Professional Property Management Solutions

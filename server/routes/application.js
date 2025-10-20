@@ -421,6 +421,7 @@ router.put('/admin/:applicationId/status', auth, async (req, res) => {
       return res.status(404).json({ error: 'Application not found' });
     }
 
+    const previousStatus = application.status;
     application.status = status;
     application.notes = notes;
     application.reviewedAt = new Date();
@@ -428,15 +429,85 @@ router.put('/admin/:applicationId/status', auth, async (req, res) => {
 
     await application.save();
 
+    // If application was just approved, automatically generate demo lease
+    if (status === 'approved' && previousStatus !== 'approved') {
+      try {
+        // Generate demo lease content
+        const demoLeaseContent = generateDemoLeaseContent(application);
+        
+        // Update application with demo lease data
+        application.leaseGenerated = true;
+        application.leaseContent = demoLeaseContent;
+        application.leaseGeneratedAt = new Date();
+        application.leaseGeneratedBy = req.user._id;
+        
+        await application.save();
+        
+        console.log(`Demo lease generated for application ${applicationId}`);
+      } catch (leaseError) {
+        console.error('Error generating demo lease:', leaseError);
+        // Don't fail the status update if lease generation fails
+      }
+    }
+
     res.json({
       message: 'Application status updated successfully',
-      application
+      application,
+      demoLeaseGenerated: status === 'approved' && previousStatus !== 'approved'
     });
   } catch (error) {
     console.error('Application status update error:', error);
     res.status(500).json({ error: 'Server error updating application status' });
   }
 });
+
+// Helper function to generate demo lease content
+const generateDemoLeaseContent = (application) => {
+  const currentDate = new Date().toLocaleDateString();
+  const startDate = application.requestedStartDate || new Date().toLocaleDateString();
+  const endDate = application.requestedEndDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString();
+  
+  return `LEASE AGREEMENT
+
+This Lease Agreement ("Agreement") is entered into on ${currentDate} between:
+
+LANDLORD: Property Management Template Demo
+TENANT: ${application.firstName} ${application.lastName}
+
+PROPERTY ADDRESS:
+${application.address.street}, ${application.address.city}, ${application.state} ${application.address.zipCode}
+
+LEASE TERMS:
+1. LEASE TERM: From ${startDate} to ${endDate}
+2. RENT: $${application.rentalAmount || 2500} per month, due on the 1st of each month
+3. SECURITY DEPOSIT: $${application.depositAmount || 500}
+4. OCCUPANTS: ${application.firstName} ${application.lastName}${application.secondApplicantFirstName ? `, ${application.secondApplicantFirstName} ${application.secondApplicantLastName}` : ''}
+
+TENANT RESPONSIBILITIES:
+- Pay rent on time
+- Maintain the property in good condition
+- Follow all community rules and regulations
+- Give 30 days notice before moving out
+
+LANDLORD RESPONSIBILITIES:
+- Maintain structural integrity of the property
+- Provide necessary repairs
+- Respect tenant privacy with proper notice
+
+SPECIAL TERMS:
+- This is a DEMO lease agreement for template demonstration purposes
+- No actual legal obligations are created by this document
+- For demonstration and presentation purposes only
+
+SIGNATURES:
+Landlord: _________________________ Date: _________
+Tenant: _________________________ Date: _________
+
+This agreement is for DEMONSTRATION PURPOSES ONLY.
+Generated automatically when application was approved by admin.
+
+Property Management Template - Demo Mode`;
+};
 
 // Admin: Update application progress
 router.put('/admin/:applicationId/progress', auth, async (req, res) => {

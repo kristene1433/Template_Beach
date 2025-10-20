@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
-*/node_modules/
+client/node_modules/
+
+# Production builds
+client/build/
+build/
+dist/
 
 # Environment variables
 .env
@@ -8,12 +13,6 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Build outputs
-build/
-dist/
-*/build/
-*/dist/
 
 # Logs
 npm-debug.log*
@@ -34,8 +33,23 @@ coverage/
 # nyc test coverage
 .nyc_output
 
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
 # Dependency directories
 jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
@@ -58,10 +72,7 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env.test
-
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
 
@@ -100,21 +111,8 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Windows
-*.lnk
+# Vercel
+.vercel
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Backup files
-*.bak
-*.backup
-
-# --- Palm Run: keep client public assets tracked ---
-# Un-ignore CRA public assets so images/videos are committed and deployed
-!client/public/
-!client/public/**
-!client/public/images/**
-!client/public/videos/**
+# Local development
+*.log

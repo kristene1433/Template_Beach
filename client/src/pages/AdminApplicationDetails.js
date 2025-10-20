@@ -108,6 +108,12 @@ const AdminApplicationDetails = () => {
       if (response.ok) {
         toast.success('Application status updated');
         setApplication(prev => ({ ...prev, status: newStatus }));
+        
+        // If approved, automatically generate lease in demo mode
+        if (newStatus === 'approved') {
+          toast.success('Application approved! Lease will be automatically generated for demo purposes.');
+          // The lease generation will be handled by the backend automatically
+        }
       } else {
         toast.error('Failed to update status');
       }

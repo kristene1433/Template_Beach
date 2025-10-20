@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useDemoPayment } from '../contexts/StripeContext';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
 import {
   CreditCard,
   AlertCircle,
   Download,
   Clock,
   Home,
-  Shield
+  Shield,
+  Play
 } from 'lucide-react';
 
 const Payment = () => {
   const { user } = useAuth();
+  const { demoPayments, createDemoPayment } = useDemoPayment();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -27,16 +29,9 @@ const Payment = () => {
   const applicationId = searchParams.get('applicationId');
 
   const loadPaymentHistory = useCallback(async () => {
-    try {
-      const url = applicationId 
-        ? `/api/payment/history?applicationId=${applicationId}`
-        : '/api/payment/history';
-      const response = await axios.get(url);
-      setPaymentHistory(response.data.payments || []);
-    } catch (error) {
-      console.error('Error loading payment history:', error);
-    }
-  }, [applicationId]);
+    // In demo mode, use demo payments instead of API call
+    setPaymentHistory(demoPayments);
+  }, [demoPayments]);
 
   useEffect(() => {
     if (user) {
@@ -95,33 +90,31 @@ const Payment = () => {
     const totalAmount = getTotalAmount(baseAmount);
 
     setLoading(true);
-    try {
-      // Create Stripe Checkout session
-      const response = await axios.post('/api/payment/create-checkout-session', {
-        amount: baseAmount,
-        creditCardFee: creditCardFee,
-        totalAmount: totalAmount,
-        paymentType,
-        applicationId: applicationId,
-        description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${baseAmount.toFixed(2)} + $${creditCardFee.toFixed(2)} processing fee`,
-        successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/payment/cancel`
-      });
+    
+    // Simulate payment processing delay
+    setTimeout(() => {
+      try {
+        // Create demo payment
+        const paymentData = {
+          amount: totalAmount,
+          paymentType,
+          description: description || `${paymentType === 'deposit' ? 'Security Deposit' : 'Rent Payment'} - $${baseAmount.toFixed(2)} + $${creditCardFee.toFixed(2)} processing fee (Demo)`,
+        };
 
-      const { url } = response.data;
-      
-      // Redirect to Stripe Checkout
-      if (url) {
-        window.location.href = url;
-      } else {
-        toast.error('Failed to create checkout session');
+        createDemoPayment(paymentData);
+        
+        toast.success('Demo payment completed successfully!');
+        
+        // Redirect to success page
+        navigate(`/payment/success?demo=true&amount=${totalAmount}&type=${paymentType}`);
+        
+      } catch (error) {
+        console.error('Demo payment error:', error);
+        toast.error('Demo payment failed');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast.error(error.response?.data?.error || 'Payment failed');
-    } finally {
-      setLoading(false);
-    }
+    }, 2000); // 2 second delay to simulate processing
   };
 
   const formatDate = (value) => {
@@ -194,6 +187,10 @@ const Payment = () => {
               Payments
             </h1>
             <p className="text-gray-200 mt-2">Make secure payments for deposits, rent, and more.</p>
+            <div className="mt-4 bg-blue-600/80 backdrop-blur-sm rounded-lg px-4 py-2 inline-flex items-center">
+              <Play className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Demo Mode - No real payments processed</span>
+            </div>
           </div>
         </div>
       </section>
@@ -374,12 +371,12 @@ const Payment = () => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Processing...
+                    Processing Demo Payment...
                   </>
                 ) : (
                   <>
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Proceed to Payment
+                    <Play className="mr-2 h-5 w-5" />
+                    Demo Payment
                   </>
                 )}
               </button>
@@ -387,7 +384,7 @@ const Payment = () => {
               {/* Security Notice */}
               <div className="text-center text-sm text-gray-500">
                 <Shield className="inline h-4 w-4 mr-1" />
-                Your payment is secured by Stripe. We never store your card information.
+                Demo Mode - This is a template for demonstration purposes only.
               </div>
             </div>
           </div>

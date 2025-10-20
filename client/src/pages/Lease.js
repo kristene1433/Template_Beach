@@ -89,8 +89,13 @@ const Lease = () => {
       // Always store latest payload
       setLeaseData(response.data);
       if (response.data.hasApplication) {
+        // Check if there's auto-generated lease content (from admin approval)
+        if (response.data.leaseContent) {
+          setLeaseContent(response.data.leaseContent);
+          console.log('Auto-generated lease content loaded');
+        }
         // If there's a lease agreement, automatically generate and display it
-        if (response.data.leaseStartDate) {
+        else if (response.data.leaseStartDate) {
           await generateLeaseFromData(response.data);
         }
         // Check if there's an uploaded signed lease - server only returns it when content exists
@@ -286,6 +291,10 @@ const Lease = () => {
               <FileText className="mr-3 h-7 w-7" />
               Lease Agreement
             </h1>
+            <div className="mt-4 bg-blue-600/80 backdrop-blur-sm rounded-lg px-4 py-2 inline-flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Demo Mode - Auto-generated lease for demonstration</span>
+            </div>
             {leaseData && (
               <div className="mt-3">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-white/40 bg-white/20 text-white backdrop-blur-md ${

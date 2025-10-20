@@ -1,7 +1,7 @@
 {
-  "name": "palm-run-llc",
+  "name": "rental-property-template",
   "version": "1.0.0",
-  "description": "Rental property management website for Palm Run LLC",
+  "description": "Template rental property management website for demonstrations",
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -11,9 +11,17 @@
     "install-all": "npm install && cd client && npm install",
     "start": "node server/index.js",
     "heroku-postbuild": "cd client && npm install && npm rebuild react-scripts && npm run build",
+    "vercel-build": "cd client && npm run build",
     "create-admin": "node server/scripts/createAdmin.js",
     "delete-admin": "node server/scripts/deleteAdmin.js",
-    "check-admin": "node server/scripts/checkAdmin.js"
+    "check-admin": "node server/scripts/checkAdmin.js",
+    "create-demo-data": "node server/scripts/createDemoData.js",
+    "reset-demo-data": "node server/scripts/resetDemoData.js",
+    "fix-demo-passwords": "node server/scripts/fixDemoPasswords.js",
+    "test-login": "node server/scripts/testLogin.js",
+    "force-fix-passwords": "node server/scripts/forceFixPasswords.js",
+    "test-lease": "node server/scripts/testLease.js",
+    "setup-production": "node server/scripts/setupProduction.js"
   },
   "keywords": [
     "rental",
@@ -22,7 +30,7 @@
     "tenant",
     "application"
   ],
-  "author": "Palm Run LLC",
+  "author": "Property Management Template",
   "license": "MIT",
   "engines": {
     "node": "18.x",
@@ -40,8 +48,7 @@
     "pdf-lib": "^1.17.1",
     "mongoose": "^7.5.0",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.9.4",
-    "stripe": "^13.5.0"
+    "nodemailer": "^6.9.4"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
