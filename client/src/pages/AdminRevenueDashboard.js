@@ -11,11 +11,9 @@ import {
   PieChart,
   Download,
   Filter,
-  ChevronDown
 } from 'lucide-react';
 
 const AdminRevenueDashboard = () => {
-  const navigate = useNavigate();
   const [revenueData, setRevenueData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

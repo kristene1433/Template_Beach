@@ -15,7 +15,6 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
 
   const { forgotPassword } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

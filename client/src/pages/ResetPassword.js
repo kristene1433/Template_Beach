@@ -18,7 +18,6 @@ const ResetPassword = () => {
   const [tokenValid, setTokenValid] = useState(true);
 
   const { resetPassword } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
