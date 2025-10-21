@@ -7,9 +7,10 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+const demoMode = process.env.DEMO_MODE === 'true';
+
 const authRoutes = require('./routes/auth');
 const applicationRoutes = require('./routes/application');
-const paymentRoutes = require('./routes/payment');
 const leaseRoutes = require('./routes/lease');
 
 const app = express();
@@ -17,12 +18,35 @@ const PORT = process.env.PORT || 5000;
 
 // Production configuration validation
 const isProduction = process.env.NODE_ENV === 'production';
-const requiredProdEnv = ['MONGODB_URI', 'JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CLIENT_URL'];
-const missingProdEnv = isProduction ? requiredProdEnv.filter((key) => !process.env[key]) : [];
+const essentialProdEnv = ['MONGODB_URI', 'JWT_SECRET'];
+const stripeEnvKeys = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+const clientProdEnv = ['CLIENT_URL'];
+const missingEssential = isProduction ? essentialProdEnv.filter((key) => !process.env[key]) : [];
+const missingStripe = stripeEnvKeys.filter((key) => !process.env[key]);
+const stripeConfigured = !demoMode && missingStripe.length === 0;
+const missingClient = isProduction ? clientProdEnv.filter((key) => !process.env[key]) : [];
 
-if (missingProdEnv.length) {
-  console.error('Missing required env vars in production:', missingProdEnv.join(', '));
-  console.error('The API will respond with 500 errors until these values are configured.');
+if (missingEssential.length) {
+  console.error('Missing required env vars in production:', missingEssential.join(', '));
+  console.error('API responses will be limited until these values are configured.');
+}
+
+if (!stripeConfigured) {
+  if (!demoMode && missingStripe.length) {
+    console.warn('Stripe env vars missing:', missingStripe.join(', '));
+  }
+  console.warn('Stripe routes will run in demo-only mode (no live payments).');
+}
+
+if (missingClient.length) {
+  console.warn('CLIENT_URL not provided; falling back to permissive CORS handling.');
+}
+
+let paymentRoutes;
+if (!stripeConfigured) {
+  paymentRoutes = require('./routes/payment-demo');
+} else {
+  paymentRoutes = require('./routes/payment');
 }
 
 // Behind proxies/load balancers (Heroku/Render/Cloudflare), trust the first proxy
@@ -84,9 +108,10 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
-if (process.env.NODE_ENV === 'production') {
+if (isProduction) {
+  const corsOrigin = process.env.CLIENT_URL ? [process.env.CLIENT_URL] : true;
   app.use(cors({
-    origin: [process.env.CLIENT_URL].filter(Boolean),
+    origin: corsOrigin,
     credentials: true
   }));
 } else {
@@ -105,7 +130,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Database connection with better error handling
-if (!isProduction || !missingProdEnv.includes('MONGODB_URI')) {
+if (!isProduction || !missingEssential.includes('MONGODB_URI')) {
   mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-llc', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -122,12 +147,13 @@ if (!isProduction || !missingProdEnv.includes('MONGODB_URI')) {
   console.warn('[MongoDB] Skipping connection because MONGODB_URI is not configured for production.');
 }
 
-if (missingProdEnv.length) {
+if (missingEssential.length) {
   app.use('/api', (req, res) => {
     res.status(500).json({
       error: 'Server configuration error',
       message: 'Required environment variables are missing. Update your deployment configuration and redeploy.',
-      missingEnv: missingProdEnv,
+      missingEnv: missingEssential,
+      demoMode: demoMode,
     });
   });
 }
