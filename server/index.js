@@ -15,6 +15,16 @@ const leaseRoutes = require('./routes/lease');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Production configuration validation
+const isProduction = process.env.NODE_ENV === 'production';
+const requiredProdEnv = ['MONGODB_URI', 'JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CLIENT_URL'];
+const missingProdEnv = isProduction ? requiredProdEnv.filter((key) => !process.env[key]) : [];
+
+if (missingProdEnv.length) {
+  console.error('Missing required env vars in production:', missingProdEnv.join(', '));
+  console.error('The API will respond with 500 errors until these values are configured.');
+}
+
 // Behind proxies/load balancers (Heroku/Render/Cloudflare), trust the first proxy
 app.set('trust proxy', 1);
 // Security middleware - Updated to allow Stripe, EmailJS, and Google Fonts
@@ -95,27 +105,32 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Database connection with better error handling
-if (process.env.NODE_ENV === 'production') {
-  const required = ['MONGODB_URI', 'JWT_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CLIENT_URL'];
-  const missing = required.filter(k => !process.env[k]);
-  if (missing.length) {
-    console.error('Missing required env vars in production:', missing.join(', '));
-    process.exit(1);
-  }
+if (!isProduction || !missingProdEnv.includes('MONGODB_URI')) {
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-llc', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('[MongoDB] Connected successfully');
+  })
+  .catch(err => {
+    console.error('[MongoDB] Connection error:', err);
+    console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+    // Don't exit the process, let the app continue
+  });
+} else {
+  console.warn('[MongoDB] Skipping connection because MONGODB_URI is not configured for production.');
 }
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/palm-run-llc', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('✅ Connected to MongoDB successfully');
-})
-.catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-  console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
-  // Don't exit the process, let the app continue
-});
+if (missingProdEnv.length) {
+  app.use('/api', (req, res) => {
+    res.status(500).json({
+      error: 'Server configuration error',
+      message: 'Required environment variables are missing. Update your deployment configuration and redeploy.',
+      missingEnv: missingProdEnv,
+    });
+  });
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -237,26 +252,33 @@ app.use('*', (req, res) => {
 
 // Process error handlers
 process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err);
+  console.error('[Process] Uncaught Exception:', err);
   console.error('Stack:', err.stack);
   // Don't exit, let the app try to recover
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('[Process] Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit, let the app try to recover
 });
 
 // Start server with better error handling
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-});
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log('[Server] Listening on port ' + PORT);
+    console.log('[Server] Environment: ' + (process.env.NODE_ENV || 'development'));
+    console.log('[Server] Health check: http://localhost:' + PORT + '/api/health');
+    if (missingProdEnv.length) {
+      console.warn('[Server] Missing required environment variables:', missingProdEnv.join(', '));
+    }
+  });
 
-server.on('error', (err) => {
-  console.error('❌ Server error:', err);
-  if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use`);
-  }
-});
+  server.on('error', (err) => {
+    console.error('[Server] Startup error:', err);
+    if (err.code === 'EADDRINUSE') {
+      console.error('[Server] Port ' + PORT + ' is already in use');
+    }
+  });
+}
+
+module.exports = app;
