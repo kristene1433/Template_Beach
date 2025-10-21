@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendPasswordResetEmail } from '../utils/emailjs';
 import { testPasswordResetConfig } from '../utils/debugEmailJS';
